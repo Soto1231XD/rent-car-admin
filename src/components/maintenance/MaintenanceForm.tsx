@@ -18,7 +18,7 @@ export default function MaintenanceForm() {
 
   const { register, handleSubmit } = useForm<FormData>({
     defaultValues: {
-      status: "PENDING",
+      status: "PENDIENTE",
     },
   });
 
@@ -35,7 +35,7 @@ export default function MaintenanceForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <section className="rounded-2xl bg-white p-6 shadow">
+      <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="mb-6 text-lg font-semibold text-slate-900">
           Registrar mantenimiento
         </h2>
@@ -75,24 +75,25 @@ export default function MaintenanceForm() {
 
           <Field label="Estado">
             <select {...register("status")} className="input">
-              <option value="PENDING">Pendiente</option>
-              <option value="IN_PROGRESS">En proceso</option>
-              <option value="COMPLETED">Completado</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="EN PROCESO">En proceso</option>
+              <option value="COMPLETADO">Completado</option>
             </select>
           </Field>
 
           <div className="md:col-span-2">
-            <Field label="Observaciones">
-              <textarea
-                {...register("notes")}
-                className="input min-h-24"
-              />
-            </Field>
-          </div>
+  <Field label="Comentarios / Observaciones">
+    <textarea
+      {...register("notes")}
+      className="input min-h-24 resize-none"
+      placeholder="Ej: Se cambió aceite, filtro y se revisaron frenos..."
+    />
+  </Field>
+</div>
         </div>
       </section>
 
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={() => router.back()}

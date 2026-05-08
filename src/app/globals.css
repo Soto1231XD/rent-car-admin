@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4f7f3;
+  --foreground: #1d2b27;
 }
 
 @theme inline {
@@ -10,12 +10,32 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-slate-50: #f7faf6;
+  --color-slate-100: #edf3ea;
+  --color-slate-200: #dce7d7;
+  --color-slate-300: #c1d0bb;
+  --color-slate-400: #85977e;
+  --color-slate-500: #667761;
+  --color-slate-600: #4f6259;
+  --color-slate-700: #344c45;
+  --color-slate-800: #203d37;
+  --color-slate-900: #12312c;
+
+  --color-green-100: #dfeee4;
+  --color-green-700: #27624a;
+  --color-yellow-100: #f3ead2;
+  --color-yellow-700: #7a5b1b;
+  --color-blue-100: #dcebea;
+  --color-blue-700: #2f646b;
+  --color-red-100: #f1deda;
+  --color-red-700: #8a3c33;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #f4f7f3;
+    --foreground: #1d2b27;
   }
 }
 
@@ -26,5 +46,36 @@ body {
 }
 
 .input {
-  @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-200;
+  @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-700 focus:ring-2 focus:ring-slate-200;
+}
+
+.fc {
+  --fc-border-color: #dce7d7;
+  --fc-button-bg-color: #12312c;
+  --fc-button-border-color: #12312c;
+  --fc-button-hover-bg-color: #344c45;
+  --fc-button-hover-border-color: #344c45;
+  --fc-button-active-bg-color: #2f646b;
+  --fc-button-active-border-color: #2f646b;
+  --fc-event-bg-color: #2f646b;
+  --fc-event-border-color: #2f646b;
+  --fc-today-bg-color: #edf3ea;
+  color: #1d2b27;
+  min-width: 680px;
+}
+
+@media (max-width: 640px) {
+  .fc .fc-toolbar {
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 1rem;
+  }
+
+  .fc .fc-button {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.75rem;
+  }
 }

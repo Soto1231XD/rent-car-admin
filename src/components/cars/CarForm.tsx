@@ -22,6 +22,7 @@ const carSchema = z.object({
 });
 
 export type CarFormData = z.infer<typeof carSchema>;
+type CarFormInput = z.input<typeof carSchema>;
 
 type CarFormProps = {
   mode: "create" | "edit";
@@ -36,7 +37,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<CarFormData>({
+  } = useForm<CarFormInput, unknown, CarFormData>({
     resolver: zodResolver(carSchema),
     defaultValues: {
       brand: initialData?.brand ?? "",
@@ -70,7 +71,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="rounded-2xl bg-white p-6 shadow">
+      <div className="rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="mb-6 text-lg font-semibold text-slate-900">
           Información del vehículo
         </h2>
@@ -120,7 +121,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
         </div>
       </div>
 
-      <div className="rounded-2xl bg-white p-6 shadow">
+      <div className="rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="mb-6 text-lg font-semibold text-slate-900">
           Precios y estado
         </h2>
@@ -159,7 +160,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
         </div>
       </div>
 
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={() => router.back()}

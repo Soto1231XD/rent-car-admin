@@ -32,7 +32,7 @@ export default async function CarDetailPage({ params }: Props) {
 
   return (
     <div>
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
             href="/dashboard/cars"
@@ -52,14 +52,14 @@ export default async function CarDetailPage({ params }: Props) {
 
         <Link
           href={`/dashboard/cars/${car.id}/edit`}
-          className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+          className="inline-flex w-full justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 sm:w-auto"
         >
           Editar carro
         </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className="rounded-2xl bg-white p-6 shadow lg:col-span-2">
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6 lg:col-span-2">
           <h2 className="mb-5 text-lg font-semibold text-slate-900">
             Datos generales
           </h2>
@@ -83,7 +83,7 @@ export default async function CarDetailPage({ params }: Props) {
           </div>
         </section>
 
-        <section className="rounded-2xl bg-white p-6 shadow">
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
           <h2 className="mb-5 text-lg font-semibold text-slate-900">
             Estado y precios
           </h2>
@@ -96,17 +96,25 @@ export default async function CarDetailPage({ params }: Props) {
             />
             <Info
               label="Precio semanal"
-              value={`$${car.weeklyPrice.toLocaleString("es-MX")} MXN`}
+              value={
+                car.weeklyPrice
+                  ? `$${car.weeklyPrice.toLocaleString("es-MX")} MXN`
+                  : "No definido"
+              }
             />
             <Info
               label="Precio mensual"
-              value={`$${car.monthlyPrice.toLocaleString("es-MX")} MXN`}
+              value={
+                car.monthlyPrice
+                  ? `$${car.monthlyPrice.toLocaleString("es-MX")} MXN`
+                  : "No definido"
+              }
             />
           </div>
         </section>
       </div>
 
-      <section className="mt-6 rounded-2xl bg-white p-6 shadow">
+      <section className="mt-6 rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="text-lg font-semibold text-slate-900">
           Historial
         </h2>

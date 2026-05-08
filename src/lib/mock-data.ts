@@ -1,7 +1,8 @@
 import { Car } from "@/types/car";
 import { Client } from "@/types/client";
 import { Rental } from "@/types/rental";
-import { Maintenance, MaintenanceStatus } from "@/types/maintenance";
+import { Maintenance } from "@/types/maintenance";
+import { CarPrice } from "@/types/price";
 
 export const cars: Car[] = [
   {
@@ -121,5 +122,69 @@ export const maintenances: Maintenance[] = [
     cost: 1200,
     date: "2026-04-20",
     status: "EN PROGRESO",
+  },
+];
+
+export const carPrices: CarPrice[] = [
+  {
+    id: 1,
+    model: "Sentra AT 2023",
+    capacity: 5,
+    deposit: 6000,
+    dailyPrice: 850,
+    highSeasonPrice: 950,
+    status: "DISPONIBLE",
+    transmission: "AUTOMATICO",
+    comments: "",
+  },
+  {
+    id: 2,
+    model: "Civic 2019 AT",
+    capacity: 5,
+    deposit: 6000,
+    dailyPrice: 800,
+    highSeasonPrice: 900,
+    status: "DISPONIBLE",
+    transmission: "AUTOMATICO",
+  },
+  {
+    id: 3,
+    model: "HRV AT",
+    capacity: 5,
+    deposit: 6000,
+    dailyPrice: 950,
+    highSeasonPrice: 1100,
+    status: "NO DISPONIBLE",
+    transmission: "AUTOMATICO",
+  },
+  {
+    id: 4,
+    model: "Ertiga AT",
+    capacity: 7,
+    deposit: 6000,
+    dailyPrice: 1200,
+    highSeasonPrice: 1400,
+    status: "DISPONIBLE",
+    transmission: "AUTOMATICO",
+  },
+  {
+    id: 5,
+    model: "Versa Rojo",
+    capacity: 5,
+    deposit: 6000,
+    dailyPrice: 750,
+    highSeasonPrice: 850,
+    status: "NO DISPONIBLE",
+    transmission: "AUTOMATICO",
+  },
+  {
+    id: 6,
+    model: "Aveo Gris",
+    capacity: 5,
+    deposit: 6000,
+    dailyPrice: 650,
+    highSeasonPrice: 680,
+    status: "DISPONIBLE",
+    transmission: "ESTANDAR",
   },
 ];

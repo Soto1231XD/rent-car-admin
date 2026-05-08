@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { CalendarDays, Car, Plus, UserPlus, Wrench } from "lucide-react";
 import { cars, rentals, maintenances } from "@/lib/mock-data";
+import StatusBadge from "@/components/ui/StatusBadge";
 
 export default function DashboardPage() {
   const totalCars = cars.length;
-  const availableCars = cars.filter((car) => car.status === "DISPONIBLE").length;
-  const maintenanceCars = cars.filter(
-    (car) => car.status === "MANTENIMIENTO"
-  ).length;
-  const activeRentals = rentals.filter((rental) => rental.status === "ACTIVO");
+ const availableCars = cars.filter((car) => car.status === "DISPONIBLE").length;
 
+const maintenanceCars = cars.filter(
+  (car) => car.status === "MANTENIMIENTO"
+).length;
+
+const activeRentals = rentals.filter((rental) => rental.status === "ACTIVO");
   return (
     <div className="space-y-6">
       <div>
@@ -19,17 +21,17 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-        <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <SummaryCard title="Total de carros" value={totalCars} icon={<Car />} />
-            <SummaryCard title="Disponibles" value={availableCars} icon={<Car />} />
-            <SummaryCard title="Rentas activas" value={activeRentals.length} icon={<CalendarDays />} />
-            <SummaryCard title="Mantenimiento" value={maintenanceCars} icon={<Wrench />} />
-          </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard title="Total de carros" value={totalCars} icon={<Car />} />
+        <SummaryCard title="Disponibles" value={availableCars} icon={<Car />} />
+        <SummaryCard title="Rentas activas" value={activeRentals.length} icon={<CalendarDays />} />
+        <SummaryCard title="Mantenimiento" value={maintenanceCars} icon={<Wrench />} />
+      </div>
 
-          <section className="rounded-2xl bg-white p-6 shadow">
-            <div className="mb-5 flex items-center justify-between">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-6">
+          <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">
                   Rentas activas
@@ -47,8 +49,49 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-slate-200">
-              <table className="w-full text-left text-sm">
+            <div className="space-y-3 md:hidden">
+              {activeRentals.map((rental) => (
+                <Link
+                  key={rental.id}
+                  href={`/dashboard/rentals/${rental.id}`}
+                  className="block rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-900">
+                        {rental.clientName}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {rental.carName}
+                      </p>
+                    </div>
+                    <StatusBadge status={rental.status} />
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs font-medium text-slate-500">
+                        Devolucion
+                      </p>
+                      <p className="mt-1 font-semibold text-slate-900">
+                        {rental.endDate}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500">
+                        Total
+                      </p>
+                      <p className="mt-1 font-semibold text-slate-900">
+                        ${rental.totalPrice.toLocaleString("es-MX")} MXN
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto rounded-xl border border-slate-200 md:block">
+              <table className="min-w-[680px] w-full text-left text-sm">
                 <thead className="bg-slate-50 text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">Cliente</th>
@@ -80,8 +123,8 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          <section className="rounded-2xl bg-white p-6 shadow">
-            <div className="mb-5 flex items-center justify-between">
+          <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">
                   Mantenimientos recientes
@@ -103,9 +146,9 @@ export default function DashboardPage() {
               {maintenances.map((maintenance) => (
                 <div
                   key={maintenance.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 p-4"
+                  className="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium text-slate-900">
                       {maintenance.carName}
                     </p>
@@ -114,17 +157,15 @@ export default function DashboardPage() {
                     </p>
                   </div>
 
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                    {maintenance.status}
-                  </span>
+                  <StatusBadge status={maintenance.status} />
                 </div>
               ))}
             </div>
           </section>
         </div>
 
-        <aside className="space-y-6">
-          <section className="rounded-2xl bg-white p-6 shadow">
+        <aside className="order-first space-y-6 xl:order-none">
+          <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
             <h2 className="text-lg font-semibold text-slate-900">
               Accesos rápidos
             </h2>
@@ -132,7 +173,7 @@ export default function DashboardPage() {
               Acciones frecuentes del sistema.
             </p>
 
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
               <QuickAction
                 href="/dashboard/rentals/new"
                 icon={<Plus />}
@@ -185,14 +226,14 @@ function SummaryCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl bg-white p-5 shadow">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-medium text-slate-500">{title}</p>
           <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
         </div>
 
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-700 ring-1 ring-slate-200">
           {icon}
         </div>
       </div>
@@ -216,11 +257,11 @@ function QuickAction({
       href={href}
       className="flex items-center gap-4 rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm shadow-slate-900/20">
         {icon}
       </div>
 
-      <div>
+      <div className="min-w-0">
         <p className="text-sm font-semibold text-slate-900">{title}</p>
         <p className="text-xs text-slate-500">{description}</p>
       </div>

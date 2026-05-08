@@ -15,7 +15,8 @@ const schema = z.object({
   status: z.string(),
 });
 
-type FormData = z.infer<typeof schema>;
+type FormData = z.output<typeof schema>;
+type FormInput = z.input<typeof schema>;
 
 type Props = {
   mode: "create" | "edit";
@@ -30,7 +31,7 @@ export default function RentalForm({
 }: Props) {
   const router = useRouter();
 
-  const { register, handleSubmit } = useForm<FormData>({
+  const { register, handleSubmit } = useForm<FormInput, unknown, FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       clientName: initialData?.clientName ?? "",
@@ -57,7 +58,7 @@ export default function RentalForm({
 
  return (
   <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-    <section className="rounded-2xl bg-white p-6 shadow">
+    <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
       <h2 className="mb-6 text-lg font-semibold text-slate-900">
         Información de la renta
       </h2>
@@ -124,7 +125,7 @@ export default function RentalForm({
       </div>
     </section>
 
-    <div className="flex justify-end gap-3">
+    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
       <button
         type="button"
         onClick={() => router.back()}

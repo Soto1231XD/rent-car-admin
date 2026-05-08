@@ -1,6 +1,6 @@
 import Link from "next/link";
-import CarForm from "@/components/cars/CarForm";
-import { cars } from "@/lib/mock-data";
+import PriceForm from "@/components/prices/PriceForm";
+import { carPrices } from "@/lib/mock-data";
 
 type Props = {
   params: Promise<{
@@ -8,23 +8,23 @@ type Props = {
   }>;
 };
 
-export default async function EditCarPage({ params }: Props) {
+export default async function EditPricePage({ params }: Props) {
   const { id } = await params;
 
-  const car = cars.find((car) => car.id === Number(id));
+  const price = carPrices.find((price) => price.id === Number(id));
 
-  if (!car) {
+  if (!price) {
     return (
       <div>
         <h1 className="text-2xl font-bold text-slate-900">
-          Carro no encontrado
+          Precio no encontrado
         </h1>
 
         <Link
-          href="/dashboard/cars"
+          href="/dashboard/prices"
           className="mt-4 inline-block text-sm font-medium text-slate-600 hover:text-slate-900"
         >
-          ← Volver a carros
+          ← Volver a precios
         </Link>
       </div>
     );
@@ -34,22 +34,22 @@ export default async function EditCarPage({ params }: Props) {
     <div>
       <div className="mb-6">
         <Link
-          href={`/dashboard/cars/${id}`}
+          href="/dashboard/prices"
           className="text-sm font-medium text-slate-600 hover:text-slate-900"
         >
-          ← Volver al detalle
+          ← Volver a precios
         </Link>
 
         <h1 className="mt-3 text-2xl font-bold text-slate-900">
-          Editar carro
+          Editar precio
         </h1>
 
         <p className="mt-1 text-sm text-slate-600">
-          Actualiza la información del vehículo seleccionado.
+          Actualiza la tarifa de {price.model}.
         </p>
       </div>
 
-      <CarForm mode="edit" initialData={car} carId={id} />
+      <PriceForm mode="edit" initialData={price} priceId={id} />
     </div>
   );
 }

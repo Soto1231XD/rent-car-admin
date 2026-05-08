@@ -31,7 +31,7 @@ export default async function RentalDetailPage({ params }: Props) {
 
   return (
     <div>
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
             href="/dashboard/rentals"
@@ -51,14 +51,14 @@ export default async function RentalDetailPage({ params }: Props) {
 
         <Link
           href={`/dashboard/rentals/${rental.id}/edit`}
-          className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+          className="inline-flex w-full justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 sm:w-auto"
         >
           Editar renta
         </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className="rounded-2xl bg-white p-6 shadow lg:col-span-2">
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6 lg:col-span-2">
           <h2 className="mb-5 text-lg font-semibold text-slate-900">
             Datos de la renta
           </h2>
@@ -76,53 +76,35 @@ export default async function RentalDetailPage({ params }: Props) {
           </div>
         </section>
 
-        <section className="rounded-2xl bg-white p-6 shadow">
+       <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
   <h2 className="mb-2 text-lg font-semibold text-slate-900">
     Documentos de renta
   </h2>
 
   <p className="mb-5 text-sm text-slate-600">
-    Genera los documentos relacionados con esta renta.
+    Genera el documento completo de la renta.
   </p>
 
   <div className="space-y-3">
-    <button
-      type="button"
-      
-      className="w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+    <Link
+      href={`/dashboard/rentals/${rental.id}/document`}
+      className="block w-full rounded-xl bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-slate-700"
     >
-      Generar contrato de arrendamiento
-    </button>
+      Generar documento único
+    </Link>
 
-    <button
-      type="button"
-      
-      className="w-full rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-    >
-      Generar carta responsiva
-    </button>
-
-    <button
-      type="button"
-      
-      className="w-full rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-    >
-      Generar inventario vehicular
-    </button>
-
-    <button
-      type="button"
-      
-      className="w-full rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-    >
-      Generar ticket
-    </button>
+    <Link
+  href={`/dashboard/rentals/${rental.id}/ticket`}
+  className="block w-full rounded-xl border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-100"
+>
+  Generar ticket
+</Link>
   </div>
 </section>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl bg-white p-6 shadow">
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
           <h2 className="mb-5 text-lg font-semibold text-slate-900">
             Resumen de pagos
           </h2>
@@ -140,24 +122,14 @@ export default async function RentalDetailPage({ params }: Props) {
           </div>
         </section>
 
-       <section className="rounded-2xl bg-white p-6 shadow">
+       <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
   <h2 className="mb-5 text-lg font-semibold text-slate-900">
     Historial de documentos
   </h2>
 
   <div className="space-y-3 text-sm text-slate-700">
     <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
-      <span>Contrato de arrendamiento</span>
-      <span className="text-slate-400">Pendiente</span>
-    </div>
-
-    <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
-      <span>Carta responsiva</span>
-      <span className="text-slate-400">Pendiente</span>
-    </div>
-
-    <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
-      <span>Inventario vehicular</span>
+      <span>Documento único de renta</span>
       <span className="text-slate-400">Pendiente</span>
     </div>
 

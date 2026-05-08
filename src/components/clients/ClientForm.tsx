@@ -68,7 +68,7 @@ export default function ClientForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <section className="rounded-2xl bg-white p-6 shadow">
+      <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="mb-6 text-lg font-semibold text-slate-900">
           Información del cliente
         </h2>
@@ -106,7 +106,7 @@ export default function ClientForm({
         </div>
       </section>
 
-      <section className="rounded-2xl bg-white p-6 shadow">
+      <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="mb-6 text-lg font-semibold text-slate-900">
           Contacto de emergencia
         </h2>
@@ -122,7 +122,7 @@ export default function ClientForm({
         </div>
       </section>
 
-      <section className="rounded-2xl bg-white p-6 shadow">
+      <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="mb-6 text-lg font-semibold text-slate-900">
           Notas adicionales
         </h2>
@@ -136,7 +136,7 @@ export default function ClientForm({
         </Field>
       </section>
 
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={() => router.back()}

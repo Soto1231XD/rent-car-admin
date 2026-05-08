@@ -31,7 +31,7 @@ export default async function ClientDetailPage({ params }: Props) {
 
   return (
     <div>
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link
             href="/dashboard/clients"
@@ -51,14 +51,14 @@ export default async function ClientDetailPage({ params }: Props) {
 
         <Link
           href={`/dashboard/clients/${client.id}/edit`}
-          className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+          className="inline-flex w-full justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 sm:w-auto"
         >
           Editar cliente
         </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className="rounded-2xl bg-white p-6 shadow lg:col-span-2">
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6 lg:col-span-2">
           <h2 className="mb-5 text-lg font-semibold text-slate-900">
             Datos personales
           </h2>
@@ -73,7 +73,7 @@ export default async function ClientDetailPage({ params }: Props) {
           </div>
         </section>
 
-        <section className="rounded-2xl bg-white p-6 shadow">
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
           <h2 className="mb-5 text-lg font-semibold text-slate-900">
             Renta actual
           </h2>
@@ -88,7 +88,7 @@ export default async function ClientDetailPage({ params }: Props) {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl bg-white p-6 shadow">
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
           <h2 className="mb-5 text-lg font-semibold text-slate-900">
             Contacto de emergencia
           </h2>
@@ -105,7 +105,7 @@ export default async function ClientDetailPage({ params }: Props) {
           </div>
         </section>
 
-        <section className="rounded-2xl bg-white p-6 shadow">
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
           <h2 className="mb-5 text-lg font-semibold text-slate-900">
             Notas
           </h2>
@@ -116,7 +116,7 @@ export default async function ClientDetailPage({ params }: Props) {
         </section>
       </div>
 
-      <section className="mt-6 rounded-2xl bg-white p-6 shadow">
+      <section className="mt-6 rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="text-lg font-semibold text-slate-900">
           Historial del cliente
         </h2>

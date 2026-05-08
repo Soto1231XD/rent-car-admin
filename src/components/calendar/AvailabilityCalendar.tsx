@@ -14,7 +14,7 @@ export default function AvailabilityCalendar() {
   }));
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow">
+    <div className="overflow-x-auto rounded-2xl bg-white p-4 shadow sm:p-6">
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
