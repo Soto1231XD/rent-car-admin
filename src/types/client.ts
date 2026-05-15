@@ -1,13 +1,17 @@
+import { Rental } from "@/types/rental";
+
 export type Client = {
-  id: number;
+  id: string;
   fullName: string;
   email: string;
   phone: string;
   idNumber: string;
-  address: string;
+  address?: string | null;
   driverLicenseNumber: string;
   emergencyContactName: string;
   emergencyContactPhone: string;
-  rentedCar?: string;
-  notes?: string;
+  notes?: string | null;
+  rentals?: Rental[];
+  createdAt?: string;
+  updatedAt?: string;
 };

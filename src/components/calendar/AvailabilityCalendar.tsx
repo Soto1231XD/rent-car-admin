@@ -3,12 +3,16 @@
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { rentals } from "@/lib/mock-data";
+import { Rental } from "@/types/rental";
 
-export default function AvailabilityCalendar() {
+type Props = {
+  rentals: Rental[];
+};
+
+export default function AvailabilityCalendar({ rentals }: Props) {
   const events = rentals.map((rental) => ({
-    id: String(rental.id),
-    title: `${rental.carName} - ${rental.clientName}`,
+    id: rental.id,
+    title: `${getCarName(rental)} - ${getClientName(rental)}`,
     start: rental.startDate,
     end: rental.endDate,
   }));
@@ -33,4 +37,16 @@ export default function AvailabilityCalendar() {
       />
     </div>
   );
+}
+
+function getClientName(rental: Rental) {
+  return rental.client?.fullName ?? "Cliente";
+}
+
+function getCarName(rental: Rental) {
+  if (!rental.car) {
+    return "Vehículo";
+  }
+
+  return `${rental.car.brand} ${rental.car.model}`;
 }

@@ -1,22 +1,32 @@
-export type CarStatus = "DISPONIBLE" | "MANTENIMIENTO" | "FUERA_DE_SERVICIO" | "RENTADO";
+export type CarStatus =
+  | "DISPONIBLE"
+  | "MANTENIMIENTO"
+  | "NO_DISPONIBLE"
+  | "RENTADO";
 
-export type Transmission = "AUTOMATICO" | "MANUAL";
+export type Transmission = "AUTOMATICO" | "ESTANDAR";
 
 export type FuelType = "GASOLINA" | "DIESEL" | "HIBRIDA" | "ELECTRICA";
 
 export type Car = {
-  id: number;
+  id: string;
   brand: string;
   model: string;
   year: number;
   plate: string;
   color: string;
   transmission: Transmission;
-  fuelType: FuelType;
+  fuelType?: FuelType;
   passengers: number;
   status: CarStatus;
   dailyPrice: number;
+  highSeasonPrice?: number | null;
+  deposit?: number | null;
   weeklyPrice?: number;
   monthlyPrice?: number;
-  description?: string;
+  description?: string | null;
+  features?: string[] | null;
+  images: string[];
+  createdAt?: string;
+  updatedAt?: string;
 };

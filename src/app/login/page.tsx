@@ -1,15 +1,31 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Car, Lock, Mail } from "lucide-react";
+import { login, saveSession } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [email, setEmail] = useState("admin@rentamivar.com");
+  const [password, setPassword] = useState("Admin123!");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError("");
+    setIsLoading(true);
 
-    // Login simulado para prototipo
+    const session = await login(email, password);
+    setIsLoading(false);
+
+    if (!session) {
+      setError("No se pudo iniciar sesión. Revisa tus credenciales o que la API esté encendida.");
+      return;
+    }
+
+    saveSession(session);
     router.push("/dashboard");
   };
 
@@ -58,8 +74,11 @@ export default function LoginPage() {
                 <Mail size={18} className="text-slate-400" />
                 <input
                   type="email"
-                  placeholder="admin@empresa.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="admin@rentamivar.com"
                   className="w-full border-0 bg-transparent px-3 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                  required
                 />
               </div>
             </label>
@@ -73,22 +92,32 @@ export default function LoginPage() {
                 <Lock size={18} className="text-slate-400" />
                 <input
                   type="password"
-                  placeholder="••••••••"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="********"
                   className="w-full border-0 bg-transparent px-3 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                  required
                 />
               </div>
             </label>
 
+            {error && (
+              <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 ring-1 ring-rose-200">
+                {error}
+              </p>
+            )}
+
             <button
-            type="submit"
-              className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm shadow-slate-900/20 transition hover:bg-slate-700"
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm shadow-slate-900/20 transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
-              Entrar al sistema
+              {isLoading ? "Validando..." : "Entrar al sistema"}
             </button>
           </form>
 
           <p className="mt-6 text-center text-xs text-slate-500">
-            Prototipo visual. La autenticación real se conectará con el backend.
+            Usuario de prueba: admin@rentamivar.com / Admin123!
           </p>
         </div>
       </section>

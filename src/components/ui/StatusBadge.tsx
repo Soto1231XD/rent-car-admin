@@ -7,7 +7,7 @@ export default function StatusBadge({ status }: Props) {
 
   return (
     <span
-      className={`rounded-full px-3 py-1 text-xs font-medium ${getStyles(
+      className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${getStyles(
         normalizedStatus
       )}`}
     >
@@ -28,12 +28,14 @@ function getStyles(status: string) {
     case "PENDIENTE":
     case "MAINTENANCE":
     case "PENDING":
+    case "RESERVACION":
       return "bg-amber-50 text-amber-700 ring-1 ring-amber-200";
 
     case "ACTIVO":
     case "ACTIVA":
     case "ACTIVE":
     case "EN PROGRESO":
+    case "EN_PROGRESO":
     case "IN_PROGRESS":
       return "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200";
 
@@ -42,6 +44,7 @@ function getStyles(status: string) {
     case "CANCELLED":
     case "FUERA DE SERVICIO":
     case "OUT_OF_SERVICE":
+    case "NO_DISPONIBLE":
       return "bg-rose-50 text-rose-700 ring-1 ring-rose-200";
 
     default:
@@ -87,10 +90,14 @@ function formatLabel(status: string) {
       return "Pendiente";
     case "PENDIENTE":
       return "Pendiente";
+    case "RESERVACION":
+      return "Reservación";
 
     case "IN_PROGRESS":
       return "En progreso";
     case "EN PROGRESO":
+      return "En progreso";
+    case "EN_PROGRESO":
       return "En progreso";
 
     case "CANCELLED":
@@ -104,6 +111,7 @@ function formatLabel(status: string) {
       return "Rentado";
 
     case "NO DISPONIBLE":
+    case "NO_DISPONIBLE":
       return "No disponible";
 
     default:

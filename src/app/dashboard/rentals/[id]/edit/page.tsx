@@ -1,6 +1,6 @@
 import Link from "next/link";
 import RentalForm from "@/components/rentals/RentalForm";
-import { rentals } from "@/lib/mock-data";
+import { getCars, getClients, getRental } from "@/lib/api";
 
 type Props = {
   params: Promise<{
@@ -10,8 +10,11 @@ type Props = {
 
 export default async function EditRentalPage({ params }: Props) {
   const { id } = await params;
-
-  const rental = rentals.find((r) => r.id === Number(id));
+  const [rental, cars, clients] = await Promise.all([
+    getRental(id),
+    getCars(),
+    getClients(),
+  ]);
 
   if (!rental) {
     return (
@@ -51,6 +54,8 @@ export default async function EditRentalPage({ params }: Props) {
 
       <RentalForm
         mode="edit"
+        cars={cars}
+        clients={clients}
         initialData={rental}
         rentalId={id}
       />

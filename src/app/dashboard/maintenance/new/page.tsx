@@ -1,7 +1,10 @@
 import Link from "next/link";
 import MaintenanceForm from "@/components/maintenance/MaintenanceForm";
+import { getCars } from "@/lib/api";
 
-export default function NewMaintenancePage() {
+export default async function NewMaintenancePage() {
+  const cars = await getCars();
+
   return (
     <div>
       <div className="mb-6">
@@ -17,7 +20,7 @@ export default function NewMaintenancePage() {
         </h1>
       </div>
 
-      <MaintenanceForm />
+      <MaintenanceForm mode="create" cars={cars} />
     </div>
   );
 }

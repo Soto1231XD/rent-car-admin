@@ -1,16 +1,21 @@
 import Link from "next/link";
-import { clients } from "@/lib/mock-data";
+import { getClient } from "@/lib/api";
+import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
+import { Rental, RentalStatus } from "@/types/rental";
 
 type Props = {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    success?: string;
+  }>;
 };
 
-export default async function ClientDetailPage({ params }: Props) {
+export default async function ClientDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
-
-  const client = clients.find((client) => client.id === Number(id));
+  await searchParams;
+  const client = await getClient(id);
 
   if (!client) {
     return (
@@ -29,32 +34,46 @@ export default async function ClientDetailPage({ params }: Props) {
     );
   }
 
+  const rentals = client.rentals ?? [];
+  const activeRental = rentals.find((rental) => rental.status === "ACTIVO");
+
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <Link
-            href="/dashboard/clients"
-            className="text-sm font-medium text-slate-600 hover:text-slate-900"
-          >
-            ← Volver a clientes
-          </Link>
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <Link
+              href="/dashboard/clients"
+              className="text-sm font-medium text-slate-600 hover:text-slate-900"
+            >
+              ← Volver a clientes
+            </Link>
 
-          <h1 className="mt-3 text-2xl font-bold text-slate-900">
-            {client.fullName}
-          </h1>
+            <h1 className="mt-3 text-2xl font-bold text-slate-900">
+              {client.fullName}
+            </h1>
 
-          <p className="mt-1 text-sm text-slate-600">
-            Información detallada del cliente.
-          </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Información detallada del cliente.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link
+              href={`/dashboard/clients/${client.id}/edit`}
+              className="inline-flex w-full justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 sm:w-auto"
+            >
+              Editar cliente
+            </Link>
+
+            <DeleteResourceButton
+              id={client.id}
+              resourceType="client"
+              resourceName={client.fullName}
+              redirectTo="/dashboard/clients"
+            />
+          </div>
         </div>
-
-        <Link
-          href={`/dashboard/clients/${client.id}/edit`}
-          className="inline-flex w-full justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 sm:w-auto"
-        >
-          Editar cliente
-        </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -69,7 +88,7 @@ export default async function ClientDetailPage({ params }: Props) {
             <Info label="Teléfono" value={client.phone} />
             <Info label="Identificación" value={client.idNumber} />
             <Info label="Licencia" value={client.driverLicenseNumber} />
-            <Info label="Dirección" value={client.address} />
+            {client.address && <Info label="Dirección" value={client.address} />}
           </div>
         </section>
 
@@ -78,12 +97,27 @@ export default async function ClientDetailPage({ params }: Props) {
             Renta actual
           </h2>
 
-          <div className="space-y-4">
-            <Info
-              label="Vehículo rentado"
-              value={client.rentedCar ?? "Sin vehículo asignado"}
-            />
-          </div>
+          {activeRental ? (
+            <div className="space-y-4">
+              <Info label="Vehículo" value={formatCarName(activeRental)} />
+              <Info
+                label="Periodo"
+                value={`${formatDate(activeRental.startDate)} - ${formatDate(activeRental.endDate)}`}
+              />
+              <Info
+                label="Estado"
+                value={formatRentalStatus(activeRental.status)}
+              />
+              <Link
+                href={`/dashboard/rentals/${activeRental.id}`}
+                className="inline-flex text-sm font-medium text-slate-900 hover:underline"
+              >
+                Ver renta
+              </Link>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-600">Sin renta activa.</p>
+          )}
         </section>
       </div>
 
@@ -94,21 +128,13 @@ export default async function ClientDetailPage({ params }: Props) {
           </h2>
 
           <div className="space-y-4">
-            <Info
-              label="Nombre"
-              value={client.emergencyContactName}
-            />
-            <Info
-              label="Teléfono"
-              value={client.emergencyContactPhone}
-            />
+            <Info label="Nombre" value={client.emergencyContactName} />
+            <Info label="Teléfono" value={client.emergencyContactPhone} />
           </div>
         </section>
 
         <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
-          <h2 className="mb-5 text-lg font-semibold text-slate-900">
-            Notas
-          </h2>
+          <h2 className="mb-5 text-lg font-semibold text-slate-900">Notas</h2>
 
           <p className="text-sm text-slate-700">
             {client.notes ?? "Sin notas registradas."}
@@ -118,12 +144,55 @@ export default async function ClientDetailPage({ params }: Props) {
 
       <section className="mt-6 rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="text-lg font-semibold text-slate-900">
-          Historial del cliente
+          Historial de rentas
         </h2>
 
-        <p className="mt-2 text-sm text-slate-600">
-          Aquí se mostrará el historial de rentas, pagos y contratos relacionados con este cliente.
-        </p>
+        {rentals.length === 0 ? (
+          <p className="mt-2 text-sm text-slate-600">
+            Este cliente todavía no tiene rentas registradas.
+          </p>
+        ) : (
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full min-w-[680px] border-collapse text-left text-sm">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Vehículo</th>
+                  <th className="px-4 py-3 font-semibold">Periodo</th>
+                  <th className="px-4 py-3 font-semibold">Estado</th>
+                  <th className="px-4 py-3 font-semibold">Total</th>
+                  <th className="px-4 py-3 font-semibold">Acción</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-slate-100">
+                {rentals.map((rental) => (
+                  <tr key={rental.id}>
+                    <td className="px-4 py-3 font-medium text-slate-900">
+                      {formatCarName(rental)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {formatDate(rental.startDate)} - {formatDate(rental.endDate)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {formatRentalStatus(rental.status)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {formatCurrency(rental.totalPrice)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/dashboard/rentals/${rental.id}`}
+                        className="font-medium text-slate-900 hover:underline"
+                      >
+                        Ver detalle
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );
@@ -142,4 +211,38 @@ function Info({
       <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
     </div>
   );
+}
+
+function formatCarName(rental: Rental) {
+  if (!rental.car) {
+    return "Vehículo no disponible";
+  }
+
+  return `${rental.car.brand} ${rental.car.model} ${rental.car.year}`;
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("es-MX", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value));
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+  }).format(value);
+}
+
+function formatRentalStatus(status: RentalStatus) {
+  const labels: Record<RentalStatus, string> = {
+    RESERVACION: "Reservación",
+    ACTIVO: "Activa",
+    COMPLETADO: "Completada",
+    CANCELADO: "Cancelada",
+  };
+
+  return labels[status];
 }

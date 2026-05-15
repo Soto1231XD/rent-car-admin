@@ -1,11 +1,16 @@
-export type MaintenanceStatus = "PENDIENTE" | "EN PROGRESO" | "COMPLETADO";
+import { Car } from "@/types/car";
+
+export type MaintenanceStatus = "PENDIENTE" | "EN_PROGRESO" | "COMPLETADO";
 
 export type Maintenance = {
-  id: number;
-  carName: string;
+  id: string;
+  carId: string;
   serviceType: string;
   cost: number;
   date: string;
   status: MaintenanceStatus;
-  notes?: string;
+  notes?: string | null;
+  car?: Car;
+  createdAt?: string;
+  updatedAt?: string;
 };

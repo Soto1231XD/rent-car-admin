@@ -1,16 +1,20 @@
 import Link from "next/link";
-import { rentals } from "@/lib/mock-data";
+import { getRental } from "@/lib/api";
+import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 
 type Props = {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    success?: string;
+  }>;
 };
 
-export default async function RentalDetailPage({ params }: Props) {
+export default async function RentalDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
-
-  const rental = rentals.find((rental) => rental.id === Number(id));
+  await searchParams;
+  const rental = await getRental(id);
 
   if (!rental) {
     return (
@@ -29,32 +33,48 @@ export default async function RentalDetailPage({ params }: Props) {
     );
   }
 
+  const clientName = rental.client?.fullName ?? "Cliente no disponible";
+  const carName = rental.car
+    ? `${rental.car.brand} ${rental.car.model} ${rental.car.year}`
+    : "Vehículo no disponible";
+
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <Link
-            href="/dashboard/rentals"
-            className="text-sm font-medium text-slate-600 hover:text-slate-900"
-          >
-            ← Volver a rentas
-          </Link>
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <Link
+              href="/dashboard/rentals"
+              className="text-sm font-medium text-slate-600 hover:text-slate-900"
+            >
+              ← Volver a rentas
+            </Link>
 
-          <h1 className="mt-3 text-2xl font-bold text-slate-900">
-            Renta #{rental.id}
-          </h1>
+            <h1 className="mt-3 text-2xl font-bold text-slate-900">
+              Renta #{rental.id.slice(0, 8)}
+            </h1>
 
-          <p className="mt-1 text-sm text-slate-600">
-            Información detallada de la renta.
-          </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Información detallada de la renta.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link
+              href={`/dashboard/rentals/${rental.id}/edit`}
+              className="inline-flex w-full justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 sm:w-auto"
+            >
+              Editar renta
+            </Link>
+
+            <DeleteResourceButton
+              id={rental.id}
+              resourceType="rental"
+              resourceName={`${clientName} - ${carName}`}
+              redirectTo="/dashboard/rentals"
+            />
+          </div>
         </div>
-
-        <Link
-          href={`/dashboard/rentals/${rental.id}/edit`}
-          className="inline-flex w-full justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 sm:w-auto"
-        >
-          Editar renta
-        </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -64,43 +84,43 @@ export default async function RentalDetailPage({ params }: Props) {
           </h2>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Info label="Cliente" value={rental.clientName} />
-            <Info label="Vehículo" value={rental.carName} />
-            <Info label="Fecha de entrega" value={rental.startDate} />
-            <Info label="Fecha de devolución" value={rental.endDate} />
+            <Info label="Cliente" value={clientName} />
+            <Info label="Vehículo" value={carName} />
+            <Info label="Fecha de entrega" value={formatDate(rental.startDate)} />
+            <Info label="Fecha de devolución" value={formatDate(rental.endDate)} />
             <Info
               label="Total"
               value={`$${rental.totalPrice.toLocaleString("es-MX")} MXN`}
             />
-            <Info label="Estado" value={rental.status} />
+            <Info label="Estado" value={formatStatus(rental.status)} />
           </div>
         </section>
 
-       <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
-  <h2 className="mb-2 text-lg font-semibold text-slate-900">
-    Documentos de renta
-  </h2>
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
+          <h2 className="mb-2 text-lg font-semibold text-slate-900">
+            Documentos de renta
+          </h2>
 
-  <p className="mb-5 text-sm text-slate-600">
-    Genera el documento completo de la renta.
-  </p>
+          <p className="mb-5 text-sm text-slate-600">
+            Genera el documento completo de la renta.
+          </p>
 
-  <div className="space-y-3">
-    <Link
-      href={`/dashboard/rentals/${rental.id}/document`}
-      className="block w-full rounded-xl bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-slate-700"
-    >
-      Generar documento único
-    </Link>
+          <div className="space-y-3">
+            <Link
+              href={`/print/rentals/${rental.id}/document`}
+              className="block w-full rounded-xl bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-slate-700"
+            >
+              Generar documento único
+            </Link>
 
-    <Link
-  href={`/dashboard/rentals/${rental.id}/ticket`}
-  className="block w-full rounded-xl border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-100"
->
-  Generar ticket
-</Link>
-  </div>
-</section>
+            <Link
+              href={`/print/rentals/${rental.id}/ticket`}
+              className="block w-full rounded-xl border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Generar ticket
+            </Link>
+          </div>
+        </section>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -122,39 +142,48 @@ export default async function RentalDetailPage({ params }: Props) {
           </div>
         </section>
 
-       <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
-  <h2 className="mb-5 text-lg font-semibold text-slate-900">
-    Historial de documentos
-  </h2>
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
+          <h2 className="mb-5 text-lg font-semibold text-slate-900">
+            Historial de documentos
+          </h2>
 
-  <div className="space-y-3 text-sm text-slate-700">
-    <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
-      <span>Documento único de renta</span>
-      <span className="text-slate-400">Pendiente</span>
-    </div>
+          <div className="space-y-3 text-sm text-slate-700">
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
+              <span>Documento único de renta</span>
+              <span className="text-slate-400">Pendiente</span>
+            </div>
 
-    <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
-      <span>Ticket</span>
-      <span className="text-slate-400">Pendiente</span>
-    </div>
-  </div>
-</section>
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
+              <span>Ticket</span>
+              <span className="text-slate-400">Pendiente</span>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );
 }
 
-function Info({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number;
-}) {
+function Info({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
       <p className="text-sm font-medium text-slate-500">{label}</p>
       <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
     </div>
   );
+}
+
+function formatDate(value: string) {
+  return value.slice(0, 10);
+}
+
+function formatStatus(status: string) {
+  const labels: Record<string, string> = {
+    RESERVACION: "Reservación",
+    ACTIVO: "Activa",
+    COMPLETADO: "Completada",
+    CANCELADO: "Cancelada",
+  };
+
+  return labels[status] ?? status;
 }

@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Menu } from "lucide-react";
+import { AuthUser, clearSession, getStoredUserRaw } from "@/lib/auth";
 
 type Props = {
   onMenuClick?: () => void;
@@ -9,8 +11,16 @@ type Props = {
 
 export default function Header({ onMenuClick }: Props) {
   const router = useRouter();
+  const rawUser = useSyncExternalStore(
+    subscribeToAuthStorage,
+    getStoredUserRaw,
+    () => null
+  );
+
+  const user = useMemo(() => parseUser(rawUser), [rawUser]);
 
   const handleLogout = () => {
+    clearSession();
     router.push("/login");
   };
 
@@ -19,7 +29,7 @@ export default function Header({ onMenuClick }: Props) {
       <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
-          aria-label="Abrir menu"
+          aria-label="Abrir menú"
           onClick={onMenuClick}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100 lg:hidden"
         >
@@ -30,19 +40,17 @@ export default function Header({ onMenuClick }: Props) {
           <h2 className="text-lg font-semibold text-slate-800">
             Rentamivar Admin
           </h2>
-          <p className="text-xs text-slate-500">
-            Panel administrativo
-          </p>
+          <p className="text-xs text-slate-500">Panel administrativo</p>
         </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-3">
         <div className="hidden text-right sm:block">
           <p className="text-sm font-medium text-slate-800">
-            Administrador
+            {user?.fullName ?? "Administrador"}
           </p>
           <p className="text-xs text-slate-500">
-            Personal autorizado
+            {user?.email ?? "Personal autorizado"}
           </p>
         </div>
 
@@ -57,4 +65,26 @@ export default function Header({ onMenuClick }: Props) {
       </div>
     </header>
   );
+}
+
+function subscribeToAuthStorage(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener("rentamivar-auth-change", callback);
+
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener("rentamivar-auth-change", callback);
+  };
+}
+
+function parseUser(rawUser: string | null): AuthUser | null {
+  if (!rawUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawUser) as AuthUser;
+  } catch {
+    return null;
+  }
 }

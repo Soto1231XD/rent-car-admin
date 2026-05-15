@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
+import ToastFeedback from "@/components/ui/ToastFeedback";
 
 export default function DashboardShell({
   children,
@@ -13,6 +14,9 @@ export default function DashboardShell({
 
   return (
     <div className="min-h-screen bg-slate-100 lg:flex">
+      <Suspense fallback={null}>
+        <ToastFeedback />
+      </Suspense>
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}

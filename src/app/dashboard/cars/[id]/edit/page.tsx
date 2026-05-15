@@ -1,6 +1,6 @@
 import Link from "next/link";
 import CarForm from "@/components/cars/CarForm";
-import { cars } from "@/lib/mock-data";
+import { getCar } from "@/lib/api";
 
 type Props = {
   params: Promise<{
@@ -10,8 +10,7 @@ type Props = {
 
 export default async function EditCarPage({ params }: Props) {
   const { id } = await params;
-
-  const car = cars.find((car) => car.id === Number(id));
+  const car = await getCar(id);
 
   if (!car) {
     return (

@@ -1,15 +1,28 @@
+import { Car } from "@/types/car";
+import { Client } from "@/types/client";
+
 export type RentalStatus =
-  | "RESERVACIÓN"
+  | "RESERVACION"
   | "ACTIVO"
   | "COMPLETADO"
   | "CANCELADO";
 
+export type RentalPriceMode = "NORMAL" | "TEMPORADA_ALTA";
+
 export type Rental = {
-  id: number;
-  clientName: string;
-  carName: string;
+  id: string;
+  clientId: string;
+  carId: string;
   startDate: string;
   endDate: string;
+  priceMode: RentalPriceMode;
+  dailyRateApplied: number;
+  daysCharged: number;
   totalPrice: number;
   status: RentalStatus;
+  notes?: string | null;
+  client?: Client;
+  car?: Car;
+  createdAt?: string;
+  updatedAt?: string;
 };

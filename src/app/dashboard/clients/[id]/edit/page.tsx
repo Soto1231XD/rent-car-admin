@@ -1,6 +1,6 @@
 import Link from "next/link";
 import ClientForm from "@/components/clients/ClientForm";
-import { clients } from "@/lib/mock-data";
+import { getClient } from "@/lib/api";
 
 type Props = {
   params: Promise<{
@@ -10,8 +10,7 @@ type Props = {
 
 export default async function EditClientPage({ params }: Props) {
   const { id } = await params;
-
-  const client = clients.find((client) => client.id === Number(id));
+  const client = await getClient(id);
 
   if (!client) {
     return (
@@ -49,11 +48,7 @@ export default async function EditClientPage({ params }: Props) {
         </p>
       </div>
 
-      <ClientForm
-        mode="edit"
-        initialData={client}
-        clientId={id}
-      />
+      <ClientForm mode="edit" initialData={client} clientId={id} />
     </div>
   );
 }

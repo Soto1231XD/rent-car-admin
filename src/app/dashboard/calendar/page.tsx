@@ -1,6 +1,9 @@
 import AvailabilityCalendar from "@/components/calendar/AvailabilityCalendar";
+import { getRentals } from "@/lib/api";
 
-export default function CalendarPage() {
+export default async function CalendarPage() {
+  const rentals = await getRentals();
+
   return (
     <div>
       <div className="mb-6">
@@ -13,7 +16,7 @@ export default function CalendarPage() {
         </p>
       </div>
 
-      <AvailabilityCalendar />
+      <AvailabilityCalendar rentals={rentals} />
     </div>
   );
 }

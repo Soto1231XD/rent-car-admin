@@ -1,20 +1,27 @@
 "use client";
 
+import { ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Client } from "@/types/client";
+import { createClientResult, updateClientResult } from "@/lib/api-client";
+import FormAlert from "@/components/ui/FormAlert";
+import { showErrorToast } from "@/lib/toast";
 
 const clientSchema = z.object({
   fullName: z.string().min(1, "El nombre es obligatorio"),
   email: z.string().email("Correo inválido"),
-  phone: z.string().min(10, "El teléfono debe tener al menos 10 dígitos"),
+  phone: z.string().min(7, "El teléfono debe tener al menos 7 dígitos"),
   idNumber: z.string().min(1, "La identificación es obligatoria"),
-  address: z.string().min(1, "La dirección es obligatoria"),
   driverLicenseNumber: z.string().min(1, "La licencia es obligatoria"),
-  emergencyContactName: z.string().min(1, "El contacto de emergencia es obligatorio"),
-  emergencyContactPhone: z.string().min(10, "El teléfono debe tener al menos 10 dígitos"),
-  rentedCar: z.string().optional(),
+  emergencyContactName: z
+    .string()
+    .min(1, "El contacto de emergencia es obligatorio"),
+  emergencyContactPhone: z
+    .string()
+    .min(7, "El teléfono debe tener al menos 7 dígitos"),
   notes: z.string().optional(),
 });
 
@@ -22,7 +29,7 @@ export type ClientFormData = z.infer<typeof clientSchema>;
 
 type ClientFormProps = {
   mode: "create" | "edit";
-  initialData?: Partial<ClientFormData>;
+  initialData?: Partial<Client>;
   clientId?: string;
 };
 
@@ -32,6 +39,8 @@ export default function ClientForm({
   clientId,
 }: ClientFormProps) {
   const router = useRouter();
+  const [submitError, setSubmitError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const {
     register,
@@ -44,30 +53,51 @@ export default function ClientForm({
       email: initialData?.email ?? "",
       phone: initialData?.phone ?? "",
       idNumber: initialData?.idNumber ?? "",
-      address: initialData?.address ?? "",
       driverLicenseNumber: initialData?.driverLicenseNumber ?? "",
       emergencyContactName: initialData?.emergencyContactName ?? "",
       emergencyContactPhone: initialData?.emergencyContactPhone ?? "",
-      rentedCar: initialData?.rentedCar ?? "",
       notes: initialData?.notes ?? "",
     },
   });
 
-  const onSubmit = (data: ClientFormData) => {
-    if (mode === "create") {
-      console.log("Crear cliente:", data);
-      alert("Cliente creado correctamente");
-      router.push("/dashboard/clients");
+  const onInvalid = () => {
+    const message = "Revisa los campos marcados antes de guardar el cliente.";
+    setSubmitError(message);
+    showErrorToast(message);
+  };
+
+  const onSubmit = async (data: ClientFormData) => {
+    setSubmitError("");
+    setIsSaving(true);
+
+    const result =
+      mode === "create"
+        ? await createClientResult(data)
+        : clientId
+          ? await updateClientResult(clientId, data)
+          : { data: null, error: "No se encontró el cliente a actualizar." };
+
+    setIsSaving(false);
+
+    if (!result.data) {
+      const message =
+        result.error ??
+        "No se pudo guardar el cliente. Revisa los datos e intenta de nuevo.";
+      setSubmitError(message);
+      showErrorToast(message);
       return;
     }
 
-    console.log("Editar cliente:", { clientId, ...data });
-    alert("Cliente actualizado correctamente");
-    router.push(`/dashboard/clients/${clientId}`);
+    router.refresh();
+    router.push(
+      `/dashboard/clients/${result.data.id}?success=${
+        mode === "create" ? "created" : "updated"
+      }`
+    );
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
       <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="mb-6 text-lg font-semibold text-slate-900">
           Información del cliente
@@ -75,11 +105,20 @@ export default function ClientForm({
 
         <div className="grid gap-5 md:grid-cols-2">
           <Field label="Nombre completo" error={errors.fullName?.message}>
-            <input {...register("fullName")} className="input" placeholder="Carlos Ramírez" />
+            <input
+              {...register("fullName")}
+              className="input"
+              placeholder="Carlos Ramírez"
+            />
           </Field>
 
           <Field label="Correo electrónico" error={errors.email?.message}>
-            <input type="email" {...register("email")} className="input" placeholder="cliente@email.com" />
+            <input
+              type="email"
+              {...register("email")}
+              className="input"
+              placeholder="cliente@email.com"
+            />
           </Field>
 
           <Field label="Teléfono" error={errors.phone?.message}>
@@ -91,18 +130,13 @@ export default function ClientForm({
           </Field>
 
           <Field label="Licencia de conducir" error={errors.driverLicenseNumber?.message}>
-            <input {...register("driverLicenseNumber")} className="input" placeholder="LIC-123456" />
+            <input
+              {...register("driverLicenseNumber")}
+              className="input"
+              placeholder="LIC-123456"
+            />
           </Field>
 
-          <Field label="Vehículo rentado" error={errors.rentedCar?.message}>
-            <input {...register("rentedCar")} className="input" placeholder="Nissan Versa 2025" />
-          </Field>
-
-          <div className="md:col-span-2">
-            <Field label="Dirección" error={errors.address?.message}>
-              <input {...register("address")} className="input" placeholder="Cancún, Quintana Roo" />
-            </Field>
-          </div>
         </div>
       </section>
 
@@ -113,11 +147,19 @@ export default function ClientForm({
 
         <div className="grid gap-5 md:grid-cols-2">
           <Field label="Nombre del contacto" error={errors.emergencyContactName?.message}>
-            <input {...register("emergencyContactName")} className="input" placeholder="María Ramírez" />
+            <input
+              {...register("emergencyContactName")}
+              className="input"
+              placeholder="María Ramírez"
+            />
           </Field>
 
           <Field label="Teléfono del contacto" error={errors.emergencyContactPhone?.message}>
-            <input {...register("emergencyContactPhone")} className="input" placeholder="9987654321" />
+            <input
+              {...register("emergencyContactPhone")}
+              className="input"
+              placeholder="9987654321"
+            />
           </Field>
         </div>
       </section>
@@ -136,6 +178,8 @@ export default function ClientForm({
         </Field>
       </section>
 
+      {submitError && <FormAlert message={submitError} />}
+
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button
           type="button"
@@ -147,9 +191,14 @@ export default function ClientForm({
 
         <button
           type="submit"
-          className="rounded-xl bg-slate-900 px-5 py-2 text-sm font-medium text-white hover:bg-slate-700"
+          disabled={isSaving}
+          className="rounded-xl bg-slate-900 px-5 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
-          {mode === "create" ? "Guardar cliente" : "Actualizar cliente"}
+          {isSaving
+            ? "Guardando..."
+            : mode === "create"
+              ? "Guardar cliente"
+              : "Actualizar cliente"}
         </button>
       </div>
     </form>
@@ -163,7 +212,7 @@ function Field({
 }: {
   label: string;
   error?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <label className="block">

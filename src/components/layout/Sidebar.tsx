@@ -44,10 +44,10 @@ const menu = [
     icon: Wrench,
   },
   {
-  name: "Precios",
-  href: "/dashboard/prices",
-  icon: DollarSign,
-},
+    name: "Precios",
+    href: "/dashboard/prices",
+    icon: DollarSign,
+  },
 ];
 
 type Props = {
@@ -74,52 +74,50 @@ export default function Sidebar({ isOpen = false, onClose }: Props) {
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-      <div className="mb-8 flex items-start justify-between gap-4">
-        <div>
-          <div className="mb-4 h-1.5 w-14 rounded-full bg-cyan-300" />
-          <h1 className="text-xl font-bold">RENTAMIVAR</h1>
-          <p className="mt-1 text-xs text-slate-400">
-            Sistema interno
-          </p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <div className="mb-4 h-1.5 w-14 rounded-full bg-cyan-300" />
+            <h1 className="text-xl font-bold">RENTAMIVAR</h1>
+            <p className="mt-1 text-xs text-slate-400">Sistema interno</p>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Cerrar menu"
+            onClick={onClose}
+            className="rounded-xl p-2 text-slate-300 transition hover:bg-slate-800 hover:text-white lg:hidden"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        <button
-          type="button"
-          aria-label="Cerrar menu"
-          onClick={onClose}
-          className="rounded-xl p-2 text-slate-300 transition hover:bg-slate-800 hover:text-white lg:hidden"
-        >
-          <X size={20} />
-        </button>
-      </div>
+        <nav className="space-y-2">
+          {menu.map((item) => {
+            const Icon = item.icon;
 
-      <nav className="space-y-2">
-        {menu.map((item) => {
-          const Icon = item.icon;
+            const isActive =
+              item.href === "/dashboard"
+                ? pathname === "/dashboard"
+                : pathname.startsWith(item.href);
 
-          const isActive =
-            item.href === "/dashboard"
-              ? pathname === "/dashboard"
-              : pathname.startsWith(item.href);
-
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={onClose}
-              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                isActive
-                  ? "bg-white text-slate-900 shadow"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
-              }`}
-            >
-              <Icon size={18} />
-              <span>{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={onClose}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                  isActive
+                    ? "bg-white text-slate-900 shadow"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                }`}
+              >
+                <Icon size={18} />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
     </>
   );
 }

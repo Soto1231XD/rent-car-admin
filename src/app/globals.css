@@ -8,8 +8,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: "Courier New", monospace;
 
   --color-slate-50: #f7faf6;
   --color-slate-100: #edf3ea;
@@ -77,5 +77,36 @@ body {
   .fc .fc-button {
     padding: 0.35rem 0.55rem;
     font-size: 0.75rem;
+  }
+}
+
+@page {
+  size: letter;
+  margin: 10mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .print-document {
+    width: 100% !important;
+    max-width: none !important;
+    box-shadow: none !important;
+  }
+
+  .print-page-break {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .print-document table,
+  .print-document img,
+  .print-document svg {
+    break-inside: avoid;
   }
 }
