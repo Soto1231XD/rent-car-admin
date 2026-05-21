@@ -76,7 +76,7 @@ export default function Sidebar({ isOpen = false, onClose }: Props) {
       >
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <div className="mb-4 h-1.5 w-14 rounded-full bg-cyan-300" />
+            <div className="mb-4 h-1.5 w-14 rounded-full bg-red-600" />
             <h1 className="text-xl font-bold">RENTAMIVAR</h1>
             <p className="mt-1 text-xs text-slate-400">Sistema interno</p>
           </div>
@@ -107,7 +107,7 @@ export default function Sidebar({ isOpen = false, onClose }: Props) {
                 onClick={onClose}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
                   isActive
-                    ? "bg-white text-slate-900 shadow"
+                    ? "bg-white text-slate-950 shadow"
                     : "text-slate-300 hover:bg-slate-800 hover:text-white"
                 }`}
               >

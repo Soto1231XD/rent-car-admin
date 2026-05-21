@@ -61,14 +61,13 @@ export default function UnifiedRentalDocument({ rental }: Props) {
     : "________________________";
   const phone = rental.client?.phone ?? "________________________";
   const idNumber = rental.client?.idNumber ?? "________________________";
-  const address = rental.client?.address || "________________________";
   const plate = rental.car?.plate ?? "________________________";
   const deposit = rental.car?.deposit
     ? formatMoney(rental.car.deposit)
     : "$6,000 MXN";
 
   return (
-    <article className="print-document relative mx-auto max-w-[816px] overflow-hidden bg-white p-10 text-[11px] leading-5 text-black print:max-w-none print:overflow-visible print:p-0">
+    <article className="print-document relative mx-auto max-w-[816px] overflow-hidden bg-white p-10 text-[12pt] leading-[1.35] text-black print:max-w-none print:overflow-visible print:p-0">
       <Image
         src="/documents/Logo.png"
         alt=""
@@ -80,8 +79,8 @@ export default function UnifiedRentalDocument({ rental }: Props) {
       />
 
       <div className="relative z-10">
-        <h1 className="text-center text-sm font-bold uppercase">
-          Contrato de arrendamiento, carta responsiva e inventario vehicular
+        <h1 className="text-center text-[14pt] font-bold uppercase">
+          Contrato de arrendamiento
         </h1>
 
         <p className="mt-2 text-center text-[10px] text-slate-500">
@@ -92,13 +91,12 @@ export default function UnifiedRentalDocument({ rental }: Props) {
           Cancún, Quintana Roo a ____ de ______________ de 20____
         </p>
 
-        <section className="mt-5">
+        <section className="mt-4">
           <h2 className="mb-2 font-bold uppercase">1. Datos generales</h2>
           <div className="grid grid-cols-2 gap-2 border border-black p-3">
             <Info label="Arrendatario" value={clientName} />
             <Info label="Teléfono" value={phone} />
             <Info label="Identificación" value={idNumber} />
-            <Info label="Domicilio" value={address} />
             <Info label="Vehículo" value={carName} />
             <Info label="Placas" value={plate} />
             <Info label="Fecha de entrega" value={formatDate(rental.startDate)} />
@@ -110,7 +108,7 @@ export default function UnifiedRentalDocument({ rental }: Props) {
           </div>
         </section>
 
-        <section className="mt-5">
+        <section className="mt-4">
           <h2 className="mb-2 font-bold uppercase">2. Declaraciones</h2>
           <p className="text-justify">
             El ARRENDADOR entrega en arrendamiento temporal al ARRENDATARIO el
@@ -126,7 +124,7 @@ export default function UnifiedRentalDocument({ rental }: Props) {
           </p>
         </section>
 
-        <section className="mt-5">
+        <section className="mt-4">
           <h2 className="mb-2 font-bold uppercase">
             3. Responsabilidad del arrendatario
           </h2>
@@ -144,11 +142,11 @@ export default function UnifiedRentalDocument({ rental }: Props) {
           </p>
         </section>
 
-        <section className="mt-5">
+        <section className="mt-4 break-inside-avoid">
           <h2 className="mb-2 font-bold uppercase">
             4. Condiciones de entrega y devolución
           </h2>
-          <ul className="list-disc space-y-1 pl-5">
+          <ul className="list-disc space-y-0.5 pl-5">
             <li>El vehículo deberá devolverse en la fecha y hora acordadas.</li>
             <li>
               Si el vehículo se devuelve 30 minutos después, se podrá cobrar
@@ -178,25 +176,27 @@ export default function UnifiedRentalDocument({ rental }: Props) {
           </ul>
         </section>
 
-        <section className="print-page-break mt-5">
-          <h2 className="mb-2 font-bold uppercase">
-            5. Inventario y estado del vehículo
-          </h2>
-          <div className="grid grid-cols-2 gap-2 border border-black p-3">
-            <Info label="Kilometraje de salida" value="________________" />
-            <Info label="Kilometraje de regreso" value="________________" />
-            <Info label="Gasolina de salida" value="________________" />
-            <Info label="Gasolina de regreso" value="________________" />
+        <section className="print-page-break mt-4">
+          <div className="break-inside-avoid">
+            <h2 className="mb-2 font-bold uppercase">
+              5. Inventario y estado del vehículo
+            </h2>
+            <div className="grid grid-cols-2 gap-2 border border-black p-3">
+              <Info label="Kilometraje de salida" value="________________" />
+              <Info label="Kilometraje de regreso" value="________________" />
+              <Info label="Gasolina de salida" value="________________" />
+              <Info label="Gasolina de regreso" value="________________" />
+            </div>
           </div>
 
-          <div className="mt-5 border border-black p-4">
-            <h3 className="mb-3 text-center font-bold uppercase">
+          <div className="mt-4 border border-black p-4 print:mt-3 print:p-3">
+            <h3 className="mb-3 text-center font-bold uppercase print:mb-2">
               Diagrama de daños del vehículo
             </h3>
-            <div className="mx-auto max-w-sm">
+            <div className="mx-auto max-w-sm print:max-w-[240px]">
               <CarDamageDiagram />
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-6">
+            <div className="mt-4 grid grid-cols-2 gap-6 print:mt-2 print:gap-x-6 print:gap-y-1 print:text-[9pt]">
               <Checklist title="Accesorios" items={accessories} />
               <Checklist title="Componentes mecánicos" items={mechanical} />
               <Checklist title="Exteriores" items={exterior} />

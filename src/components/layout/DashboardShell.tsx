@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import Header from "@/components/layout/Header";
+import PageTransition from "@/components/layout/PageTransition";
 import Sidebar from "@/components/layout/Sidebar";
 import ToastFeedback from "@/components/ui/ToastFeedback";
 
@@ -26,7 +27,7 @@ export default function DashboardShell({
         <Header onMenuClick={() => setIsSidebarOpen(true)} />
 
         <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:p-6">
-          {children}
+          <PageTransition>{children}</PageTransition>
         </main>
       </div>
     </div>

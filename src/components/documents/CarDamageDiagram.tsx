@@ -75,7 +75,7 @@ export default function CarDamageDiagram() {
         Da clic en la zona donde el vehículo presenta daño.
       </p>
 
-      <div className="relative mx-auto w-full max-w-md">
+      <div className="relative mx-auto w-full max-w-md print:max-w-[240px]">
         <img
           src="/documents/diagrama_carro.jpg"
           alt="Diagrama del vehículo"
@@ -105,7 +105,7 @@ export default function CarDamageDiagram() {
         })}
       </div>
 
-      <div className="mt-4 rounded-xl border border-slate-300 p-3 text-xs text-slate-700">
+      <div className="mt-4 rounded-xl border border-slate-300 p-3 text-xs text-slate-700 print:hidden">
         <p className="font-bold text-slate-900">Zonas seleccionadas:</p>
 
         <p className="mt-1">
