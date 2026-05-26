@@ -1,6 +1,13 @@
 "use client";
 
-import { ChangeEvent, FormEvent, ReactNode, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  ReactNode,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { ImagePlus, Star, UploadCloud, X } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -56,22 +63,44 @@ type CarFormProps = {
   carId?: string;
 };
 
+type SelectedImageFile = {
+  id: string;
+  file: File;
+};
+
 export default function CarForm({ mode, initialData, carId }: CarFormProps) {
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [existingImages, setExistingImages] = useState(initialData?.images ?? []);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<SelectedImageFile[]>([]);
+  const [primaryImageId, setPrimaryImageId] = useState(
+    initialData?.images?.[0] ? getExistingImageId(initialData.images[0]) : ""
+  );
   const totalImages = existingImages.length + selectedFiles.length;
 
   const selectedPreviews = useMemo(
     () =>
-      selectedFiles.map((file) => ({
+      selectedFiles.map(({ id, file }) => ({
+        id,
         name: file.name,
         url: URL.createObjectURL(file),
       })),
     [selectedFiles]
   );
+
+  const fallbackPrimaryImageId = getFirstImageId(existingImages, selectedFiles);
+  const effectivePrimaryImageId =
+    primaryImageId &&
+    imageIdExists(primaryImageId, existingImages, selectedFiles)
+      ? primaryImageId
+      : fallbackPrimaryImageId;
+
+  useEffect(() => {
+    return () => {
+      selectedPreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
+    };
+  }, [selectedPreviews]);
 
   const {
     register,
@@ -114,6 +143,16 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
 
     setIsSaving(true);
 
+    const primaryId = effectivePrimaryImageId;
+    const orderedExistingImages = orderExistingImagesByPrimary(
+      existingImages,
+      primaryId
+    );
+    const orderedSelectedFiles = orderSelectedFilesByPrimary(
+      selectedFiles,
+      primaryId
+    );
+
     const payload = {
       brand: data.brand,
       model: data.model,
@@ -128,7 +167,9 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       status: data.status,
       description: data.description,
       features: parseFeatures(data.featuresText),
-      images: existingImages,
+      images: primaryId.startsWith("existing:")
+        ? orderedExistingImages
+        : existingImages,
     };
 
     const result =
@@ -149,8 +190,11 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
     }
 
     const uploadResult =
-      selectedFiles.length > 0
-        ? await uploadCarImagesResult(result.data.id, selectedFiles)
+      orderedSelectedFiles.length > 0
+        ? await uploadCarImagesResult(
+            result.data.id,
+            orderedSelectedFiles.map(({ file }) => file)
+          )
         : { data: result.data, error: null };
 
     setIsSaving(false);
@@ -164,6 +208,31 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       return;
     }
 
+    if (primaryId.startsWith("new:") && uploadResult.data.images.length > 0) {
+      const uploadedImages = uploadResult.data.images.slice(existingImages.length);
+      const primaryUploadedImage = uploadedImages[0];
+
+      if (primaryUploadedImage) {
+        const reorderResult = await updateCarResult(uploadResult.data.id, {
+          ...payload,
+          images: [
+            primaryUploadedImage,
+            ...existingImages,
+            ...uploadedImages.slice(1),
+          ],
+        });
+
+        if (!reorderResult.data) {
+          const message =
+            reorderResult.error ??
+            "El carro se guardo, pero no se pudo marcar la imagen principal.";
+          setSubmitError(message);
+          showErrorToast(message);
+          return;
+        }
+      }
+    }
+
     router.refresh();
     router.push(
       `/dashboard/cars/${uploadResult.data.id}?success=${
@@ -174,7 +243,15 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
-    setSelectedFiles((currentFiles) => [...currentFiles, ...files]);
+    const newFiles = files.map((file) => ({
+      id: getNewImageId(file),
+      file,
+    }));
+
+    setSelectedFiles((currentFiles) => [...currentFiles, ...newFiles]);
+    setPrimaryImageId((currentPrimary) =>
+      currentPrimary || getFirstImageId(existingImages, newFiles)
+    );
     event.target.value = "";
   };
 
@@ -275,8 +352,8 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
                 Fotos del carro
               </h3>
               <p className="mt-1 text-xs text-slate-500">
-                Sube fotos claras del exterior e interior. La primera imagen
-                guardada será la principal del sitio web.
+                Sube fotos claras del exterior e interior. Marca una foto como
+                principal para mostrarla primero en el sitio web.
               </p>
             </div>
 
@@ -315,12 +392,17 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
             </div>
           ) : (
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {existingImages.map((image, index) => (
+              {existingImages.map((image) => (
                 <ImagePreview
                   key={image}
-                  label={index === 0 ? "Principal" : "Guardada"}
+                  label={
+                    effectivePrimaryImageId === getExistingImageId(image)
+                      ? "Principal"
+                      : "Guardada"
+                  }
                   url={getAssetUrl(image)}
-                  isPrimary={index === 0}
+                  isPrimary={effectivePrimaryImageId === getExistingImageId(image)}
+                  onSetPrimary={() => setPrimaryImageId(getExistingImageId(image))}
                   onRemove={() =>
                     setExistingImages((images) =>
                       images.filter((currentImage) => currentImage !== image)
@@ -329,14 +411,20 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
                 />
               ))}
 
-              {selectedPreviews.map((preview, index) => (
+              {selectedPreviews.map((preview) => (
                 <ImagePreview
-                  key={`${preview.name}-${index}`}
-                  label="Nueva"
+                  key={preview.id}
+                  label={
+                    effectivePrimaryImageId === preview.id
+                      ? "Principal"
+                      : "Nueva"
+                  }
                   url={preview.url}
+                  isPrimary={effectivePrimaryImageId === preview.id}
+                  onSetPrimary={() => setPrimaryImageId(preview.id)}
                   onRemove={() =>
                     setSelectedFiles((files) =>
-                      files.filter((_, fileIndex) => fileIndex !== index)
+                      files.filter((file) => file.id !== preview.id)
                     )
                   }
                 />
@@ -424,11 +512,13 @@ function ImagePreview({
   label,
   url,
   isPrimary = false,
+  onSetPrimary,
   onRemove,
 }: {
   label: string;
   url: string;
   isPrimary?: boolean;
+  onSetPrimary: () => void;
   onRemove: () => void;
 }) {
   return (
@@ -453,14 +543,31 @@ function ImagePreview({
         <span className="truncate text-xs text-slate-500">
           {isPrimary ? "Imagen principal del catálogo" : "Foto del vehículo"}
         </span>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-          aria-label="Quitar imagen"
-        >
-          <X size={16} />
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={onSetPrimary}
+            disabled={isPrimary}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+              isPrimary
+                ? "cursor-default bg-slate-900 text-white"
+                : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            }`}
+            aria-label="Marcar como imagen principal"
+            title="Marcar como principal"
+          >
+            <Star size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+            aria-label="Quitar imagen"
+            title="Quitar imagen"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -489,4 +596,59 @@ function formatCurrencyInputValue(value?: string | number | null) {
   const digits = String(value).replace(/\D/g, "");
 
   return digits ? Number(digits).toLocaleString("es-MX") : "";
+}
+
+function getExistingImageId(image: string) {
+  return `existing:${image}`;
+}
+
+function getNewImageId(file: File) {
+  return `new:${crypto.randomUUID()}-${file.name}`;
+}
+
+function getFirstImageId(
+  existingImages: string[],
+  selectedFiles: SelectedImageFile[]
+) {
+  if (existingImages[0]) {
+    return getExistingImageId(existingImages[0]);
+  }
+
+  return selectedFiles[0]?.id ?? "";
+}
+
+function imageIdExists(
+  imageId: string,
+  existingImages: string[],
+  selectedFiles: SelectedImageFile[]
+) {
+  return (
+    existingImages.some((image) => getExistingImageId(image) === imageId) ||
+    selectedFiles.some((file) => file.id === imageId)
+  );
+}
+
+function orderExistingImagesByPrimary(images: string[], primaryImageId: string) {
+  const primaryImage = images.find(
+    (image) => getExistingImageId(image) === primaryImageId
+  );
+
+  if (!primaryImage) {
+    return images;
+  }
+
+  return [primaryImage, ...images.filter((image) => image !== primaryImage)];
+}
+
+function orderSelectedFilesByPrimary(
+  files: SelectedImageFile[],
+  primaryImageId: string
+) {
+  const primaryFile = files.find((file) => file.id === primaryImageId);
+
+  if (!primaryFile) {
+    return files;
+  }
+
+  return [primaryFile, ...files.filter((file) => file.id !== primaryFile.id)];
 }
