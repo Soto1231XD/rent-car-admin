@@ -109,6 +109,10 @@ export default async function CarDetailPage({ params, searchParams }: Props) {
             <Info label="Placa" value={car.plate} />
             <Info label="Color" value={car.color} />
             <Info label="Transmisión" value={formatTransmission(car.transmission)} />
+            <Info label="Tipo de motor" value={car.engineType || "No definido"} />
+            <Info label="Cilindraje" value={car.displacement || "No definido"} />
+            <Info label="CarPlay" value={car.hasCarPlay ? "Si" : "No"} />
+            <Info label="Cajuela" value={car.trunkCapacity || "No definido"} />
             <Info label="Pasajeros" value={car.passengers} />
             <Info label="Imágenes" value={car.images.length} />
           </div>

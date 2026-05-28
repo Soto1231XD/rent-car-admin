@@ -96,6 +96,10 @@ export type SaveCarPayload = {
   color: string;
   passengers: number;
   transmission: string;
+  engineType?: string;
+  displacement?: string;
+  hasCarPlay?: boolean;
+  trunkCapacity?: string;
   dailyPrice: number;
   highSeasonPrice?: number;
   deposit?: number;

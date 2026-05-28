@@ -43,6 +43,10 @@ const carSchema = z.object({
   transmission: z.enum(["AUTOMATICO", "ESTANDAR"], {
     message: "La transmisión es obligatoria",
   }),
+  engineType: z.string().optional(),
+  displacement: z.string().optional(),
+  hasCarPlay: z.enum(["true", "false"]).transform((value) => value === "true"),
+  trunkCapacity: z.string().optional(),
   passengers: z.coerce.number().min(1, "Debe tener al menos 1 pasajero"),
   dailyPrice: currencyNumber,
   highSeasonPrice: optionalNumber,
@@ -115,6 +119,10 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       plate: initialData?.plate ?? "",
       color: initialData?.color ?? "",
       transmission: initialData?.transmission ?? "AUTOMATICO",
+      engineType: initialData?.engineType ?? "",
+      displacement: initialData?.displacement ?? "",
+      hasCarPlay: initialData?.hasCarPlay ? "true" : "false",
+      trunkCapacity: initialData?.trunkCapacity ?? "",
       passengers: initialData?.passengers ?? undefined,
       dailyPrice: formatCurrencyInputValue(initialData?.dailyPrice),
       highSeasonPrice: formatCurrencyInputValue(initialData?.highSeasonPrice),
@@ -161,6 +169,10 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       color: data.color,
       passengers: data.passengers,
       transmission: data.transmission,
+      engineType: data.engineType,
+      displacement: data.displacement,
+      hasCarPlay: data.hasCarPlay,
+      trunkCapacity: data.trunkCapacity,
       dailyPrice: data.dailyPrice,
       highSeasonPrice: data.highSeasonPrice,
       deposit: data.deposit,
@@ -288,6 +300,37 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
               <option value="AUTOMATICO">Automática</option>
               <option value="ESTANDAR">Estándar</option>
             </select>
+          </Field>
+
+          <Field label="Tipo de motor" error={errors.engineType?.message}>
+            <input
+              {...register("engineType")}
+              className="input"
+              placeholder="Gasolina, diesel, hibrido..."
+            />
+          </Field>
+
+          <Field label="Cilindraje" error={errors.displacement?.message}>
+            <input
+              {...register("displacement")}
+              className="input"
+              placeholder="1.6 L, 2.0 L, 1600 cc..."
+            />
+          </Field>
+
+          <Field label="CarPlay" error={errors.hasCarPlay?.message}>
+            <select {...register("hasCarPlay")} className="input">
+              <option value="false">No</option>
+              <option value="true">Si</option>
+            </select>
+          </Field>
+
+          <Field label="Espacio de cajuela" error={errors.trunkCapacity?.message}>
+            <input
+              {...register("trunkCapacity")}
+              className="input"
+              placeholder="2 maletas grandes, 3 medianas..."
+            />
           </Field>
 
           <Field label="Pasajeros" error={errors.passengers?.message}>

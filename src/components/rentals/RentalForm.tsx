@@ -103,6 +103,14 @@ export default function RentalForm({
   }, [endDate, priceMode, selectedCar, startDate]);
 
   useEffect(() => {
+    if (!startDate || !endDate || endDate < startDate) {
+      return;
+    }
+
+    setPriceMode(isHighSeasonRange(startDate, endDate) ? "highSeason" : "daily");
+  }, [endDate, startDate]);
+
+  useEffect(() => {
     if (quote) {
       setValue("totalPrice", quote.total, {
         shouldDirty: true,
@@ -194,12 +202,15 @@ export default function RentalForm({
           <Field label="Tipo de tarifa">
             <select
               value={priceMode}
-              onChange={(event) => setPriceMode(event.target.value as PriceMode)}
+              disabled
               className="input"
             >
               <option value="daily">Precio normal</option>
               <option value="highSeason">Temporada alta</option>
             </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Se calcula automÃ¡ticamente segÃºn las fechas seleccionadas.
+            </p>
           </Field>
 
           <Field label="Estado de la renta" error={errors.status?.message}>
@@ -347,6 +358,29 @@ function getRentalDays(startDate: string, endDate: string) {
   );
 
   return Math.max(1, difference);
+}
+
+function isHighSeasonRange(startDate: string, endDate: string) {
+  const days = getRentalDays(startDate, endDate);
+  const start = new Date(`${startDate}T00:00:00`);
+
+  return Array.from({ length: days }).some((_, index) => {
+    const currentDate = new Date(start);
+    currentDate.setDate(start.getDate() + index);
+
+    return isHighSeasonDate(currentDate);
+  });
+}
+
+function isHighSeasonDate(date: Date) {
+  const monthDay = (date.getMonth() + 1) * 100 + date.getDate();
+
+  return (
+    (monthDay >= 701 && monthDay <= 831) ||
+    monthDay >= 1201 ||
+    monthDay <= 115 ||
+    (monthDay >= 320 && monthDay <= 415)
+  );
 }
 
 function formatMoney(value: number) {

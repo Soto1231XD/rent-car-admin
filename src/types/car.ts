@@ -17,6 +17,10 @@ export type Car = {
   color: string;
   transmission: Transmission;
   fuelType?: FuelType;
+  engineType?: string | null;
+  displacement?: string | null;
+  hasCarPlay?: boolean;
+  trunkCapacity?: string | null;
   passengers: number;
   status: CarStatus;
   dailyPrice: number;
