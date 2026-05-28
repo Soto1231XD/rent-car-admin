@@ -92,8 +92,8 @@ export type SaveCarPayload = {
   brand: string;
   model: string;
   year: number;
-  plate: string;
-  color: string;
+  plate?: string;
+  color?: string;
   passengers: number;
   transmission: string;
   engineType?: string;
@@ -101,8 +101,8 @@ export type SaveCarPayload = {
   hasCarPlay?: boolean;
   trunkCapacity?: string;
   dailyPrice: number;
-  highSeasonPrice?: number;
-  deposit?: number;
+  highSeasonPrice: number;
+  deposit: number;
   status?: string;
   description?: string;
   features: string[];
@@ -196,13 +196,13 @@ export async function uploadCarImagesResult(
 
 export type SaveClientPayload = {
   fullName: string;
-  email: string;
+  email?: string;
   phone: string;
   idNumber: string;
   address?: string;
-  driverLicenseNumber: string;
-  emergencyContactName: string;
-  emergencyContactPhone: string;
+  driverLicenseNumber?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
   notes?: string;
 };
 

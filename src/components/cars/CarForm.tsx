@@ -23,39 +23,39 @@ import { getAssetUrl } from "@/lib/assets";
 import FormAlert from "@/components/ui/FormAlert";
 import { showErrorToast } from "@/lib/toast";
 
-const currencyNumber = z.preprocess(
-  normalizeCurrencyValue,
-  z.coerce.number().min(1, "El precio diario es obligatorio")
-);
+const requiredCurrencyNumber = (message: string) =>
+  z.preprocess(normalizeCurrencyValue, z.coerce.number().min(1, message));
 
-const optionalNumber = z.preprocess(
-  (value) =>
-    value === "" || value === null ? undefined : normalizeCurrencyValue(value),
-  z.coerce.number().min(0).optional()
-);
+const optionalText = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => value || undefined);
 
 const carSchema = z.object({
   brand: z.string().min(1, "La marca es obligatoria"),
   model: z.string().min(1, "El modelo es obligatorio"),
-  year: z.coerce.number().min(1990, "Año inválido"),
-  plate: z.string().min(1, "La placa es obligatoria"),
-  color: z.string().min(1, "El color es obligatorio"),
+  year: z.coerce.number().min(1990, "El año es obligatorio"),
+  plate: optionalText,
+  color: optionalText,
   transmission: z.enum(["AUTOMATICO", "ESTANDAR"], {
     message: "La transmisión es obligatoria",
   }),
-  engineType: z.string().optional(),
-  displacement: z.string().optional(),
+  engineType: optionalText,
+  displacement: optionalText,
   hasCarPlay: z.enum(["true", "false"]).transform((value) => value === "true"),
-  trunkCapacity: z.string().optional(),
+  trunkCapacity: optionalText,
   passengers: z.coerce.number().min(1, "Debe tener al menos 1 pasajero"),
-  dailyPrice: currencyNumber,
-  highSeasonPrice: optionalNumber,
-  deposit: optionalNumber,
+  dailyPrice: requiredCurrencyNumber("El precio diario es obligatorio"),
+  highSeasonPrice: requiredCurrencyNumber(
+    "El precio de temporada alta es obligatorio"
+  ),
+  deposit: requiredCurrencyNumber("El depósito en garantía es obligatorio"),
   status: z.enum(["DISPONIBLE", "RENTADO", "MANTENIMIENTO", "NO_DISPONIBLE"], {
     message: "El estado es obligatorio",
   }),
-  description: z.string().optional(),
-  featuresText: z.string().optional(),
+  description: optionalText,
+  featuresText: optionalText,
 });
 
 export type CarFormData = z.infer<typeof carSchema>;
@@ -270,20 +270,25 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
       <div className="rounded-2xl bg-white p-4 shadow sm:p-6">
-        <h2 className="mb-6 text-lg font-semibold text-slate-900">
-          Información del vehículo
-        </h2>
+        <div className="mb-6 space-y-2">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Información del vehículo
+          </h2>
+          <p className="text-sm text-slate-500">
+            Los campos que tengan <span className="font-semibold text-red-600">*</span> son obligatorios. El nombre visible se arma con marca, modelo y año.
+          </p>
+        </div>
 
         <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Marca" error={errors.brand?.message}>
+          <Field label="Marca" required error={errors.brand?.message}>
             <input {...register("brand")} className="input" placeholder="Nissan" />
           </Field>
 
-          <Field label="Modelo" error={errors.model?.message}>
+          <Field label="Modelo" required error={errors.model?.message}>
             <input {...register("model")} className="input" placeholder="Versa" />
           </Field>
 
-          <Field label="Año" error={errors.year?.message}>
+          <Field label="Año" required error={errors.year?.message}>
             <input type="number" {...register("year")} className="input" placeholder="2025" />
           </Field>
 
@@ -295,26 +300,28 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
             <input {...register("color")} className="input" placeholder="Blanco" />
           </Field>
 
-          <Field label="Transmisión" error={errors.transmission?.message}>
+          <Field label="Transmisión" required error={errors.transmission?.message}>
             <select {...register("transmission")} className="input">
               <option value="AUTOMATICO">Automática</option>
               <option value="ESTANDAR">Estándar</option>
             </select>
           </Field>
 
-          <Field label="Tipo de motor" error={errors.engineType?.message}>
-            <input
-              {...register("engineType")}
-              className="input"
-              placeholder="Gasolina, diesel, hibrido..."
-            />
+          <Field label="Combustible" error={errors.engineType?.message}>
+            <select {...register("engineType")} className="input">
+              <option value="">Selecciona el combustible</option>
+              <option value="Gasolina">Gasolina</option>
+              <option value="Diesel">Diesel</option>
+              <option value="Hibrido">Hibrido</option>
+              <option value="Electrico">Electrico</option>
+            </select>
           </Field>
 
-          <Field label="Cilindraje" error={errors.displacement?.message}>
+          <Field label="Tamaño del motor" error={errors.displacement?.message}>
             <input
               {...register("displacement")}
               className="input"
-              placeholder="1.6 L, 2.0 L, 1600 cc..."
+              placeholder="1.6 L, 2.0 L..."
             />
           </Field>
 
@@ -333,11 +340,11 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
             />
           </Field>
 
-          <Field label="Pasajeros" error={errors.passengers?.message}>
+          <Field label="Pasajeros" required error={errors.passengers?.message}>
             <input type="number" {...register("passengers")} className="input" placeholder="5" />
           </Field>
 
-          <Field label="Estado" error={errors.status?.message}>
+          <Field label="Estado" required error={errors.status?.message}>
             <select {...register("status")} className="input">
               <option value="DISPONIBLE">Disponible</option>
               <option value="RENTADO">Rentado</option>
@@ -349,12 +356,17 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       </div>
 
       <div className="rounded-2xl bg-white p-4 shadow sm:p-6">
-        <h2 className="mb-6 text-lg font-semibold text-slate-900">
-          Precios e imágenes
-        </h2>
+        <div className="mb-6 space-y-2">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Precios e imágenes
+          </h2>
+          <p className="text-sm text-slate-500">
+            Los precios y al menos una foto son necesarios para publicar y cotizar el carro correctamente.
+          </p>
+        </div>
 
         <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Precio diario" error={errors.dailyPrice?.message}>
+          <Field label="Precio diario" required error={errors.dailyPrice?.message}>
             <input
               type="text"
               inputMode="numeric"
@@ -365,7 +377,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
             />
           </Field>
 
-          <Field label="Precio temporada alta" error={errors.highSeasonPrice?.message}>
+          <Field label="Precio temporada alta" required error={errors.highSeasonPrice?.message}>
             <input
               type="text"
               inputMode="numeric"
@@ -376,7 +388,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
             />
           </Field>
 
-          <Field label="Depósito" error={errors.deposit?.message}>
+          <Field label="Depósito en garantía" required error={errors.deposit?.message}>
             <input
               type="text"
               inputMode="numeric"
@@ -392,11 +404,12 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
           <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h3 className="text-sm font-semibold text-slate-900">
-                Fotos del carro
+                Fotos del carro <span className="text-red-600">*</span>
               </h3>
               <p className="mt-1 text-xs text-slate-500">
                 Sube fotos claras del exterior e interior. Marca una foto como
-                principal para mostrarla primero en el sitio web.
+                principal para mostrarla primero en el sitio web. Si subes
+                varias, siempre debe quedar una marcada como principal.
               </p>
             </div>
 
@@ -533,10 +546,12 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
 
 function Field({
   label,
+  required = false,
   error,
   children,
 }: {
   label: string;
+  required?: boolean;
   error?: string;
   children: ReactNode;
 }) {
@@ -544,6 +559,7 @@ function Field({
     <label className="block">
       <span className="mb-1 block text-sm font-medium text-slate-700">
         {label}
+        {required && <span className="ml-1 text-red-600">*</span>}
       </span>
       {children}
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}

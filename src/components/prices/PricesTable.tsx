@@ -31,7 +31,7 @@ export default function PricesTable({ cars }: Props) {
       const matchesModel =
         !modelSearch ||
         modelName.includes(modelSearch.toLowerCase()) ||
-        car.plate.toLowerCase().includes(modelSearch.toLowerCase());
+        (car.plate ?? "").toLowerCase().includes(modelSearch.toLowerCase());
 
       const matchesStatus =
         !statusFilter || car.status === statusFilter;
@@ -130,7 +130,9 @@ export default function PricesTable({ cars }: Props) {
               <td className="px-6 py-4 text-slate-900">
                 {formatTransmission(car.transmission)}
               </td>
-              <td className="px-6 py-4 text-slate-900">{car.plate}</td>
+              <td className="px-6 py-4 text-slate-900">
+                {car.plate || "No registrada"}
+              </td>
               <td className="px-6 py-4">
                 <Link
                   href={`/dashboard/cars/${car.id}/edit`}

@@ -13,8 +13,8 @@ export type Car = {
   brand: string;
   model: string;
   year: number;
-  plate: string;
-  color: string;
+  plate?: string | null;
+  color?: string | null;
   transmission: Transmission;
   fuelType?: FuelType;
   engineType?: string | null;
@@ -24,8 +24,8 @@ export type Car = {
   passengers: number;
   status: CarStatus;
   dailyPrice: number;
-  highSeasonPrice?: number | null;
-  deposit?: number | null;
+  highSeasonPrice: number;
+  deposit: number;
   weeklyPrice?: number;
   monthlyPrice?: number;
   description?: string | null;

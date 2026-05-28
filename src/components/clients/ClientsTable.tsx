@@ -20,7 +20,7 @@ export default function ClientsTable({ clients }: Props) {
       return (
         !clientValue ||
         client.fullName.toLowerCase().includes(clientValue) ||
-        client.email.toLowerCase().includes(clientValue) ||
+        (client.email ?? "").toLowerCase().includes(clientValue) ||
         client.phone.toLowerCase().includes(clientValue)
       );
     });
@@ -63,9 +63,11 @@ export default function ClientsTable({ clients }: Props) {
                 {client.fullName}
               </td>
               <td className="px-6 py-4 text-slate-900">{client.phone}</td>
-              <td className="px-6 py-4 text-slate-900">{client.email}</td>
               <td className="px-6 py-4 text-slate-900">
-                {client.driverLicenseNumber}
+                {client.email || "No registrado"}
+              </td>
+              <td className="px-6 py-4 text-slate-900">
+                {client.driverLicenseNumber || "No registrada"}
               </td>
               <td className="px-6 py-4">
                 <Link

@@ -30,8 +30,8 @@ export default function CarsTable({ cars }: Props) {
       const matchesSearch =
         !value ||
         fullCarName.includes(value) ||
-        car.plate.toLowerCase().includes(value) ||
-        car.color.toLowerCase().includes(value);
+        (car.plate ?? "").toLowerCase().includes(value) ||
+        (car.color ?? "").toLowerCase().includes(value);
 
       const matchesStatus = !statusFilter || car.status === statusFilter;
 
@@ -91,7 +91,9 @@ export default function CarsTable({ cars }: Props) {
                 {car.brand} {car.model}
               </td>
               <td className="px-6 py-4 text-slate-900">{car.year}</td>
-              <td className="px-6 py-4 text-slate-900">{car.plate}</td>
+              <td className="px-6 py-4 text-slate-900">
+                {car.plate || "No registrada"}
+              </td>
               <td className="px-6 py-4">
                 <StatusBadge status={car.status} />
               </td>

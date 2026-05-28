@@ -109,7 +109,8 @@ export default function MaintenanceForm({
               <option value="">Selecciona un vehículo</option>
               {cars.map((car) => (
                 <option key={car.id} value={car.id}>
-                  {car.brand} {car.model} {car.year} - {car.plate}
+                  {car.brand} {car.model} {car.year}
+                  {car.plate ? ` - ${car.plate}` : ""}
                 </option>
               ))}
             </select>

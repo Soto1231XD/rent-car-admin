@@ -10,22 +10,45 @@ import { createClientResult, updateClientResult } from "@/lib/api-client";
 import FormAlert from "@/components/ui/FormAlert";
 import { showErrorToast } from "@/lib/toast";
 
+const optionalText = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => value || undefined);
+
+const optionalEmail = z
+  .string()
+  .trim()
+  .optional()
+  .refine(
+    (value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+    "Correo inválido"
+  )
+  .transform((value) => value || undefined);
+
+const optionalPhone = z
+  .string()
+  .trim()
+  .optional()
+  .refine(
+    (value) => !value || value.length >= 7,
+    "El teléfono debe tener al menos 7 dígitos"
+  )
+  .transform((value) => value || undefined);
+
 const clientSchema = z.object({
   fullName: z.string().min(1, "El nombre es obligatorio"),
-  email: z.string().email("Correo inválido"),
+  email: optionalEmail,
   phone: z.string().min(7, "El teléfono debe tener al menos 7 dígitos"),
   idNumber: z.string().min(1, "La identificación es obligatoria"),
-  driverLicenseNumber: z.string().min(1, "La licencia es obligatoria"),
-  emergencyContactName: z
-    .string()
-    .min(1, "El contacto de emergencia es obligatorio"),
-  emergencyContactPhone: z
-    .string()
-    .min(7, "El teléfono debe tener al menos 7 dígitos"),
-  notes: z.string().optional(),
+  driverLicenseNumber: optionalText,
+  emergencyContactName: optionalText,
+  emergencyContactPhone: optionalPhone,
+  notes: optionalText,
 });
 
 export type ClientFormData = z.infer<typeof clientSchema>;
+type ClientFormInput = z.input<typeof clientSchema>;
 
 type ClientFormProps = {
   mode: "create" | "edit";
@@ -46,7 +69,7 @@ export default function ClientForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<ClientFormData>({
+  } = useForm<ClientFormInput, unknown, ClientFormData>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
       fullName: initialData?.fullName ?? "",
@@ -99,12 +122,17 @@ export default function ClientForm({
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
       <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
-        <h2 className="mb-6 text-lg font-semibold text-slate-900">
-          Información del cliente
-        </h2>
+        <div className="mb-6 space-y-2">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Información del cliente
+          </h2>
+          <p className="text-sm text-slate-500">
+            Los campos que tengan <span className="font-semibold text-red-600">*</span> son obligatorios.
+          </p>
+        </div>
 
         <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Nombre completo" error={errors.fullName?.message}>
+          <Field label="Nombre completo" required error={errors.fullName?.message}>
             <input
               {...register("fullName")}
               className="input"
@@ -121,11 +149,11 @@ export default function ClientForm({
             />
           </Field>
 
-          <Field label="Teléfono" error={errors.phone?.message}>
+          <Field label="Teléfono" required error={errors.phone?.message}>
             <input {...register("phone")} className="input" placeholder="9981234567" />
           </Field>
 
-          <Field label="Identificación" error={errors.idNumber?.message}>
+          <Field label="Identificación" required error={errors.idNumber?.message}>
             <input {...register("idNumber")} className="input" placeholder="INE / Pasaporte" />
           </Field>
 
@@ -207,10 +235,12 @@ export default function ClientForm({
 
 function Field({
   label,
+  required = false,
   error,
   children,
 }: {
   label: string;
+  required?: boolean;
   error?: string;
   children: ReactNode;
 }) {
@@ -218,6 +248,7 @@ function Field({
     <label className="block">
       <span className="mb-1 block text-sm font-medium text-slate-700">
         {label}
+        {required && <span className="ml-1 text-red-600">*</span>}
       </span>
       {children}
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}

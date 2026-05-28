@@ -84,10 +84,13 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
 
           <div className="grid gap-4 md:grid-cols-2">
             <Info label="Nombre completo" value={client.fullName} />
-            <Info label="Correo" value={client.email} />
+            <Info label="Correo" value={client.email || "No registrado"} />
             <Info label="Teléfono" value={client.phone} />
             <Info label="Identificación" value={client.idNumber} />
-            <Info label="Licencia" value={client.driverLicenseNumber} />
+            <Info
+              label="Licencia"
+              value={client.driverLicenseNumber || "No registrada"}
+            />
             {client.address && <Info label="Dirección" value={client.address} />}
           </div>
         </section>
@@ -128,8 +131,14 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
           </h2>
 
           <div className="space-y-4">
-            <Info label="Nombre" value={client.emergencyContactName} />
-            <Info label="Teléfono" value={client.emergencyContactPhone} />
+            <Info
+              label="Nombre"
+              value={client.emergencyContactName || "No registrado"}
+            />
+            <Info
+              label="Teléfono"
+              value={client.emergencyContactPhone || "No registrado"}
+            />
           </div>
         </section>
 

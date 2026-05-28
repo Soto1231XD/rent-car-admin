@@ -3,13 +3,13 @@ import { Rental } from "@/types/rental";
 export type Client = {
   id: string;
   fullName: string;
-  email: string;
+  email?: string | null;
   phone: string;
   idNumber: string;
   address?: string | null;
-  driverLicenseNumber: string;
-  emergencyContactName: string;
-  emergencyContactPhone: string;
+  driverLicenseNumber?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
   notes?: string | null;
   rentals?: Rental[];
   createdAt?: string;

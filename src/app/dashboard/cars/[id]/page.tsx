@@ -68,7 +68,7 @@ export default async function CarDetailPage({ params, searchParams }: Props) {
             <DeleteResourceButton
               id={car.id}
               resourceType="car"
-              resourceName={`${car.brand} ${car.model} ${car.plate}`}
+              resourceName={`${car.brand} ${car.model} ${car.plate || ""}`.trim()}
               redirectTo="/dashboard/cars"
             />
           </div>
@@ -106,11 +106,11 @@ export default async function CarDetailPage({ params, searchParams }: Props) {
             <Info label="Marca" value={car.brand} />
             <Info label="Modelo" value={car.model} />
             <Info label="Año" value={car.year} />
-            <Info label="Placa" value={car.plate} />
-            <Info label="Color" value={car.color} />
+            <Info label="Placa" value={car.plate || "No registrada"} />
+            <Info label="Color" value={car.color || "No registrado"} />
             <Info label="Transmisión" value={formatTransmission(car.transmission)} />
-            <Info label="Tipo de motor" value={car.engineType || "No definido"} />
-            <Info label="Cilindraje" value={car.displacement || "No definido"} />
+            <Info label="Combustible" value={car.engineType || "No definido"} />
+            <Info label="Tamaño del motor" value={car.displacement || "No definido"} />
             <Info label="CarPlay" value={car.hasCarPlay ? "Si" : "No"} />
             <Info label="Cajuela" value={car.trunkCapacity || "No definido"} />
             <Info label="Pasajeros" value={car.passengers} />
@@ -161,19 +161,11 @@ export default async function CarDetailPage({ params, searchParams }: Props) {
             />
             <Info
               label="Temporada alta"
-              value={
-                car.highSeasonPrice
-                  ? `$${car.highSeasonPrice.toLocaleString("es-MX")} MXN`
-                  : "No definido"
-              }
+              value={`$${car.highSeasonPrice.toLocaleString("es-MX")} MXN`}
             />
             <Info
-              label="Depósito"
-              value={
-                car.deposit
-                  ? `$${car.deposit.toLocaleString("es-MX")} MXN`
-                  : "No definido"
-              }
+              label="Depósito en garantía"
+              value={`$${car.deposit.toLocaleString("es-MX")} MXN`}
             />
           </div>
         </section>

@@ -185,7 +185,8 @@ export default function RentalForm({
               <option value="">Selecciona un vehículo</option>
               {cars.map((car) => (
                 <option key={car.id} value={car.id}>
-                  {car.brand} {car.model} {car.year} - {car.plate}
+                  {car.brand} {car.model} {car.year}
+                  {car.plate ? ` - ${car.plate}` : ""}
                 </option>
               ))}
             </select>
@@ -209,7 +210,7 @@ export default function RentalForm({
               <option value="highSeason">Temporada alta</option>
             </select>
             <p className="mt-1 text-xs text-slate-500">
-              Se calcula automÃ¡ticamente segÃºn las fechas seleccionadas.
+              Se calcula automáticamente según las fechas seleccionadas.
             </p>
           </Field>
 
