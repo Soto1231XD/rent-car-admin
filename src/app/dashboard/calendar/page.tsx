@@ -1,8 +1,11 @@
 import AvailabilityCalendar from "@/components/calendar/AvailabilityCalendar";
-import { getRentals } from "@/lib/api";
+import { getMaintenances, getRentals } from "@/lib/api";
 
 export default async function CalendarPage() {
-  const rentals = await getRentals();
+  const [rentals, maintenances] = await Promise.all([
+    getRentals(),
+    getMaintenances(),
+  ]);
 
   return (
     <div>
@@ -16,7 +19,7 @@ export default async function CalendarPage() {
         </p>
       </div>
 
-      <AvailabilityCalendar rentals={rentals} />
+      <AvailabilityCalendar rentals={rentals} maintenances={maintenances} />
     </div>
   );
 }

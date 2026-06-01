@@ -50,8 +50,9 @@ export default function RentalForm({
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [priceMode, setPriceMode] = useState<PriceMode>(() =>
-    inferInitialPriceMode(cars, initialData)
+  const initialPriceMode = useMemo(
+    () => inferInitialPriceMode(cars, initialData),
+    [cars, initialData]
   );
 
   const {
@@ -80,6 +81,13 @@ export default function RentalForm({
     () => cars.find((car) => car.id === selectedCarId) ?? null,
     [cars, selectedCarId]
   );
+  const priceMode = useMemo(() => {
+    if (!startDate || !endDate || endDate < startDate) {
+      return initialPriceMode;
+    }
+
+    return isHighSeasonRange(startDate, endDate) ? "highSeason" : "daily";
+  }, [endDate, initialPriceMode, startDate]);
 
   const quote = useMemo(() => {
     if (!selectedCar || !startDate || !endDate || endDate < startDate) {
@@ -101,14 +109,6 @@ export default function RentalForm({
         priceMode === "highSeason" && !selectedCar.highSeasonPrice,
     };
   }, [endDate, priceMode, selectedCar, startDate]);
-
-  useEffect(() => {
-    if (!startDate || !endDate || endDate < startDate) {
-      return;
-    }
-
-    setPriceMode(isHighSeasonRange(startDate, endDate) ? "highSeason" : "daily");
-  }, [endDate, startDate]);
 
   useEffect(() => {
     if (quote) {
