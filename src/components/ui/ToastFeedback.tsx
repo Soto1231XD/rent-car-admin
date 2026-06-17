@@ -19,6 +19,11 @@ const successMessages: Record<string, Record<string, string>> = {
     updated: "Mantenimiento actualizado correctamente.",
     deleted: "Mantenimiento eliminado correctamente.",
   },
+  "/dashboard/extra-expenses": {
+    created: "Gasto extra registrado correctamente.",
+    updated: "Gasto extra actualizado correctamente.",
+    deleted: "Gasto extra eliminado correctamente.",
+  },
 };
 
 export default function ToastFeedback() {

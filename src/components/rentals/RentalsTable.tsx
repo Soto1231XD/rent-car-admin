@@ -85,10 +85,11 @@ export default function RentalsTable({ rentals }: Props) {
       emptyTitle="No se encontraron rentas"
       emptyDescription="Intenta ajustar el cliente, vehículo o estado seleccionado."
     >
-      <table className="w-full min-w-[900px] text-left text-sm">
+      <table className="w-full min-w-[980px] text-left text-sm">
         <thead className="bg-slate-50 text-slate-600">
           <tr>
             <th className="px-6 py-4 font-semibold">Cliente</th>
+            <th className="px-6 py-4 font-semibold">Tipo</th>
             <th className="px-6 py-4 font-semibold">Vehículo</th>
             <th className="px-6 py-4 font-semibold">Inicio</th>
             <th className="px-6 py-4 font-semibold">Fin</th>
@@ -103,6 +104,9 @@ export default function RentalsTable({ rentals }: Props) {
             <tr key={rental.id} className="transition hover:bg-slate-50">
               <td className="px-6 py-4 font-medium text-slate-900">
                 {getClientName(rental)}
+              </td>
+              <td className="px-6 py-4 text-slate-900">
+                {rental.renterType === "COMISIONISTA" ? "Comisionista" : "Cliente"}
               </td>
               <td className="px-6 py-4 text-slate-900">{getCarName(rental)}</td>
               <td className="px-6 py-4 text-slate-900">

@@ -22,6 +22,7 @@ function getStyles(status: string) {
     case "AVAILABLE":
     case "COMPLETADO":
     case "COMPLETED":
+    case "PAGADO":
       return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
 
     case "MANTENIMIENTO":
@@ -106,6 +107,8 @@ function formatLabel(status: string) {
       return "Cancelado";
     case "CANCELADA":
       return "Cancelada";
+    case "PAGADO":
+      return "Pagado";
 
     case "RENTADO":
       return "Rentado";

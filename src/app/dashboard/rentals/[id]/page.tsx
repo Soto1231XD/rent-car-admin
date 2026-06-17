@@ -34,6 +34,7 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
   }
 
   const clientName = rental.client?.fullName ?? "Cliente no disponible";
+  const isCommissionerRental = rental.renterType === "COMISIONISTA";
   const carName = rental.car
     ? `${rental.car.brand} ${rental.car.model} ${rental.car.year}`
     : "Vehículo no disponible";
@@ -85,6 +86,10 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
 
           <div className="grid gap-4 md:grid-cols-2">
             <Info label="Cliente" value={clientName} />
+            <Info
+              label="Tipo de cliente"
+              value={isCommissionerRental ? "Comisionista" : "Cliente normal"}
+            />
             <Info label="Vehículo" value={carName} />
             <Info label="Fecha de entrega" value={formatDate(rental.startDate)} />
             <Info label="Fecha de devolución" value={formatDate(rental.endDate)} />
@@ -102,16 +107,20 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
           </h2>
 
           <p className="mb-5 text-sm text-slate-600">
-            Genera el documento completo de la renta.
+            {isCommissionerRental
+              ? "Las rentas de comisionistas no generan contrato."
+              : "Genera el documento completo de la renta."}
           </p>
 
           <div className="space-y-3">
-            <Link
-              href={`/print/rentals/${rental.id}/document`}
-              className="block w-full rounded-xl bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-slate-700"
-            >
-              Generar documento único
-            </Link>
+            {!isCommissionerRental && (
+              <Link
+                href={`/print/rentals/${rental.id}/document`}
+                className="block w-full rounded-xl bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-slate-700"
+              >
+                Generar documento único
+              </Link>
+            )}
 
             <Link
               href={`/print/rentals/${rental.id}/ticket`}

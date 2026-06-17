@@ -8,6 +8,7 @@ import {
   DollarSign,
   X,
   LayoutDashboard,
+  ReceiptText,
   Users,
   Wrench,
 } from "lucide-react";
@@ -42,6 +43,11 @@ const menu = [
     name: "Mantenimiento",
     href: "/dashboard/maintenance",
     icon: Wrench,
+  },
+  {
+    name: "Gastos extras",
+    href: "/dashboard/extra-expenses",
+    icon: ReceiptText,
   },
   {
     name: "Precios",

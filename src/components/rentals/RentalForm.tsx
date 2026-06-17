@@ -21,6 +21,7 @@ const schema = z
     startDate: z.string().min(1, "La fecha de entrega es obligatoria"),
     endDate: z.string().min(1, "La fecha de devolución es obligatoria"),
     totalPrice: z.coerce.number().min(1, "El total es obligatorio"),
+    renterType: z.enum(["CLIENTE", "COMISIONISTA"]),
     status: z.enum(["RESERVACION", "ACTIVO", "COMPLETADO", "CANCELADO"]),
     notes: z.string().optional(),
   })
@@ -69,6 +70,7 @@ export default function RentalForm({
       startDate: formatDateInput(initialData?.startDate),
       endDate: formatDateInput(initialData?.endDate),
       totalPrice: initialData?.totalPrice ?? undefined,
+      renterType: initialData?.renterType ?? "CLIENTE",
       status: initialData?.status ?? "RESERVACION",
       notes: initialData?.notes ?? "",
     },
@@ -77,6 +79,7 @@ export default function RentalForm({
   const selectedCarId = useWatch({ control, name: "carId" });
   const startDate = useWatch({ control, name: "startDate" });
   const endDate = useWatch({ control, name: "endDate" });
+  const renterType = useWatch({ control, name: "renterType" });
   const selectedCar = useMemo(
     () => cars.find((car) => car.id === selectedCarId) ?? null,
     [cars, selectedCarId]
@@ -95,20 +98,24 @@ export default function RentalForm({
     }
 
     const days = getRentalDays(startDate, endDate);
-    const dailyRate =
-      priceMode === "highSeason"
-        ? selectedCar.highSeasonPrice ?? selectedCar.dailyPrice
-        : selectedCar.dailyPrice;
+    const dailyRate = getDailyRate(selectedCar, priceMode, renterType);
+    const deposit = toMoneyNumber(selectedCar.deposit);
 
     return {
       days,
       dailyRate,
       total: days * dailyRate,
-      deposit: selectedCar.deposit ?? 0,
+      deposit,
       isUsingFallbackRate:
-        priceMode === "highSeason" && !selectedCar.highSeasonPrice,
+        priceMode === "highSeason" &&
+        renterType === "CLIENTE" &&
+        !hasMoneyValue(selectedCar.highSeasonPrice),
+      isUsingCommissionFallback:
+        renterType === "COMISIONISTA" &&
+        !hasMoneyValue(selectedCar.commissionDailyPrice) &&
+        !hasMoneyValue(selectedCar.commissionHighSeasonPrice),
     };
-  }, [endDate, priceMode, selectedCar, startDate]);
+  }, [endDate, priceMode, renterType, selectedCar, startDate]);
 
   useEffect(() => {
     if (quote) {
@@ -131,6 +138,7 @@ export default function RentalForm({
 
     const payload = {
       ...data,
+      renterType,
       priceMode: priceMode === "highSeason" ? "TEMPORADA_ALTA" : "NORMAL",
       totalPrice: quote?.total ?? data.totalPrice,
     };
@@ -192,6 +200,16 @@ export default function RentalForm({
             </select>
           </Field>
 
+          <Field label="Tipo de cliente" error={errors.renterType?.message}>
+            <select {...register("renterType")} className="input">
+              <option value="CLIENTE">Cliente normal</option>
+              <option value="COMISIONISTA">Comisionista</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Comisionista usa la tarifa especial configurada en el carro.
+            </p>
+          </Field>
+
           <Field label="Fecha de entrega" error={errors.startDate?.message}>
             <input type="date" {...register("startDate")} className="input" />
           </Field>
@@ -230,7 +248,11 @@ export default function RentalForm({
           Cálculo de renta
         </h2>
 
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-5">
+          <SummaryItem
+            label="Cliente"
+            value={renterType === "COMISIONISTA" ? "Comisionista" : "Normal"}
+          />
           <SummaryItem label="Días" value={quote ? quote.days : "-"} />
           <SummaryItem
             label="Precio por día"
@@ -250,6 +272,13 @@ export default function RentalForm({
         {quote?.isUsingFallbackRate && (
           <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
             Este carro no tiene precio de temporada alta configurado. Se usó el
+            precio normal.
+          </p>
+        )}
+
+        {quote?.isUsingCommissionFallback && (
+          <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
+            Este carro no tiene precio de comisionista configurado. Se usÃ³ el
             precio normal.
           </p>
         )}
@@ -386,6 +415,49 @@ function isHighSeasonDate(date: Date) {
 
 function formatMoney(value: number) {
   return `$${value.toLocaleString("es-MX")} MXN`;
+}
+
+function getDailyRate(
+  car: Car,
+  priceMode: PriceMode,
+  renterType: "CLIENTE" | "COMISIONISTA"
+) {
+  if (renterType === "COMISIONISTA") {
+    if (priceMode === "highSeason" && hasMoneyValue(car.commissionHighSeasonPrice)) {
+      return toMoneyNumber(car.commissionHighSeasonPrice);
+    }
+
+    if (hasMoneyValue(car.commissionDailyPrice)) {
+      return toMoneyNumber(car.commissionDailyPrice);
+    }
+  }
+
+  if (priceMode === "highSeason") {
+    return hasMoneyValue(car.highSeasonPrice)
+      ? toMoneyNumber(car.highSeasonPrice)
+      : toMoneyNumber(car.dailyPrice);
+  }
+
+  return toMoneyNumber(car.dailyPrice);
+}
+
+function hasMoneyValue(value?: number | string | null) {
+  return toMoneyNumber(value) > 0;
+}
+
+function toMoneyNumber(value?: number | string | null) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (typeof value === "string") {
+    const normalizedValue = value.replace(/,/g, "").trim();
+    const parsedValue = Number(normalizedValue);
+
+    return Number.isFinite(parsedValue) ? parsedValue : 0;
+  }
+
+  return 0;
 }
 
 function inferInitialPriceMode(

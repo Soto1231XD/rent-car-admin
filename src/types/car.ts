@@ -25,6 +25,8 @@ export type Car = {
   status: CarStatus;
   dailyPrice: number;
   highSeasonPrice: number;
+  commissionDailyPrice?: number | null;
+  commissionHighSeasonPrice?: number | null;
   deposit: number;
   weeklyPrice?: number;
   monthlyPrice?: number;

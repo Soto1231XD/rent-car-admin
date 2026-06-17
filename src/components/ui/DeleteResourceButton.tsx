@@ -8,12 +8,18 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
   deleteCarResult,
   deleteClientResult,
+  deleteExtraExpenseResult,
   deleteMaintenanceResult,
   deleteRentalResult,
 } from "@/lib/api-client";
 import { showErrorToast } from "@/lib/toast";
 
-type ResourceType = "car" | "client" | "rental" | "maintenance";
+type ResourceType =
+  | "car"
+  | "client"
+  | "rental"
+  | "maintenance"
+  | "extraExpense";
 
 type DeleteResourceButtonProps = {
   id: string;
@@ -27,6 +33,7 @@ const deleteByType = {
   client: deleteClientResult,
   rental: deleteRentalResult,
   maintenance: deleteMaintenanceResult,
+  extraExpense: deleteExtraExpenseResult,
 };
 
 const labels: Record<ResourceType, string> = {
@@ -34,6 +41,7 @@ const labels: Record<ResourceType, string> = {
   client: "cliente",
   rental: "renta",
   maintenance: "mantenimiento",
+  extraExpense: "gasto extra",
 };
 
 export default function DeleteResourceButton({

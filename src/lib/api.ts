@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { Car } from "@/types/car";
 import { Client } from "@/types/client";
+import { ExtraExpense } from "@/types/extra-expense";
 import { Maintenance } from "@/types/maintenance";
 import { Rental } from "@/types/rental";
 import { AUTH_COOKIE } from "@/lib/auth";
@@ -32,6 +33,7 @@ export type DashboardSummary = {
   };
   income: {
     currentMonth: number;
+    commissionerCurrentMonth: number;
   };
   upcomingRentals: Rental[];
   pendingMaintenanceList: Maintenance[];
@@ -90,6 +92,16 @@ export async function getMaintenances(): Promise<Maintenance[]> {
 
 export async function getMaintenance(id: string): Promise<Maintenance | null> {
   return request<Maintenance>(`/maintenances/${id}`);
+}
+
+export async function getExtraExpenses(): Promise<ExtraExpense[]> {
+  return (await request<ExtraExpense[]>("/extra-expenses")) ?? [];
+}
+
+export async function getExtraExpense(
+  id: string
+): Promise<ExtraExpense | null> {
+  return request<ExtraExpense>(`/extra-expenses/${id}`);
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary | null> {

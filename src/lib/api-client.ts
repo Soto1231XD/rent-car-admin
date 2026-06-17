@@ -1,5 +1,6 @@
 import { Car } from "@/types/car";
 import { Client } from "@/types/client";
+import { ExtraExpense } from "@/types/extra-expense";
 import { Maintenance } from "@/types/maintenance";
 import { Rental } from "@/types/rental";
 import { getStoredToken } from "@/lib/auth";
@@ -102,6 +103,8 @@ export type SaveCarPayload = {
   trunkCapacity?: string;
   dailyPrice: number;
   highSeasonPrice: number;
+  commissionDailyPrice?: number;
+  commissionHighSeasonPrice?: number;
   deposit: number;
   status?: string;
   description?: string;
@@ -251,6 +254,7 @@ export type SaveRentalPayload = {
   startDate: string;
   endDate: string;
   totalPrice: number;
+  renterType?: string;
   priceMode?: string;
   status?: string;
   notes?: string;
@@ -332,6 +336,38 @@ export function updateMaintenanceResult(
 
 export function deleteMaintenanceResult(id: string) {
   return requestResult<Maintenance>(`/maintenances/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export type SaveExtraExpensePayload = {
+  carId: string;
+  concept: string;
+  cost: number;
+  date: string;
+  status?: string;
+  notes?: string;
+};
+
+export function createExtraExpenseResult(payload: SaveExtraExpensePayload) {
+  return requestResult<ExtraExpense>("/extra-expenses", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateExtraExpenseResult(
+  id: string,
+  payload: SaveExtraExpensePayload
+) {
+  return requestResult<ExtraExpense>(`/extra-expenses/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteExtraExpenseResult(id: string) {
+  return requestResult<ExtraExpense>(`/extra-expenses/${id}`, {
     method: "DELETE",
   });
 }

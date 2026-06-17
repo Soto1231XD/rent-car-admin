@@ -8,6 +8,7 @@ export type RentalStatus =
   | "CANCELADO";
 
 export type RentalPriceMode = "NORMAL" | "TEMPORADA_ALTA";
+export type RenterType = "CLIENTE" | "COMISIONISTA";
 
 export type Rental = {
   id: string;
@@ -15,6 +16,7 @@ export type Rental = {
   carId: string;
   startDate: string;
   endDate: string;
+  renterType: RenterType;
   priceMode: RentalPriceMode;
   dailyRateApplied: number;
   daysCharged: number;

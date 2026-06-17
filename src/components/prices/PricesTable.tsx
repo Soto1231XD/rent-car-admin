@@ -86,7 +86,7 @@ export default function PricesTable({ cars }: Props) {
       emptyTitle="No se encontraron tarifas"
       emptyDescription="Intenta ajustar el modelo, placa, estado o transmisión."
     >
-      <table className="w-full min-w-[980px] text-left text-sm">
+      <table className="w-full min-w-[1180px] text-left text-sm">
         <thead className="bg-slate-100 text-slate-600">
           <tr>
             <th className="px-6 py-4 font-semibold">Modelo</th>
@@ -94,6 +94,8 @@ export default function PricesTable({ cars }: Props) {
             <th className="px-6 py-4 font-semibold">Depósito en garantía</th>
             <th className="px-6 py-4 font-semibold">Precio por día</th>
             <th className="px-6 py-4 font-semibold">Precio temporada alta</th>
+            <th className="px-6 py-4 font-semibold">Comisionista</th>
+            <th className="px-6 py-4 font-semibold">Comisionista alta</th>
             <th className="px-6 py-4 font-semibold">Estado</th>
             <th className="px-6 py-4 font-semibold">Transmisión</th>
             <th className="px-6 py-4 font-semibold">Placa</th>
@@ -124,6 +126,12 @@ export default function PricesTable({ cars }: Props) {
               <td className="px-6 py-4 text-slate-900">
                 {formatMoney(car.highSeasonPrice)}
               </td>
+              <td className="px-6 py-4 text-slate-900">
+                {formatMoney(car.commissionDailyPrice)}
+              </td>
+              <td className="px-6 py-4 text-slate-900">
+                {formatMoney(car.commissionHighSeasonPrice)}
+              </td>
               <td className="px-6 py-4">
                 <StatusBadge status={car.status} />
               </td>
@@ -153,12 +161,19 @@ function getModelName(car: Car) {
   return `${car.brand} ${car.model} ${car.year}`;
 }
 
-function formatMoney(value?: number | null) {
+function formatMoney(value?: number | string | null) {
   if (value === undefined || value === null) {
     return "No definido";
   }
 
-  return `$${value.toLocaleString("es-MX")} MXN`;
+  const numericValue =
+    typeof value === "string" ? Number(value.replace(/,/g, "")) : value;
+
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return "No definido";
+  }
+
+  return `$${numericValue.toLocaleString("es-MX")} MXN`;
 }
 
 function formatTransmission(transmission: string) {

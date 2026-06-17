@@ -31,6 +31,28 @@ export default async function PrintRentalDocumentPage({ params }: Props) {
     );
   }
 
+  if (rental.renterType === "COMISIONISTA") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
+        <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow">
+          <h1 className="text-xl font-bold text-slate-900">
+            Contrato no disponible
+          </h1>
+          <p className="mt-3 text-sm text-slate-600">
+            Esta renta pertenece a un comisionista, por lo que no genera
+            contrato de arrendamiento.
+          </p>
+          <Link
+            href={`/dashboard/rentals/${rental.id}`}
+            className="mt-5 inline-block rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+          >
+            Volver a la renta
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-slate-100 p-6 print:bg-white print:p-0">
       <div className="mx-auto mb-4 flex max-w-[816px] justify-between print:hidden">

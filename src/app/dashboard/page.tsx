@@ -30,6 +30,8 @@ export default async function DashboardPage() {
 
   const activeOrReservedRentals = summary.upcomingRentals;
   const pendingMaintenances = summary.pendingMaintenanceList;
+  const monthlyIncome = summary.income.currentMonth;
+  const monthlyCommissionerIncome = summary.income.commissionerCurrentMonth;
 
   return (
     <div className="space-y-6">
@@ -40,7 +42,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <SummaryCard
           title="Carros disponibles"
           value={summary.cars.available}
@@ -61,8 +63,14 @@ export default async function DashboardPage() {
         />
         <SummaryCard
           title="Ingreso del mes"
-          value={formatMoney(summary.income.currentMonth)}
-          detail="Rentas completadas"
+          value={formatMoney(monthlyIncome)}
+          detail="Ingreso registrado este mes"
+          icon={<DollarSign />}
+        />
+        <SummaryCard
+          title="Comisionistas"
+          value={formatMoney(monthlyCommissionerIncome)}
+          detail="Ingreso mensual de comisionistas"
           icon={<DollarSign />}
         />
       </div>

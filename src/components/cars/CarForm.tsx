@@ -26,6 +26,12 @@ import { showErrorToast } from "@/lib/toast";
 const requiredCurrencyNumber = (message: string) =>
   z.preprocess(normalizeCurrencyValue, z.coerce.number().min(1, message));
 
+const optionalCurrencyNumber = z.preprocess((value) => {
+  const normalizedValue = normalizeCurrencyValue(value);
+
+  return normalizedValue === "" ? undefined : normalizedValue;
+}, z.coerce.number().min(0).optional());
+
 const optionalText = z
   .string()
   .trim()
@@ -50,6 +56,8 @@ const carSchema = z.object({
   highSeasonPrice: requiredCurrencyNumber(
     "El precio de temporada alta es obligatorio"
   ),
+  commissionDailyPrice: optionalCurrencyNumber,
+  commissionHighSeasonPrice: optionalCurrencyNumber,
   deposit: requiredCurrencyNumber("El depósito en garantía es obligatorio"),
   status: z.enum(["DISPONIBLE", "RENTADO", "MANTENIMIENTO", "NO_DISPONIBLE"], {
     message: "El estado es obligatorio",
@@ -126,6 +134,12 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       passengers: initialData?.passengers ?? undefined,
       dailyPrice: formatCurrencyInputValue(initialData?.dailyPrice),
       highSeasonPrice: formatCurrencyInputValue(initialData?.highSeasonPrice),
+      commissionDailyPrice: formatCurrencyInputValue(
+        initialData?.commissionDailyPrice
+      ),
+      commissionHighSeasonPrice: formatCurrencyInputValue(
+        initialData?.commissionHighSeasonPrice
+      ),
       deposit: formatCurrencyInputValue(initialData?.deposit),
       status: initialData?.status ?? "DISPONIBLE",
       description: initialData?.description ?? "",
@@ -175,6 +189,8 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       trunkCapacity: data.trunkCapacity,
       dailyPrice: data.dailyPrice,
       highSeasonPrice: data.highSeasonPrice,
+      commissionDailyPrice: data.commissionDailyPrice,
+      commissionHighSeasonPrice: data.commissionHighSeasonPrice,
       deposit: data.deposit,
       status: data.status,
       description: data.description,
@@ -385,6 +401,31 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
               onInput={formatCurrencyInput}
               className="input"
               placeholder="950"
+            />
+          </Field>
+
+          <Field label="Precio comisionista" error={errors.commissionDailyPrice?.message}>
+            <input
+              type="text"
+              inputMode="numeric"
+              {...register("commissionDailyPrice")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="700"
+            />
+          </Field>
+
+          <Field
+            label="Precio comisionista temporada alta"
+            error={errors.commissionHighSeasonPrice?.message}
+          >
+            <input
+              type="text"
+              inputMode="numeric"
+              {...register("commissionHighSeasonPrice")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="850"
             />
           </Field>
 
