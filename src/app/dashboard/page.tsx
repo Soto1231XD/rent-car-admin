@@ -42,36 +42,43 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <SummaryCard
           title="Carros disponibles"
           value={summary.cars.available}
           detail={`${summary.cars.total} unidades registradas`}
           icon={<Car />}
+          className="xl:col-span-2"
         />
         <SummaryCard
           title="Rentas activas"
           value={summary.rentals.active}
           detail={`${summary.rentals.reserved} reservaciones`}
           icon={<CalendarDays />}
+          className="xl:col-span-2"
         />
         <SummaryCard
           title="Clientes"
           value={summary.clients.total}
           detail="Clientes registrados"
           icon={<Users />}
+          className="xl:col-span-2"
         />
         <SummaryCard
           title="Ingreso del mes"
-          value={formatMoney(monthlyIncome)}
-          detail="Ingreso registrado este mes"
+          value={formatSummaryMoney(monthlyIncome)}
+          detail="Ingreso registrado este mes, MXN"
           icon={<DollarSign />}
+          className="xl:col-span-3"
+          valueClassName="text-2xl sm:text-3xl"
         />
         <SummaryCard
           title="Comisionistas"
-          value={formatMoney(monthlyCommissionerIncome)}
-          detail="Ingreso mensual de comisionistas"
+          value={formatSummaryMoney(monthlyCommissionerIncome)}
+          detail="Ingreso mensual de comisionistas, MXN"
           icon={<DollarSign />}
+          className="xl:col-span-3"
+          valueClassName="text-2xl sm:text-3xl"
         />
       </div>
 
@@ -283,18 +290,26 @@ function SummaryCard({
   value,
   detail,
   icon,
+  className = "",
+  valueClassName = "text-3xl",
 }: {
   title: string;
   value: number | string;
   detail: string;
   icon: React.ReactNode;
+  className?: string;
+  valueClassName?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-      <div className="flex items-center justify-between gap-3">
+    <div
+      className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 ${className}`}
+    >
+      <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p className="mt-2 truncate text-3xl font-bold text-slate-900">
+          <p
+            className={`mt-2 break-words font-bold leading-tight tracking-normal text-slate-900 tabular-nums ${valueClassName}`}
+          >
             {value}
           </p>
           <p className="mt-1 text-xs text-slate-500">{detail}</p>
@@ -423,4 +438,8 @@ function formatDate(value: string) {
 
 function formatMoney(value: number) {
   return `$${value.toLocaleString("es-MX")} MXN`;
+}
+
+function formatSummaryMoney(value: number) {
+  return `$${value.toLocaleString("es-MX")}`;
 }
