@@ -33,14 +33,14 @@ export default async function PrintRentalTicketPage({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-slate-100 p-6 print:bg-white print:p-0">
-      <div className="mx-auto mb-4 flex max-w-[380px] justify-between print:hidden">
+      <div className="mx-auto mb-4 flex max-w-[920px] justify-between print:hidden">
         <Link
           href={`/dashboard/rentals/${rental.id}`}
           className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
         >
           ← Volver
         </Link>
-        <PrintButton label="Imprimir" />
+        <PrintButton label="Imprimir cotizacion" />
       </div>
 
       <RentalTicket rental={rental} />

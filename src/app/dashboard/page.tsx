@@ -4,17 +4,22 @@ import {
   Car,
   DollarSign,
   Plus,
+  ReceiptText,
   UserPlus,
   Users,
   Wrench,
 } from "lucide-react";
-import { getDashboardSummary } from "@/lib/api";
+import { getDashboardSummary, getExtraExpenses } from "@/lib/api";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { Rental } from "@/types/rental";
 import { Maintenance } from "@/types/maintenance";
+import { ExtraExpense } from "@/types/extra-expense";
 
 export default async function DashboardPage() {
-  const summary = await getDashboardSummary();
+  const [summary, extraExpenses] = await Promise.all([
+    getDashboardSummary(),
+    getExtraExpenses(),
+  ]);
 
   if (!summary) {
     return (
@@ -32,6 +37,7 @@ export default async function DashboardPage() {
   const pendingMaintenances = summary.pendingMaintenanceList;
   const monthlyIncome = summary.income.currentMonth;
   const monthlyCommissionerIncome = summary.income.commissionerCurrentMonth;
+  const monthlyExtraExpenses = getMonthlyPaidExtraExpenses(extraExpenses);
 
   return (
     <div className="space-y-6">
@@ -69,7 +75,7 @@ export default async function DashboardPage() {
           value={formatSummaryMoney(monthlyIncome)}
           detail="Ingreso registrado este mes, MXN"
           icon={<DollarSign />}
-          className="xl:col-span-3"
+          className="xl:col-span-2"
           valueClassName="text-2xl sm:text-3xl"
         />
         <SummaryCard
@@ -77,7 +83,15 @@ export default async function DashboardPage() {
           value={formatSummaryMoney(monthlyCommissionerIncome)}
           detail="Ingreso mensual de comisionistas, MXN"
           icon={<DollarSign />}
-          className="xl:col-span-3"
+          className="xl:col-span-2"
+          valueClassName="text-2xl sm:text-3xl"
+        />
+        <SummaryCard
+          title="Gastos extras"
+          value={formatSummaryMoney(monthlyExtraExpenses)}
+          detail="Gastos pagados este mes, MXN"
+          icon={<ReceiptText />}
+          className="xl:col-span-2"
           valueClassName="text-2xl sm:text-3xl"
         />
       </div>
@@ -442,4 +456,25 @@ function formatMoney(value: number) {
 
 function formatSummaryMoney(value: number) {
   return `$${value.toLocaleString("es-MX")}`;
+}
+
+function getMonthlyPaidExtraExpenses(extraExpenses: ExtraExpense[]) {
+  const currentMonthStart = new Date();
+  currentMonthStart.setDate(1);
+  currentMonthStart.setHours(0, 0, 0, 0);
+
+  const nextMonthStart = new Date(currentMonthStart);
+  nextMonthStart.setMonth(currentMonthStart.getMonth() + 1);
+
+  return extraExpenses
+    .filter((extraExpense) => {
+      if (extraExpense.status !== "PAGADO") {
+        return false;
+      }
+
+      const date = new Date(extraExpense.date);
+
+      return date >= currentMonthStart && date < nextMonthStart;
+    })
+    .reduce((total, extraExpense) => total + extraExpense.cost, 0);
 }

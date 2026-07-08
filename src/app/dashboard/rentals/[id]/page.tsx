@@ -126,7 +126,7 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
               href={`/print/rentals/${rental.id}/ticket`}
               className="block w-full rounded-xl border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-100"
             >
-              Generar ticket
+              Generar cotizacion
             </Link>
           </div>
         </section>
@@ -163,7 +163,7 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
             </div>
 
             <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
-              <span>Ticket</span>
+              <span>Cotizacion</span>
               <span className="text-slate-400">Pendiente</span>
             </div>
           </div>
