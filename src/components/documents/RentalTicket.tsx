@@ -30,7 +30,7 @@ export default function RentalTicket({ rental }: Props) {
         <div className="flex justify-end">
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-right print:px-3 print:py-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Fecha de cotizacion
+              Fecha de cotización
             </p>
             <p className="mt-1 text-sm font-bold text-slate-950">
               {formatShortDate(new Date().toISOString())}
@@ -40,7 +40,7 @@ export default function RentalTicket({ rental }: Props) {
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 print:rounded-lg">
           <div className="bg-[#0b477d] px-5 py-3 text-sm font-bold uppercase tracking-wide text-white print:px-3 print:py-2 print:text-xs">
-            Detalle de la cotizacion
+            Detalle de la cotización
           </div>
 
           <div className="overflow-x-auto print:overflow-visible">
@@ -83,8 +83,8 @@ export default function RentalTicket({ rental }: Props) {
                 />
                 <QuoteRow
                   icon={<ShieldCheck size={24} />}
-                  concept="Deposito en garantia"
-                  detail="Reembolsable al finalizar la renta, una vez que el vehiculo sea devuelto en las condiciones establecidas."
+                  concept="Depósito en garantía"
+                  detail="Reembolsable al finalizar la renta, una vez que el vehículo sea devuelto en las condiciones establecidas."
                   amount={formatMoney(deposit)}
                   stackedConcept="(reembolsable)"
                 />
@@ -96,7 +96,7 @@ export default function RentalTicket({ rental }: Props) {
         <section className="grid overflow-hidden rounded-2xl bg-slate-950 text-white md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] print:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] print:rounded-lg">
           <div className="flex items-center bg-[#0b477d] px-6 py-5 md:[clip-path:polygon(0_0,92%_0,100%_100%,0_100%)] print:[clip-path:none] print:px-3 print:py-3">
             <p className="text-lg font-bold uppercase leading-tight tracking-wide print:text-[11pt]">
-              Total a cubrir al recibir el vehiculo
+              Total a cubrir al recibir el vehículo
             </p>
           </div>
 
@@ -114,15 +114,15 @@ export default function RentalTicket({ rental }: Props) {
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 print:rounded-lg print:p-3">
             <p className="font-semibold text-slate-900">Notas</p>
             <p className="mt-2">
-              La cotizacion contempla la renta y el deposito en garantia. No
-              incluye cargos por danos, combustible, limpieza o retrasos.
+              La cotización contempla la renta y el depósito en garantía. No
+              incluye cargos por daños, combustible, limpieza o retrasos.
             </p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 print:rounded-lg print:p-3">
             <p className="font-semibold text-slate-900">Vigencia</p>
             <p className="mt-2">
-              Sujeta a disponibilidad del vehiculo y confirmacion del periodo de
+              Sujeta a disponibilidad del vehículo y confirmación del periodo de
               renta.
             </p>
           </div>
