@@ -13,7 +13,7 @@ export type RenterType = "CLIENTE" | "COMISIONISTA";
 export type Rental = {
   id: string;
   clientId: string;
-  carId: string;
+  carId: string | null;
   startDate: string;
   endDate: string;
   renterType: RenterType;

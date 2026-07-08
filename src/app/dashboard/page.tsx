@@ -451,11 +451,11 @@ function formatDate(value: string) {
 }
 
 function formatMoney(value: number) {
-  return `$${value.toLocaleString("es-MX")} MXN`;
+  return `$${toMoneyNumber(value).toLocaleString("es-MX")} MXN`;
 }
 
-function formatSummaryMoney(value: number) {
-  return `$${value.toLocaleString("es-MX")}`;
+function formatSummaryMoney(value: number | string | null | undefined) {
+  return `$${toMoneyNumber(value).toLocaleString("es-MX")}`;
 }
 
 function getMonthlyPaidExtraExpenses(extraExpenses: ExtraExpense[]) {
@@ -476,5 +476,19 @@ function getMonthlyPaidExtraExpenses(extraExpenses: ExtraExpense[]) {
 
       return date >= currentMonthStart && date < nextMonthStart;
     })
-    .reduce((total, extraExpense) => total + extraExpense.cost, 0);
+    .reduce((total, extraExpense) => total + toMoneyNumber(extraExpense.cost), 0);
+}
+
+function toMoneyNumber(value: number | string | null | undefined) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (typeof value === "string") {
+    const parsedValue = Number(value.replace(/,/g, "").trim());
+
+    return Number.isFinite(parsedValue) ? parsedValue : 0;
+  }
+
+  return 0;
 }

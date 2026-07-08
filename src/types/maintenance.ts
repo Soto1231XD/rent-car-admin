@@ -4,7 +4,7 @@ export type MaintenanceStatus = "PENDIENTE" | "EN_PROGRESO" | "COMPLETADO";
 
 export type Maintenance = {
   id: string;
-  carId: string;
+  carId: string | null;
   serviceType: string;
   cost: number;
   date: string;

@@ -4,7 +4,7 @@ export type ExtraExpenseStatus = "PENDIENTE" | "PAGADO" | "CANCELADO";
 
 export type ExtraExpense = {
   id: string;
-  carId: string;
+  carId: string | null;
   concept: string;
   cost: number;
   date: string;

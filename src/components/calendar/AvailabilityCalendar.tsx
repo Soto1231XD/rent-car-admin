@@ -30,7 +30,7 @@ const MAINTENANCE_COLOR = {
 
 export default function AvailabilityCalendar({ rentals, maintenances }: Props) {
   const rentalEvents = rentals.map((rental) => {
-    const color = getCarEventColor(rental.carId);
+    const color = getCarEventColor(rental.carId ?? rental.id);
 
     return {
       id: `rental-${rental.id}`,
