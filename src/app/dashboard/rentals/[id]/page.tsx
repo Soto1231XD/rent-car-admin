@@ -91,10 +91,25 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
               value={isCommissionerRental ? "Comisionista" : "Cliente normal"}
             />
             <Info label="Vehículo" value={carName} />
-            <Info label="Fecha de entrega" value={formatDate(rental.startDate)} />
-            <Info label="Fecha de devolución" value={formatDate(rental.endDate)} />
             <Info
-              label="Total"
+              label="Tipo de renta"
+              value={
+                rental.rentalType === "INDEFINIDA"
+                  ? "Indefinida"
+                  : "Normal"
+              }
+            />
+            <Info label="Fecha de entrega" value={formatDate(rental.startDate)} />
+            <Info
+              label="Fecha de devolución"
+              value={
+                rental.rentalType === "INDEFINIDA"
+                  ? "Sin fecha definida"
+                  : formatDate(rental.endDate)
+              }
+            />
+            <Info
+              label={rental.rentalType === "INDEFINIDA" ? "Tarifa diaria" : "Total"}
               value={`$${rental.totalPrice.toLocaleString("es-MX")} MXN`}
             />
             <Info label="Estado" value={formatStatus(rental.status)} />
@@ -140,7 +155,11 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
 
           <div className="space-y-4">
             <Info
-              label="Total de la renta"
+              label={
+                rental.rentalType === "INDEFINIDA"
+                  ? "Tarifa diaria"
+                  : "Total de la renta"
+              }
               value={`$${rental.totalPrice.toLocaleString("es-MX")} MXN`}
             />
             <Info
@@ -188,8 +207,8 @@ function Info({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function formatDate(value: string) {
-  return value.slice(0, 10);
+function formatDate(value: string | null) {
+  return value ? value.slice(0, 10) : "-";
 }
 
 function formatStatus(status: string) {

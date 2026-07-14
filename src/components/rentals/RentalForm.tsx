@@ -25,16 +25,63 @@ const schema = z
     clientId: z.string().min(1, "Selecciona un cliente"),
     carId: z.string().min(1, "Selecciona un vehículo"),
     startDate: z.string().min(1, "La fecha de entrega es obligatoria"),
-    endDate: z.string().min(1, "La fecha de devolución es obligatoria"),
-    totalPrice: z.coerce.number().min(1, "El total es obligatorio"),
+    endDate: z.string().optional(),
+    rentalType: z.enum(["NORMAL", "INDEFINIDA"]),
+    totalPrice: optionalCurrencyNumber,
+    dailyRateApplied: optionalCurrencyNumber,
     advancePayment: optionalCurrencyNumber,
     renterType: z.enum(["CLIENTE", "COMISIONISTA"]),
     status: z.enum(["RESERVACION", "ACTIVO", "COMPLETADO", "CANCELADO"]),
     notes: z.string().optional(),
   })
-  .refine((data) => data.endDate >= data.startDate, {
-    message: "La fecha de devolución no puede ser anterior a la entrega",
-    path: ["endDate"],
+  .superRefine((data, ctx) => {
+    if (data.rentalType === "NORMAL") {
+      if (!data.endDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La fecha de devolución es obligatoria",
+          path: ["endDate"],
+        });
+      } else if (data.endDate < data.startDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "La fecha de devolución no puede ser anterior a la entrega",
+          path: ["endDate"],
+        });
+      }
+
+      if (data.totalPrice === undefined || data.totalPrice < 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "El total es obligatorio",
+          path: ["totalPrice"],
+        });
+      }
+    } else {
+      if (data.dailyRateApplied === undefined || data.dailyRateApplied <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Ingresa la tarifa diaria para la renta indefinida",
+          path: ["dailyRateApplied"],
+        });
+      }
+
+      if (data.status === "COMPLETADO") {
+        if (!data.endDate) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Ingresa la fecha real de devolución para completar la renta",
+            path: ["endDate"],
+          });
+        } else if (data.endDate < data.startDate) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "La fecha de devolución no puede ser anterior a la entrega",
+            path: ["endDate"],
+          });
+        }
+      }
+    }
   });
 
 type FormData = z.output<typeof schema>;
@@ -75,8 +122,12 @@ export default function RentalForm({
       clientId: initialData?.clientId ?? "",
       carId: initialData?.carId ?? "",
       startDate: formatDateInput(initialData?.startDate),
-      endDate: formatDateInput(initialData?.endDate),
+      endDate: formatDateInput(initialData?.endDate ?? undefined),
+      rentalType: initialData?.rentalType ?? "NORMAL",
       totalPrice: initialData?.totalPrice ?? undefined,
+      dailyRateApplied: formatCurrencyInputValue(
+        initialData?.dailyRateApplied ?? undefined
+      ),
       advancePayment: formatCurrencyInputValue(initialData?.advancePayment ?? 0),
       renterType: initialData?.renterType ?? "CLIENTE",
       status: initialData?.status ?? "RESERVACION",
@@ -87,25 +138,30 @@ export default function RentalForm({
   const selectedCarId = useWatch({ control, name: "carId" });
   const startDate = useWatch({ control, name: "startDate" });
   const endDate = useWatch({ control, name: "endDate" });
+  const rentalType = useWatch({ control, name: "rentalType" });
+  const status = useWatch({ control, name: "status" });
   const renterType = useWatch({ control, name: "renterType" });
   const advancePaymentInput = useWatch({ control, name: "advancePayment" });
   const advancePaymentValue = toMoneyNumber(
     advancePaymentInput as string | number | null | undefined
   );
+  const dailyRateInput = useWatch({ control, name: "dailyRateApplied" });
+  const isIndefinida = rentalType === "INDEFINIDA";
+  const isCompletingIndefinida = isIndefinida && status === "COMPLETADO";
   const selectedCar = useMemo(
     () => cars.find((car) => car.id === selectedCarId) ?? null,
     [cars, selectedCarId]
   );
   const priceMode = useMemo(() => {
-    if (!startDate || !endDate || endDate < startDate) {
+    if (isIndefinida || !startDate || !endDate || endDate < startDate) {
       return initialPriceMode;
     }
 
     return isHighSeasonRange(startDate, endDate) ? "highSeason" : "daily";
-  }, [endDate, initialPriceMode, startDate]);
+  }, [endDate, initialPriceMode, isIndefinida, startDate]);
 
   const quote = useMemo(() => {
-    if (!selectedCar || !startDate || !endDate || endDate < startDate) {
+    if (isIndefinida || !selectedCar || !startDate || !endDate || endDate < startDate) {
       return null;
     }
 
@@ -127,16 +183,52 @@ export default function RentalForm({
         !hasMoneyValue(selectedCar.commissionDailyPrice) &&
         !hasMoneyValue(selectedCar.commissionHighSeasonPrice),
     };
-  }, [endDate, priceMode, renterType, selectedCar, startDate]);
+  }, [endDate, isIndefinida, priceMode, renterType, selectedCar, startDate]);
+
+  const completionQuote = useMemo(() => {
+    if (
+      !isCompletingIndefinida ||
+      !startDate ||
+      !endDate ||
+      endDate < startDate
+    ) {
+      return null;
+    }
+
+    const days = getRentalDays(startDate, endDate);
+    const dailyRate = toMoneyNumber(
+      dailyRateInput as string | number | null | undefined
+    );
+
+    return { days, dailyRate, total: days * dailyRate };
+  }, [dailyRateInput, endDate, isCompletingIndefinida, startDate]);
+
+  const effectiveDailyRate = isIndefinida
+    ? toMoneyNumber(dailyRateInput as string | number | null | undefined)
+    : (quote?.dailyRate ?? 0);
+  const effectiveTotal = isCompletingIndefinida
+    ? (completionQuote?.total ?? effectiveDailyRate)
+    : isIndefinida
+      ? effectiveDailyRate
+      : (quote?.total ?? 0);
 
   useEffect(() => {
-    if (quote) {
+    if (!isIndefinida && quote) {
       setValue("totalPrice", quote.total, {
         shouldDirty: true,
         shouldValidate: true,
       });
     }
-  }, [quote, setValue]);
+  }, [isIndefinida, quote, setValue]);
+
+  useEffect(() => {
+    if (isIndefinida) {
+      setValue("totalPrice", effectiveTotal, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [effectiveTotal, isIndefinida, setValue]);
 
   const onInvalid = () => {
     const message = "Revisa los campos marcados antes de guardar la renta.";
@@ -151,8 +243,20 @@ export default function RentalForm({
     const payload = {
       ...data,
       renterType,
-      priceMode: priceMode === "highSeason" ? "TEMPORADA_ALTA" : "NORMAL",
-      totalPrice: quote?.total ?? data.totalPrice,
+      rentalType,
+      priceMode: isIndefinida
+        ? "NORMAL"
+        : priceMode === "highSeason"
+          ? "TEMPORADA_ALTA"
+          : "NORMAL",
+      endDate:
+        isIndefinida && !isCompletingIndefinida ? undefined : data.endDate,
+      totalPrice: isCompletingIndefinida
+        ? (completionQuote?.total ?? data.dailyRateApplied ?? 0)
+        : isIndefinida
+          ? (data.dailyRateApplied ?? 0)
+          : (quote?.total ?? data.totalPrice ?? 0),
+      dailyRateApplied: isIndefinida ? data.dailyRateApplied : undefined,
       advancePayment: data.advancePayment ?? 0,
     };
 
@@ -223,27 +327,72 @@ export default function RentalForm({
             </p>
           </Field>
 
+          <Field label="Tipo de renta" error={errors.rentalType?.message}>
+            <select {...register("rentalType")} className="input">
+              <option value="NORMAL">Renta normal</option>
+              <option value="INDEFINIDA">Renta indefinida</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              La renta indefinida no tiene fecha de devolución fija y permite
+              definir el precio manualmente.
+            </p>
+          </Field>
+
           <Field label="Fecha de entrega" error={errors.startDate?.message}>
             <input type="date" {...register("startDate")} className="input" />
           </Field>
 
-          <Field label="Fecha de devolución" error={errors.endDate?.message}>
-            <input type="date" {...register("endDate")} className="input" />
-          </Field>
+          {isIndefinida && !isCompletingIndefinida ? (
+            <Field label="Fecha de devolución">
+              <input
+                type="text"
+                value="Sin fecha definida (indefinida)"
+                disabled
+                className="input text-slate-400"
+              />
+            </Field>
+          ) : (
+            <Field label="Fecha de devolución" error={errors.endDate?.message}>
+              <input type="date" {...register("endDate")} className="input" />
+              {isCompletingIndefinida && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Ingresa la fecha real en que se devolvió el vehículo para
+                  calcular el precio final según los días usados.
+                </p>
+              )}
+            </Field>
+          )}
 
-          <Field label="Tipo de tarifa">
-            <select
-              value={priceMode}
-              disabled
-              className="input"
+          {!isIndefinida && (
+            <Field label="Tipo de tarifa">
+              <select value={priceMode} disabled className="input">
+                <option value="daily">Precio normal</option>
+                <option value="highSeason">Temporada alta</option>
+              </select>
+              <p className="mt-1 text-xs text-slate-500">
+                Se calcula automáticamente según las fechas seleccionadas.
+              </p>
+            </Field>
+          )}
+
+          {isIndefinida && (
+            <Field
+              label="Tarifa diaria"
+              error={errors.dailyRateApplied?.message}
             >
-              <option value="daily">Precio normal</option>
-              <option value="highSeason">Temporada alta</option>
-            </select>
-            <p className="mt-1 text-xs text-slate-500">
-              Se calcula automáticamente según las fechas seleccionadas.
-            </p>
-          </Field>
+              <input
+                type="text"
+                inputMode="numeric"
+                {...register("dailyRateApplied")}
+                onInput={formatCurrencyInput}
+                className="input"
+                placeholder="0"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Precio por día definido manualmente para esta renta.
+              </p>
+            </Field>
+          )}
 
           <Field label="Estado de la renta" error={errors.status?.message}>
             <select {...register("status")} className="input">
@@ -266,20 +415,35 @@ export default function RentalForm({
             label="Cliente"
             value={renterType === "COMISIONISTA" ? "Comisionista" : "Normal"}
           />
-          <SummaryItem label="Días" value={quote ? quote.days : "-"} />
+          <SummaryItem
+            label="Días"
+            value={
+              isCompletingIndefinida
+                ? (completionQuote?.days ?? "-")
+                : isIndefinida
+                  ? "Indefinido"
+                  : quote
+                    ? quote.days
+                    : "-"
+            }
+          />
           <SummaryItem
             label="Precio por día"
-            value={quote ? formatMoney(quote.dailyRate) : "-"}
+            value={
+              effectiveDailyRate > 0 ? formatMoney(effectiveDailyRate) : "-"
+            }
           />
           <SummaryItem
             label="Depósito sugerido"
             value={quote?.deposit ? formatMoney(quote.deposit) : "No definido"}
           />
-          <SummaryItem
-            label="Total"
-            value={quote ? formatMoney(quote.total) : "-"}
-            strong
-          />
+          {(!isIndefinida || isCompletingIndefinida) && (
+            <SummaryItem
+              label="Total"
+              value={effectiveTotal > 0 ? formatMoney(effectiveTotal) : "-"}
+              strong
+            />
+          )}
         </div>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -297,8 +461,8 @@ export default function RentalForm({
           <SummaryItem
             label="Saldo pendiente"
             value={
-              quote
-                ? formatMoney(Math.max(quote.total - advancePaymentValue, 0))
+              effectiveTotal > 0
+                ? formatMoney(Math.max(effectiveTotal - advancePaymentValue, 0))
                 : "-"
             }
             strong
@@ -407,7 +571,7 @@ function SummaryItem({
   );
 }
 
-function formatDateInput(value?: string) {
+function formatDateInput(value?: string | null) {
   if (!value) {
     return "";
   }

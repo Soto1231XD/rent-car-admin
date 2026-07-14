@@ -55,6 +55,11 @@ const interior = [
 ];
 
 export default function UnifiedRentalDocument({ rental }: Props) {
+  // An indefinida rental has no known return date/days until it's completed.
+  // Once rental.daysCharged is set, treat it like a normal rental for
+  // display — it now has a real return date and calculated total.
+  const isOpenIndefinida =
+    rental.rentalType === "INDEFINIDA" && !rental.daysCharged;
   const clientName = rental.client?.fullName ?? "________________________";
   const carName = rental.car
     ? `${rental.car.brand} ${rental.car.model} ${rental.car.year}`
@@ -96,10 +101,27 @@ export default function UnifiedRentalDocument({ rental }: Props) {
             <Info label="Vehículo" value={carName} />
             <Info label="Placas" value={plate} />
             <Info label="Fecha de entrega" value={formatDate(rental.startDate)} />
-            <Info label="Fecha de devolución" value={formatDate(rental.endDate)} />
-            <Info label="Tarifa aplicada" value={formatPriceMode(rental.priceMode)} />
+            <Info
+              label="Fecha de devolución"
+              value={
+                isOpenIndefinida
+                  ? "Renta indefinida (sin fecha fija)"
+                  : formatDate(rental.endDate)
+              }
+            />
+            <Info
+              label="Tarifa aplicada"
+              value={
+                rental.rentalType === "INDEFINIDA"
+                  ? "Tarifa manual (renta indefinida)"
+                  : formatPriceMode(rental.priceMode)
+              }
+            />
             <Info label="Desglose" value={getPriceBreakdown(rental)} />
-            <Info label="Monto de renta" value={formatMoney(rental.totalPrice)} />
+            <Info
+              label={isOpenIndefinida ? "Tarifa diaria" : "Monto de renta"}
+              value={formatMoney(rental.totalPrice)}
+            />
             <Info label="Depósito en garantía" value={deposit} />
           </div>
         </section>
@@ -258,8 +280,8 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
-function formatDate(value: string) {
-  return value.slice(0, 10);
+function formatDate(value: string | null) {
+  return value ? value.slice(0, 10) : "-";
 }
 
 function formatMoney(value: number) {
@@ -276,6 +298,10 @@ function formatPriceMode(priceMode: string) {
 }
 
 function getPriceBreakdown(rental: Rental) {
+  if (rental.rentalType === "INDEFINIDA" && !rental.daysCharged) {
+    return `Tarifa manual acordada: ${formatMoney(rental.dailyRateApplied)} por día`;
+  }
+
   const days = rental.daysCharged || 1;
   const rate = rental.dailyRateApplied || rental.totalPrice / days;
 

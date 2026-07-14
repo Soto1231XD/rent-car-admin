@@ -443,10 +443,13 @@ function QuickAction({
 }
 
 function formatDate(value: string) {
+  // Stored as UTC-midnight calendar dates; format in UTC so the displayed
+  // day doesn't shift backward in timezones behind UTC.
   return new Intl.DateTimeFormat("es-MX", {
     day: "2-digit",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
   }).format(new Date(value));
 }
 

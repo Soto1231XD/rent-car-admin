@@ -129,10 +129,7 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
           {activeRental ? (
             <div className="space-y-4">
               <Info label="Vehículo" value={formatCarName(activeRental)} />
-              <Info
-                label="Periodo"
-                value={`${formatDate(activeRental.startDate)} - ${formatDate(activeRental.endDate)}`}
-              />
+              <Info label="Periodo" value={formatPeriod(activeRental)} />
               <Info
                 label="Estado"
                 value={formatRentalStatus(activeRental.status)}
@@ -206,7 +203,7 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
                       {formatCarName(rental)}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
-                      {formatDate(rental.startDate)} - {formatDate(rental.endDate)}
+                      {formatPeriod(rental)}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       {formatRentalStatus(rental.status)}
@@ -256,12 +253,27 @@ function formatCarName(rental: Rental) {
   return `${rental.car.brand} ${rental.car.model} ${rental.car.year}`;
 }
 
-function formatDate(value: string) {
+function formatDate(value: string | null) {
+  if (!value) {
+    return "-";
+  }
+
+  // Stored as UTC-midnight calendar dates; format in UTC so the displayed
+  // day doesn't shift backward in timezones behind UTC.
   return new Intl.DateTimeFormat("es-MX", {
     year: "numeric",
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
   }).format(new Date(value));
+}
+
+function formatPeriod(rental: { startDate: string; endDate: string | null; rentalType: string }) {
+  if (rental.rentalType === "INDEFINIDA") {
+    return `${formatDate(rental.startDate)} - Indefinida`;
+  }
+
+  return `${formatDate(rental.startDate)} - ${formatDate(rental.endDate)}`;
 }
 
 function formatCurrency(value: number) {

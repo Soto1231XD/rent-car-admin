@@ -31,12 +31,17 @@ const MAINTENANCE_COLOR = {
 export default function AvailabilityCalendar({ rentals, maintenances }: Props) {
   const rentalEvents = rentals.map((rental) => {
     const color = getCarEventColor(rental.carId ?? rental.id);
+    const isIndefinida = rental.rentalType === "INDEFINIDA" || !rental.endDate;
 
     return {
       id: `rental-${rental.id}`,
-      title: `${getCarName(rental)} - ${getClientName(rental)}`,
+      title: `${getCarName(rental)} - ${getClientName(rental)}${
+        isIndefinida ? " (Indefinida)" : ""
+      }`,
       start: toDateOnly(rental.startDate),
-      end: addOneDay(rental.endDate),
+      end: isIndefinida
+        ? addDays(rental.startDate, 365)
+        : addOneDay(rental.endDate as string),
       allDay: true,
       backgroundColor: color.background,
       borderColor: color.border,
@@ -161,13 +166,17 @@ function getStableIndex(value: string, length: number) {
 }
 
 function addOneDay(date: string) {
+  return addDays(date, 1);
+}
+
+function addDays(date: string, amount: number) {
   const parsedDate = parseDateOnly(date);
 
   if (!parsedDate) {
     return date;
   }
 
-  parsedDate.setDate(parsedDate.getDate() + 1);
+  parsedDate.setDate(parsedDate.getDate() + amount);
 
   return formatDateOnly(parsedDate);
 }

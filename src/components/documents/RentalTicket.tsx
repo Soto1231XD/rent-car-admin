@@ -16,6 +16,12 @@ type Props = {
 };
 
 export default function RentalTicket({ rental }: Props) {
+  const isIndefinida = rental.rentalType === "INDEFINIDA";
+  // An indefinida rental has no known day count until it's completed with a
+  // real return date. Once rental.daysCharged is set, treat it like a
+  // normal rental for period/total display — it now has an actual total
+  // distinct from the daily rate.
+  const isOpenIndefinida = isIndefinida && !rental.daysCharged;
   const days = rental.daysCharged || 1;
   const totalPrice = toMoneyNumber(rental.totalPrice);
   const dailyRate = toMoneyNumber(rental.dailyRateApplied) || totalPrice / days;
@@ -81,25 +87,35 @@ export default function RentalTicket({ rental }: Props) {
                 <QuoteRow
                   icon={<CalendarDays size={24} />}
                   concept="Periodo de renta"
-                  detail={`${formatLongDate(rental.startDate)} al ${formatLongDate(
-                    rental.endDate
-                  )} (${days} ${days === 1 ? "dia" : "dias"})`}
+                  detail={
+                    isOpenIndefinida
+                      ? `Desde el ${formatLongDate(rental.startDate)} (renta indefinida)`
+                      : `${formatLongDate(rental.startDate)} al ${formatLongDate(
+                          rental.endDate as string
+                        )} (${days} ${days === 1 ? "dia" : "dias"})`
+                  }
                   amount="-"
                 />
                 <QuoteRow
                   icon={<Tag size={24} />}
                   concept="Tarifa diaria"
-                  detail={`${formatMoney(dailyRate)} por dia - ${formatPriceMode(
-                    rental.priceMode
-                  )}`}
+                  detail={
+                    isIndefinida
+                      ? `${formatMoney(dailyRate)} por dia - Tarifa manual`
+                      : `${formatMoney(dailyRate)} por dia - ${formatPriceMode(
+                          rental.priceMode
+                        )}`
+                  }
                   amount={formatMoney(dailyRate)}
                 />
-                <QuoteRow
-                  icon={<Calculator size={24} />}
-                  concept={`Total renta (${days} ${days === 1 ? "dia" : "dias"})`}
-                  detail={`Tarifa diaria x ${days} ${days === 1 ? "dia" : "dias"}`}
-                  amount={formatMoney(totalPrice)}
-                />
+                {!isOpenIndefinida && (
+                  <QuoteRow
+                    icon={<Calculator size={24} />}
+                    concept={`Total renta (${days} ${days === 1 ? "dia" : "dias"})`}
+                    detail={`Tarifa diaria x ${days} ${days === 1 ? "dia" : "dias"}`}
+                    amount={formatMoney(totalPrice)}
+                  />
+                )}
                 <QuoteRow
                   icon={<HandCoins size={24} />}
                   concept="Anticipo recibido"
@@ -109,7 +125,11 @@ export default function RentalTicket({ rental }: Props) {
                 <QuoteRow
                   icon={<Receipt size={24} />}
                   concept="Saldo pendiente de la renta"
-                  detail="Total de la renta menos el anticipo ya recibido."
+                  detail={
+                    isOpenIndefinida
+                      ? "Tarifa diaria menos el anticipo ya recibido."
+                      : "Total de la renta menos el anticipo ya recibido."
+                  }
                   amount={formatMoney(pendingBalance)}
                 />
                 <QuoteRow
@@ -206,10 +226,14 @@ function QuoteRow({
 }
 
 function formatLongDate(value: string) {
+  // Rental start/end dates are stored as UTC-midnight calendar dates (from a
+  // date-only picker). Format in UTC so the displayed day doesn't shift
+  // backward in timezones behind UTC (e.g. America/Cancun).
   return new Intl.DateTimeFormat("es-MX", {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "UTC",
   }).format(new Date(value));
 }
 

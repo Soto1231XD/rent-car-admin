@@ -376,10 +376,14 @@ function QuoteRow({
 }
 
 function formatShortDate(value: string) {
+  // quote.startDate/endDate are stored as UTC-midnight calendar dates;
+  // format in UTC so the displayed day doesn't shift backward in timezones
+  // behind UTC (e.g. America/Cancun).
   return new Intl.DateTimeFormat("es-MX", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "UTC",
   }).format(new Date(value));
 }
 

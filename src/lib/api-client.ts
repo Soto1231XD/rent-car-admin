@@ -295,8 +295,10 @@ export type SaveRentalPayload = {
   clientId: string;
   carId: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;
+  rentalType?: string;
   totalPrice: number;
+  dailyRateApplied?: number;
   advancePayment?: number;
   renterType?: string;
   priceMode?: string;

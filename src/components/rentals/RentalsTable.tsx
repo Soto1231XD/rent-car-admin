@@ -113,7 +113,9 @@ export default function RentalsTable({ rentals }: Props) {
                 {formatDate(rental.startDate)}
               </td>
               <td className="px-6 py-4 text-slate-900">
-                {formatDate(rental.endDate)}
+                {rental.rentalType === "INDEFINIDA"
+                  ? "Indefinida"
+                  : formatDate(rental.endDate)}
               </td>
               <td className="px-6 py-4 text-slate-900">
                 ${rental.totalPrice.toLocaleString("es-MX")} MXN
@@ -149,6 +151,6 @@ function getCarName(rental: Rental) {
   return `${rental.car.brand} ${rental.car.model} ${rental.car.year}`;
 }
 
-function formatDate(value: string) {
-  return value.slice(0, 10);
+function formatDate(value: string | null) {
+  return value ? value.slice(0, 10) : "-";
 }
