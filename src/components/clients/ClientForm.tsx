@@ -1,12 +1,18 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ChangeEvent, ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { IdCard, UploadCloud, X } from "lucide-react";
 import { Client } from "@/types/client";
-import { createClientResult, updateClientResult } from "@/lib/api-client";
+import {
+  createClientResult,
+  updateClientResult,
+  uploadClientIdentificationImageResult,
+} from "@/lib/api-client";
+import { getAssetUrl } from "@/lib/assets";
 import FormAlert from "@/components/ui/FormAlert";
 import { showErrorToast } from "@/lib/toast";
 
@@ -38,6 +44,7 @@ const optionalPhone = z
 
 const clientSchema = z.object({
   fullName: z.string().min(1, "El nombre es obligatorio"),
+  type: z.enum(["CLIENTE", "COMISIONISTA"]),
   email: optionalEmail,
   phone: z.string().min(7, "El teléfono debe tener al menos 7 dígitos"),
   idNumber: z.string().min(1, "La identificación es obligatoria"),
@@ -64,6 +71,40 @@ export default function ClientForm({
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [existingIdImage, setExistingIdImage] = useState(
+    initialData?.idDocumentImage ?? null
+  );
+  const [selectedIdFile, setSelectedIdFile] = useState<File | null>(null);
+  const [idImagePreviewUrl, setIdImagePreviewUrl] = useState<string | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (!selectedIdFile) {
+      setIdImagePreviewUrl(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(selectedIdFile);
+    setIdImagePreviewUrl(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [selectedIdFile]);
+
+  const handleIdImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (file) {
+      setSelectedIdFile(file);
+    }
+
+    event.target.value = "";
+  };
+
+  const handleRemoveIdImage = () => {
+    setSelectedIdFile(null);
+    setExistingIdImage(null);
+  };
 
   const {
     register,
@@ -73,6 +114,7 @@ export default function ClientForm({
     resolver: zodResolver(clientSchema),
     defaultValues: {
       fullName: initialData?.fullName ?? "",
+      type: initialData?.type ?? "CLIENTE",
       email: initialData?.email ?? "",
       phone: initialData?.phone ?? "",
       idNumber: initialData?.idNumber ?? "",
@@ -93,16 +135,22 @@ export default function ClientForm({
     setSubmitError("");
     setIsSaving(true);
 
+    const shouldClearIdImage =
+      !selectedIdFile && !existingIdImage && Boolean(initialData?.idDocumentImage);
+    const payload = {
+      ...data,
+      ...(shouldClearIdImage ? { idDocumentImage: null } : {}),
+    };
+
     const result =
       mode === "create"
-        ? await createClientResult(data)
+        ? await createClientResult(payload)
         : clientId
-          ? await updateClientResult(clientId, data)
+          ? await updateClientResult(clientId, payload)
           : { data: null, error: "No se encontró el cliente a actualizar." };
 
-    setIsSaving(false);
-
     if (!result.data) {
+      setIsSaving(false);
       const message =
         result.error ??
         "No se pudo guardar el cliente. Revisa los datos e intenta de nuevo.";
@@ -111,9 +159,24 @@ export default function ClientForm({
       return;
     }
 
+    const uploadResult = selectedIdFile
+      ? await uploadClientIdentificationImageResult(result.data.id, selectedIdFile)
+      : { data: result.data, error: null };
+
+    setIsSaving(false);
+
+    if (!uploadResult.data) {
+      const message =
+        uploadResult.error ??
+        "El cliente se guardó, pero no se pudo subir la imagen de identificación.";
+      setSubmitError(message);
+      showErrorToast(message);
+      return;
+    }
+
     router.refresh();
     router.push(
-      `/dashboard/clients/${result.data.id}?success=${
+      `/dashboard/clients/${uploadResult.data.id}?success=${
         mode === "create" ? "created" : "updated"
       }`
     );
@@ -138,6 +201,13 @@ export default function ClientForm({
               className="input"
               placeholder="Carlos Ramírez"
             />
+          </Field>
+
+          <Field label="Tipo de cliente" required error={errors.type?.message}>
+            <select {...register("type")} className="input">
+              <option value="CLIENTE">Cliente</option>
+              <option value="COMISIONISTA">Comisionista</option>
+            </select>
           </Field>
 
           <Field label="Correo electrónico" error={errors.email?.message}>
@@ -165,6 +235,69 @@ export default function ClientForm({
             />
           </Field>
 
+          <div className="md:col-span-2">
+            <span className="mb-1 block text-sm font-medium text-slate-700">
+              Foto de la identificación
+            </span>
+
+            {idImagePreviewUrl || existingIdImage ? (
+              <div className="mt-1 flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-3">
+                <div
+                  className="h-24 w-36 shrink-0 rounded-xl bg-slate-100 bg-cover bg-center ring-1 ring-slate-200"
+                  style={{
+                    backgroundImage: `url("${
+                      idImagePreviewUrl ?? getAssetUrl(existingIdImage ?? "")
+                    }")`,
+                  }}
+                />
+                <div className="flex flex-1 flex-col gap-2 py-1">
+                  <p className="text-sm font-medium text-slate-900">
+                    {selectedIdFile ? selectedIdFile.name : "Identificación guardada"}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <label
+                      htmlFor="client-id-image"
+                      className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                    >
+                      <UploadCloud size={14} />
+                      Cambiar imagen
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRemoveIdImage}
+                      className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                    >
+                      <X size={14} />
+                      Quitar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <label
+                htmlFor="client-id-image"
+                className="mt-1 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-center transition hover:border-slate-500 hover:bg-slate-100"
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-200">
+                  <IdCard size={20} />
+                </span>
+                <span className="mt-2 text-sm font-semibold text-slate-900">
+                  Subir foto de la identificación
+                </span>
+                <span className="mt-1 max-w-md text-xs leading-5 text-slate-500">
+                  Opcional. INE, pasaporte u otro documento. Formatos JPG, PNG o WEBP.
+                </span>
+              </label>
+            )}
+
+            <input
+              id="client-id-image"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={handleIdImageChange}
+              className="sr-only"
+            />
+          </div>
         </div>
       </section>
 

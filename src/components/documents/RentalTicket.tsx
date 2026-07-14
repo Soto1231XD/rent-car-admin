@@ -1,6 +1,14 @@
 import Image from "next/image";
 import { ReactNode } from "react";
-import { Calculator, CalendarDays, ShieldCheck, Tag } from "lucide-react";
+import {
+  Calculator,
+  CalendarDays,
+  Car,
+  HandCoins,
+  Receipt,
+  ShieldCheck,
+  Tag,
+} from "lucide-react";
 import { Rental } from "@/types/rental";
 
 type Props = {
@@ -12,7 +20,12 @@ export default function RentalTicket({ rental }: Props) {
   const totalPrice = toMoneyNumber(rental.totalPrice);
   const dailyRate = toMoneyNumber(rental.dailyRateApplied) || totalPrice / days;
   const deposit = toMoneyNumber(rental.car?.deposit);
-  const totalToCover = totalPrice + deposit;
+  const advancePayment = toMoneyNumber(rental.advancePayment);
+  const pendingBalance = Math.max(totalPrice - advancePayment, 0);
+  const totalToCover = pendingBalance + deposit;
+  const carName = rental.car
+    ? `${rental.car.brand} ${rental.car.model} ${rental.car.year}`
+    : "Vehículo no disponible";
 
   return (
     <article className="relative mx-auto max-w-[920px] overflow-hidden rounded-2xl bg-white text-slate-950 shadow-xl ring-1 ring-slate-200 print:w-full print:max-w-none print:overflow-visible print:rounded-none print:shadow-none print:ring-0">
@@ -60,6 +73,12 @@ export default function RentalTicket({ rental }: Props) {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 <QuoteRow
+                  icon={<Car size={24} />}
+                  concept="Vehículo"
+                  detail={carName}
+                  amount="-"
+                />
+                <QuoteRow
                   icon={<CalendarDays size={24} />}
                   concept="Periodo de renta"
                   detail={`${formatLongDate(rental.startDate)} al ${formatLongDate(
@@ -80,6 +99,18 @@ export default function RentalTicket({ rental }: Props) {
                   concept={`Total renta (${days} ${days === 1 ? "dia" : "dias"})`}
                   detail={`Tarifa diaria x ${days} ${days === 1 ? "dia" : "dias"}`}
                   amount={formatMoney(totalPrice)}
+                />
+                <QuoteRow
+                  icon={<HandCoins size={24} />}
+                  concept="Anticipo recibido"
+                  detail="Pago inicial ya cubierto por el cliente."
+                  amount={advancePayment > 0 ? `-${formatMoney(advancePayment)}` : formatMoney(0)}
+                />
+                <QuoteRow
+                  icon={<Receipt size={24} />}
+                  concept="Saldo pendiente de la renta"
+                  detail="Total de la renta menos el anticipo ya recibido."
+                  amount={formatMoney(pendingBalance)}
                 />
                 <QuoteRow
                   icon={<ShieldCheck size={24} />}

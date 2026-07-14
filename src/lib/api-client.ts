@@ -2,6 +2,7 @@ import { Car } from "@/types/car";
 import { Client } from "@/types/client";
 import { ExtraExpense } from "@/types/extra-expense";
 import { Maintenance } from "@/types/maintenance";
+import { Quote } from "@/types/quote";
 import { Rental } from "@/types/rental";
 import { getStoredToken } from "@/lib/auth";
 
@@ -207,6 +208,8 @@ export type SaveClientPayload = {
   emergencyContactName?: string;
   emergencyContactPhone?: string;
   notes?: string;
+  idDocumentImage?: string | null;
+  type?: string;
 };
 
 export function createClient(
@@ -248,12 +251,53 @@ export function deleteClientResult(id: string) {
   });
 }
 
+export async function uploadClientIdentificationImageResult(
+  id: string,
+  file: File
+): Promise<ApiResult<Client>> {
+  try {
+    const token = getStoredToken();
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await fetch(
+      `${API_URL}/clients/${id}/identification-image`,
+      {
+        method: "POST",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      return {
+        data: null,
+        error: await getApiErrorMessage(response),
+      };
+    }
+
+    return {
+      data: (await response.json()) as Client,
+      error: null,
+    };
+  } catch {
+    return {
+      data: null,
+      error:
+        "No se pudo subir la imagen de identificación. Revisa que la API esté encendida.",
+    };
+  }
+}
+
 export type SaveRentalPayload = {
   clientId: string;
   carId: string;
   startDate: string;
   endDate: string;
   totalPrice: number;
+  advancePayment?: number;
   renterType?: string;
   priceMode?: string;
   status?: string;
@@ -368,6 +412,26 @@ export function updateExtraExpenseResult(
 
 export function deleteExtraExpenseResult(id: string) {
   return requestResult<ExtraExpense>(`/extra-expenses/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export type SaveQuotePayload = {
+  carId: string;
+  startDate: string;
+  endDate: string;
+  notes?: string;
+};
+
+export function createQuoteResult(payload: SaveQuotePayload) {
+  return requestResult<Quote>("/quotes", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteQuoteResult(id: string) {
+  return requestResult<Quote>(`/quotes/${id}`, {
     method: "DELETE",
   });
 }

@@ -10,6 +10,7 @@ import {
   deleteClientResult,
   deleteExtraExpenseResult,
   deleteMaintenanceResult,
+  deleteQuoteResult,
   deleteRentalResult,
 } from "@/lib/api-client";
 import { showErrorToast } from "@/lib/toast";
@@ -19,7 +20,8 @@ type ResourceType =
   | "client"
   | "rental"
   | "maintenance"
-  | "extraExpense";
+  | "extraExpense"
+  | "quote";
 
 type DeleteResourceButtonProps = {
   id: string;
@@ -34,6 +36,7 @@ const deleteByType = {
   rental: deleteRentalResult,
   maintenance: deleteMaintenanceResult,
   extraExpense: deleteExtraExpenseResult,
+  quote: deleteQuoteResult,
 };
 
 const labels: Record<ResourceType, string> = {
@@ -42,6 +45,7 @@ const labels: Record<ResourceType, string> = {
   rental: "renta",
   maintenance: "mantenimiento",
   extraExpense: "gasto extra",
+  quote: "cotización",
 };
 
 export default function DeleteResourceButton({

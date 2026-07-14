@@ -21,6 +21,7 @@ export type Rental = {
   dailyRateApplied: number;
   daysCharged: number;
   totalPrice: number;
+  advancePayment: number;
   status: RentalStatus;
   notes?: string | null;
   client?: Client;

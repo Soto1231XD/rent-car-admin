@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Car,
   DollarSign,
+  FileText,
   X,
   LayoutDashboard,
   ReceiptText,
@@ -33,6 +34,11 @@ const menu = [
     name: "Rentas",
     href: "/dashboard/rentals",
     icon: CalendarDays,
+  },
+  {
+    name: "Cotizaciones",
+    href: "/dashboard/quotes",
+    icon: FileText,
   },
   {
     name: "Calendario",

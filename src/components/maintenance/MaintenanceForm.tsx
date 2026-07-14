@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { FormEvent, ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -17,7 +17,10 @@ import { showErrorToast } from "@/lib/toast";
 const schema = z.object({
   carId: z.string().min(1, "Selecciona un vehículo"),
   serviceType: z.string().min(1, "El tipo de servicio es obligatorio"),
-  cost: z.coerce.number().min(0, "El costo no puede ser negativo"),
+  cost: z.preprocess(
+    normalizeCurrencyValue,
+    z.coerce.number().min(0, "El costo no puede ser negativo")
+  ),
   date: z.string().min(1, "La fecha es obligatoria"),
   status: z.enum(["PENDIENTE", "EN_PROGRESO", "COMPLETADO"]),
   notes: z.string().optional(),
@@ -52,7 +55,7 @@ export default function MaintenanceForm({
     defaultValues: {
       carId: initialData?.carId ?? "",
       serviceType: initialData?.serviceType ?? "",
-      cost: initialData?.cost ?? undefined,
+      cost: formatCurrencyInputValue(initialData?.cost),
       date: formatDateInput(initialData?.date),
       status: initialData?.status ?? "PENDIENTE",
       notes: initialData?.notes ?? "",
@@ -126,8 +129,10 @@ export default function MaintenanceForm({
 
           <Field label="Costo" error={errors.cost?.message}>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               {...register("cost")}
+              onInput={formatCurrencyInput}
               className="input"
               placeholder="800"
             />
@@ -210,4 +215,22 @@ function formatDateInput(value?: string) {
   }
 
   return value.slice(0, 10);
+}
+
+function normalizeCurrencyValue(value: unknown) {
+  return typeof value === "string" ? value.replace(/,/g, "") : value;
+}
+
+function formatCurrencyInput(event: FormEvent<HTMLInputElement>) {
+  event.currentTarget.value = formatCurrencyInputValue(event.currentTarget.value);
+}
+
+function formatCurrencyInputValue(value?: string | number | null) {
+  if (value === undefined || value === null || value === "") {
+    return "";
+  }
+
+  const digits = String(value).replace(/\D/g, "");
+
+  return digits ? Number(digits).toLocaleString("es-MX") : "";
 }

@@ -83,10 +83,6 @@ export default function UnifiedRentalDocument({ rental }: Props) {
           Contrato de arrendamiento
         </h1>
 
-        <p className="mt-2 text-center text-[10px] text-slate-500">
-          Documento generado por el sistema interno de la empresa Rentamivar.
-        </p>
-
         <p className="mt-4 text-right">
           Cancún, Quintana Roo a ____ de ______________ de 20____
         </p>
@@ -170,8 +166,14 @@ export default function UnifiedRentalDocument({ rental }: Props) {
             </li>
             <li>
               El kilometraje será libre siempre y cuando el carro se encuentre
-              dentro de Quintana Roo; de lo contrario, se les cobrará
-              kilometraje extra.
+              dentro de Quintana Roo y Yucatán; de lo contrario, se les
+              cobrará kilometraje extra.
+            </li>
+            <li>Los precios están sujetos a cambio sin previo aviso.</li>
+            <li>
+              En caso de que el vehículo sea devuelto con días de
+              anticipación a la fecha pactada, únicamente se reembolsará el
+              60% del importe correspondiente a los días no disfrutados.
             </li>
           </ul>
         </section>

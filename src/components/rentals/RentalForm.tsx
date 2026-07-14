@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -14,6 +14,12 @@ import { showErrorToast } from "@/lib/toast";
 
 type PriceMode = "daily" | "highSeason";
 
+const optionalCurrencyNumber = z.preprocess((value) => {
+  const normalizedValue = normalizeCurrencyValue(value);
+
+  return normalizedValue === "" ? undefined : normalizedValue;
+}, z.coerce.number().min(0).optional());
+
 const schema = z
   .object({
     clientId: z.string().min(1, "Selecciona un cliente"),
@@ -21,6 +27,7 @@ const schema = z
     startDate: z.string().min(1, "La fecha de entrega es obligatoria"),
     endDate: z.string().min(1, "La fecha de devolución es obligatoria"),
     totalPrice: z.coerce.number().min(1, "El total es obligatorio"),
+    advancePayment: optionalCurrencyNumber,
     renterType: z.enum(["CLIENTE", "COMISIONISTA"]),
     status: z.enum(["RESERVACION", "ACTIVO", "COMPLETADO", "CANCELADO"]),
     notes: z.string().optional(),
@@ -70,6 +77,7 @@ export default function RentalForm({
       startDate: formatDateInput(initialData?.startDate),
       endDate: formatDateInput(initialData?.endDate),
       totalPrice: initialData?.totalPrice ?? undefined,
+      advancePayment: formatCurrencyInputValue(initialData?.advancePayment ?? 0),
       renterType: initialData?.renterType ?? "CLIENTE",
       status: initialData?.status ?? "RESERVACION",
       notes: initialData?.notes ?? "",
@@ -80,6 +88,10 @@ export default function RentalForm({
   const startDate = useWatch({ control, name: "startDate" });
   const endDate = useWatch({ control, name: "endDate" });
   const renterType = useWatch({ control, name: "renterType" });
+  const advancePaymentInput = useWatch({ control, name: "advancePayment" });
+  const advancePaymentValue = toMoneyNumber(
+    advancePaymentInput as string | number | null | undefined
+  );
   const selectedCar = useMemo(
     () => cars.find((car) => car.id === selectedCarId) ?? null,
     [cars, selectedCarId]
@@ -141,6 +153,7 @@ export default function RentalForm({
       renterType,
       priceMode: priceMode === "highSeason" ? "TEMPORADA_ALTA" : "NORMAL",
       totalPrice: quote?.total ?? data.totalPrice,
+      advancePayment: data.advancePayment ?? 0,
     };
 
     const result =
@@ -265,6 +278,29 @@ export default function RentalForm({
           <SummaryItem
             label="Total"
             value={quote ? formatMoney(quote.total) : "-"}
+            strong
+          />
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <Field label="Anticipo recibido" error={errors.advancePayment?.message}>
+            <input
+              type="text"
+              inputMode="numeric"
+              {...register("advancePayment")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="0"
+            />
+          </Field>
+
+          <SummaryItem
+            label="Saldo pendiente"
+            value={
+              quote
+                ? formatMoney(Math.max(quote.total - advancePaymentValue, 0))
+                : "-"
+            }
             strong
           />
         </div>
@@ -415,6 +451,24 @@ function isHighSeasonDate(date: Date) {
 
 function formatMoney(value: number) {
   return `$${value.toLocaleString("es-MX")} MXN`;
+}
+
+function normalizeCurrencyValue(value: unknown) {
+  return typeof value === "string" ? value.replace(/,/g, "") : value;
+}
+
+function formatCurrencyInput(event: FormEvent<HTMLInputElement>) {
+  event.currentTarget.value = formatCurrencyInputValue(event.currentTarget.value);
+}
+
+function formatCurrencyInputValue(value?: string | number | null) {
+  if (value === undefined || value === null || value === "") {
+    return "";
+  }
+
+  const digits = String(value).replace(/\D/g, "");
+
+  return digits ? Number(digits).toLocaleString("es-MX") : "";
 }
 
 function getDailyRate(

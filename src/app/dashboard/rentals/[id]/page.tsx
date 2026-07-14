@@ -143,10 +143,16 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
               label="Total de la renta"
               value={`$${rental.totalPrice.toLocaleString("es-MX")} MXN`}
             />
-            <Info label="Pagado" value="$0 MXN" />
+            <Info
+              label="Anticipo recibido"
+              value={`$${rental.advancePayment.toLocaleString("es-MX")} MXN`}
+            />
             <Info
               label="Saldo pendiente"
-              value={`$${rental.totalPrice.toLocaleString("es-MX")} MXN`}
+              value={`$${Math.max(
+                rental.totalPrice - rental.advancePayment,
+                0
+              ).toLocaleString("es-MX")} MXN`}
             />
           </div>
         </section>

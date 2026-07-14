@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getClient } from "@/lib/api";
+import { getAssetUrl } from "@/lib/assets";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 import { Rental, RentalStatus } from "@/types/rental";
 
@@ -84,6 +85,10 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
 
           <div className="grid gap-4 md:grid-cols-2">
             <Info label="Nombre completo" value={client.fullName} />
+            <Info
+              label="Tipo de cliente"
+              value={client.type === "COMISIONISTA" ? "Comisionista" : "Cliente"}
+            />
             <Info label="Correo" value={client.email || "No registrado"} />
             <Info label="Teléfono" value={client.phone} />
             <Info label="Identificación" value={client.idNumber} />
@@ -93,6 +98,27 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
             />
             {client.address && <Info label="Dirección" value={client.address} />}
           </div>
+
+          {client.idDocumentImage && (
+            <div className="mt-5 border-t border-slate-100 pt-5">
+              <p className="mb-2 text-sm font-medium text-slate-500">
+                Foto de la identificación
+              </p>
+              <a
+                href={getAssetUrl(client.idDocumentImage)}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-fit"
+              >
+                <div
+                  className="h-32 w-52 rounded-xl border border-slate-200 bg-slate-100 bg-cover bg-center shadow-sm transition hover:opacity-90"
+                  style={{
+                    backgroundImage: `url("${getAssetUrl(client.idDocumentImage)}")`,
+                  }}
+                />
+              </a>
+            </div>
+          )}
         </section>
 
         <section className="rounded-2xl bg-white p-4 shadow sm:p-6">

@@ -3,6 +3,7 @@ import { Car } from "@/types/car";
 import { Client } from "@/types/client";
 import { ExtraExpense } from "@/types/extra-expense";
 import { Maintenance } from "@/types/maintenance";
+import { Quote } from "@/types/quote";
 import { Rental } from "@/types/rental";
 import { AUTH_COOKIE } from "@/lib/auth";
 
@@ -106,4 +107,12 @@ export async function getExtraExpense(
 
 export async function getDashboardSummary(): Promise<DashboardSummary | null> {
   return request<DashboardSummary>("/dashboard/summary");
+}
+
+export async function getQuotes(): Promise<Quote[]> {
+  return (await request<Quote[]>("/quotes")) ?? [];
+}
+
+export async function getQuote(id: string): Promise<Quote | null> {
+  return request<Quote>(`/quotes/${id}`);
 }
