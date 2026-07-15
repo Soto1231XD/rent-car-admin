@@ -67,9 +67,11 @@ export default function UnifiedRentalDocument({ rental }: Props) {
   const phone = rental.client?.phone ?? "________________________";
   const idNumber = rental.client?.idNumber ?? "________________________";
   const plate = rental.car?.plate ?? "________________________";
-  const deposit = rental.car?.deposit
-    ? formatMoney(rental.car.deposit)
-    : "$6,000 MXN";
+  const depositAmount = rental.car?.deposit ? Number(rental.car.deposit) : 6000;
+  const deposit = formatMoney(depositAmount);
+  const totalWithDeposit = rental.totalPrice + depositAmount;
+  const advancePayment = rental.advancePayment ?? 0;
+  const remainingAfterAdvance = Math.max(totalWithDeposit - advancePayment, 0);
 
   return (
     <article className="print-document relative mx-auto max-w-[816px] overflow-hidden bg-white p-10 text-[12pt] leading-[1.35] text-black print:max-w-none print:overflow-visible print:p-0">
@@ -123,6 +125,15 @@ export default function UnifiedRentalDocument({ rental }: Props) {
               value={formatMoney(rental.totalPrice)}
             />
             <Info label="Depósito en garantía" value={deposit} />
+            <Info
+              label="Total (renta + depósito)"
+              value={formatMoney(totalWithDeposit)}
+            />
+            <Info label="Anticipo recibido" value={formatMoney(advancePayment)} />
+            <Info
+              label="Total a cubrir después del anticipo"
+              value={formatMoney(remainingAfterAdvance)}
+            />
           </div>
         </section>
 
@@ -180,7 +191,7 @@ export default function UnifiedRentalDocument({ rental }: Props) {
             </li>
             <li>
               El vehículo deberá entregarse limpio; en caso contrario, se
-              cobrará el lavado por $180.00 MXN.
+              cobrará el lavado por $200.00 MXN.
             </li>
             <li>
               El depósito podrá aplicarse para cubrir daños, faltantes,
