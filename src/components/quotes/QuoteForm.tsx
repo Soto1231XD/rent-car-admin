@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -10,11 +10,19 @@ import { createQuoteResult } from "@/lib/api-client";
 import FormAlert from "@/components/ui/FormAlert";
 import { showErrorToast } from "@/lib/toast";
 
+const optionalCurrencyNumber = z.preprocess((value) => {
+  const normalizedValue = normalizeCurrencyValue(value);
+
+  return normalizedValue === "" ? undefined : normalizedValue;
+}, z.coerce.number().min(0).optional());
+
 const schema = z
   .object({
     carId: z.string().min(1, "Selecciona un vehículo"),
     startDate: z.string().min(1, "La fecha de entrega es obligatoria"),
     endDate: z.string().min(1, "La fecha de devolución es obligatoria"),
+    deliveryFee: optionalCurrencyNumber,
+    returnFee: optionalCurrencyNumber,
     notes: z.string().optional(),
   })
   .refine((data) => data.endDate >= data.startDate, {
@@ -23,6 +31,7 @@ const schema = z
   });
 
 type FormData = z.output<typeof schema>;
+type FormInput = z.input<typeof schema>;
 
 type Props = {
   cars: Car[];
@@ -38,12 +47,14 @@ export default function QuoteForm({ cars }: Props) {
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<FormData>({
+  } = useForm<FormInput, unknown, FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       carId: "",
       startDate: "",
       endDate: "",
+      deliveryFee: undefined,
+      returnFee: undefined,
       notes: "",
     },
   });
@@ -51,6 +62,14 @@ export default function QuoteForm({ cars }: Props) {
   const selectedCarId = useWatch({ control, name: "carId" });
   const startDate = useWatch({ control, name: "startDate" });
   const endDate = useWatch({ control, name: "endDate" });
+  const deliveryFeeInput = useWatch({ control, name: "deliveryFee" });
+  const returnFeeInput = useWatch({ control, name: "returnFee" });
+  const deliveryFeeValue = toMoneyNumber(
+    deliveryFeeInput as string | number | null | undefined
+  );
+  const returnFeeValue = toMoneyNumber(
+    returnFeeInput as string | number | null | undefined
+  );
   const selectedCar = useMemo(
     () => cars.find((car) => car.id === selectedCarId) ?? null,
     [cars, selectedCarId]
@@ -140,6 +159,28 @@ export default function QuoteForm({ cars }: Props) {
           <Field label="Fecha de devolución" error={errors.endDate?.message}>
             <input type="date" {...register("endDate")} className="input" />
           </Field>
+
+          <Field label="Cuota de entrega" error={errors.deliveryFee?.message}>
+            <input
+              type="text"
+              inputMode="numeric"
+              {...register("deliveryFee")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="0"
+            />
+          </Field>
+
+          <Field label="Cuota de devolución" error={errors.returnFee?.message}>
+            <input
+              type="text"
+              inputMode="numeric"
+              {...register("returnFee")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="0"
+            />
+          </Field>
         </div>
       </section>
 
@@ -148,19 +189,40 @@ export default function QuoteForm({ cars }: Props) {
           Cálculo de la cotización
         </h2>
 
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <SummaryItem label="Días" value={quote ? quote.days : "-"} />
           <SummaryItem
             label="Precio por día"
             value={quote ? formatMoney(quote.dailyRate) : "-"}
           />
           <SummaryItem
+            label="Total renta"
+            value={quote ? formatMoney(quote.total) : "-"}
+          />
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-4">
+          <SummaryItem
             label="Depósito sugerido"
             value={quote?.deposit ? formatMoney(quote.deposit) : "No definido"}
           />
           <SummaryItem
-            label="Total"
-            value={quote ? formatMoney(quote.total) : "-"}
+            label="Cuota de entrega"
+            value={deliveryFeeValue > 0 ? formatMoney(deliveryFeeValue) : "-"}
+          />
+          <SummaryItem
+            label="Cuota de devolución"
+            value={returnFeeValue > 0 ? formatMoney(returnFeeValue) : "-"}
+          />
+          <SummaryItem
+            label="Total a cubrir"
+            value={
+              quote
+                ? formatMoney(
+                    quote.total + quote.deposit + deliveryFeeValue + returnFeeValue
+                  )
+                : "-"
+            }
             strong
           />
         </div>
@@ -304,4 +366,22 @@ function toMoneyNumber(value?: number | string | null) {
   }
 
   return 0;
+}
+
+function normalizeCurrencyValue(value: unknown) {
+  return typeof value === "string" ? value.replace(/,/g, "") : value;
+}
+
+function formatCurrencyInput(event: FormEvent<HTMLInputElement>) {
+  event.currentTarget.value = formatCurrencyInputValue(event.currentTarget.value);
+}
+
+function formatCurrencyInputValue(value?: string | number | null) {
+  if (value === undefined || value === null || value === "") {
+    return "";
+  }
+
+  const digits = String(value).replace(/\D/g, "");
+
+  return digits ? Number(digits).toLocaleString("es-MX") : "";
 }

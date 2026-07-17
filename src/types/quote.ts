@@ -12,6 +12,8 @@ export type Quote = {
   dailyRateApplied: number;
   totalPrice: number;
   deposit: number;
+  deliveryFee: number;
+  returnFee: number;
   notes?: string | null;
   car?: Car | null;
   createdAt?: string;

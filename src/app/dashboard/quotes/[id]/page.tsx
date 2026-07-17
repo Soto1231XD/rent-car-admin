@@ -83,6 +83,8 @@ export default async function QuoteDetailPage({ params, searchParams }: Props) {
             <Info label="Precio por día" value={formatMoney(quote.dailyRateApplied)} />
             <Info label="Total" value={formatMoney(quote.totalPrice)} />
             <Info label="Depósito en garantía" value={formatMoney(quote.deposit)} />
+            <Info label="Cuota de entrega" value={formatMoney(quote.deliveryFee)} />
+            <Info label="Cuota de devolución" value={formatMoney(quote.returnFee)} />
           </div>
 
           {quote.notes && (

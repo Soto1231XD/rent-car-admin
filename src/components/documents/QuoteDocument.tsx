@@ -209,6 +209,22 @@ export default function QuoteDocument({ quote, qrDataUrl }: Props) {
                 detail="Se reembolsa al finalizar la renta, una vez que el vehículo sea devuelto en las condiciones establecidas en el contrato."
                 amount={formatMoney(quote.deposit)}
               />
+              {quote.deliveryFee > 0 && (
+                <QuoteRow
+                  icon={<CalendarDays size={22} />}
+                  concept="Cuota de entrega"
+                  detail="Costo por la entrega del vehículo en el lugar acordado."
+                  amount={formatMoney(quote.deliveryFee)}
+                />
+              )}
+              {quote.returnFee > 0 && (
+                <QuoteRow
+                  icon={<CalendarDays size={22} />}
+                  concept="Cuota de devolución"
+                  detail="Costo por la devolución del vehículo en el lugar acordado."
+                  amount={formatMoney(quote.returnFee)}
+                />
+              )}
             </tbody>
           </table>
         </div>
@@ -223,7 +239,9 @@ export default function QuoteDocument({ quote, qrDataUrl }: Props) {
 
         <div className="flex items-center justify-end px-6 py-5 print:px-3 print:py-3">
           <span className="text-3xl font-bold tracking-normal tabular-nums sm:text-4xl print:text-[20pt]">
-            {formatMoney(quote.totalPrice + quote.deposit)}
+            {formatMoney(
+              quote.totalPrice + quote.deposit + quote.deliveryFee + quote.returnFee
+            )}
           </span>
         </div>
       </section>

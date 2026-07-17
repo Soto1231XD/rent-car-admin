@@ -422,6 +422,8 @@ export type SaveQuotePayload = {
   carId: string;
   startDate: string;
   endDate: string;
+  deliveryFee?: number;
+  returnFee?: number;
   notes?: string;
 };
 
