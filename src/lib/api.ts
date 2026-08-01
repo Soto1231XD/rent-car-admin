@@ -40,6 +40,13 @@ export type DashboardSummary = {
   pendingMaintenanceList: Maintenance[];
 };
 
+export type MonthlyHistoryEntry = {
+  month: string;
+  income: number;
+  commissionerIncome: number;
+  extraExpenses: number;
+};
+
 async function request<T>(path: string): Promise<T | null> {
   try {
     const cookieStore = await cookies();
@@ -107,6 +114,10 @@ export async function getExtraExpense(
 
 export async function getDashboardSummary(): Promise<DashboardSummary | null> {
   return request<DashboardSummary>("/dashboard/summary");
+}
+
+export async function getMonthlyHistory(): Promise<MonthlyHistoryEntry[]> {
+  return (await request<MonthlyHistoryEntry[]>("/dashboard/monthly-history")) ?? [];
 }
 
 export async function getQuotes(): Promise<Quote[]> {

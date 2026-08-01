@@ -7,6 +7,7 @@ import {
   Car,
   DollarSign,
   FileText,
+  History,
   X,
   LayoutDashboard,
   ReceiptText,
@@ -59,6 +60,11 @@ const menu = [
     name: "Precios",
     href: "/dashboard/prices",
     icon: DollarSign,
+  },
+  {
+    name: "Historial mensual",
+    href: "/dashboard/monthly-history",
+    icon: History,
   },
 ];
 

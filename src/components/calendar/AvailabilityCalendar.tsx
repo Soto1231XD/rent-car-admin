@@ -29,26 +29,28 @@ const MAINTENANCE_COLOR = {
 };
 
 export default function AvailabilityCalendar({ rentals, maintenances }: Props) {
-  const rentalEvents = rentals.map((rental) => {
-    const color = getCarEventColor(rental.carId ?? rental.id);
-    const isIndefinida = rental.rentalType === "INDEFINIDA" || !rental.endDate;
+  const rentalEvents = rentals
+    .filter((rental) => rental.status !== "CANCELADO")
+    .map((rental) => {
+      const color = getCarEventColor(rental.carId ?? rental.id);
+      const isIndefinida = !rental.endDate;
 
-    return {
-      id: `rental-${rental.id}`,
-      title: `${getCarName(rental)} - ${getClientName(rental)}${
-        isIndefinida ? " (Indefinida)" : ""
-      }`,
-      start: toDateOnly(rental.startDate),
-      end: isIndefinida
-        ? addDays(rental.startDate, 365)
-        : addOneDay(rental.endDate as string),
-      allDay: true,
-      backgroundColor: color.background,
-      borderColor: color.border,
-      textColor: color.text,
-      classNames: ["rentamivar-calendar-event"],
-    };
-  });
+      return {
+        id: `rental-${rental.id}`,
+        title: `${getCarName(rental)} - ${getClientName(rental)}${
+          isIndefinida ? " (Indefinida)" : ""
+        }`,
+        start: toDateOnly(rental.startDate),
+        end: isIndefinida
+          ? addDays(rental.startDate, 365)
+          : addOneDay(rental.endDate as string),
+        allDay: true,
+        backgroundColor: color.background,
+        borderColor: color.border,
+        textColor: color.text,
+        classNames: ["rentamivar-calendar-event"],
+      };
+    });
 
   const maintenanceEvents = maintenances
     .filter((maintenance) => maintenance.status !== "COMPLETADO")
