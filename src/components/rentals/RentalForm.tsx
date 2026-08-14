@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -27,7 +27,6 @@ const schema = z
     startDate: z.string().min(1, "La fecha de entrega es obligatoria"),
     endDate: z.string().optional(),
     rentalType: z.enum(["NORMAL", "INDEFINIDA"]),
-    totalPrice: optionalCurrencyNumber,
     dailyRateApplied: optionalCurrencyNumber,
     advancePayment: optionalCurrencyNumber,
     renterType: z.enum(["CLIENTE", "COMISIONISTA"]),
@@ -50,11 +49,11 @@ const schema = z
         });
       }
 
-      if (data.totalPrice === undefined || data.totalPrice < 1) {
+      if (data.dailyRateApplied === undefined || data.dailyRateApplied <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "El total es obligatorio",
-          path: ["totalPrice"],
+          message: "El precio por día es obligatorio",
+          path: ["dailyRateApplied"],
         });
       }
     } else {
@@ -124,7 +123,6 @@ export default function RentalForm({
       startDate: formatDateInput(initialData?.startDate),
       endDate: formatDateInput(initialData?.endDate ?? undefined),
       rentalType: initialData?.rentalType ?? "NORMAL",
-      totalPrice: initialData?.totalPrice ?? undefined,
       dailyRateApplied: formatCurrencyInputValue(
         initialData?.dailyRateApplied ?? undefined
       ),
@@ -203,32 +201,34 @@ export default function RentalForm({
     return { days, dailyRate, total: days * dailyRate };
   }, [dailyRateInput, endDate, isCompletingIndefinida, startDate]);
 
-  const effectiveDailyRate = isIndefinida
-    ? toMoneyNumber(dailyRateInput as string | number | null | undefined)
-    : (quote?.dailyRate ?? 0);
+  const dailyRateValue = toMoneyNumber(
+    dailyRateInput as string | number | null | undefined
+  );
+  const effectiveDailyRate = dailyRateValue;
   const effectiveTotal = isCompletingIndefinida
     ? (completionQuote?.total ?? effectiveDailyRate)
     : isIndefinida
       ? effectiveDailyRate
-      : (quote?.total ?? 0);
+      : (quote ? quote.days * dailyRateValue : 0);
 
+  // Pre-fill the daily rate with the car/date-suggested value whenever the
+  // underlying selection actually changes, but skip the very first run so we
+  // don't clobber a rate already loaded from initialData (edit mode) or a
+  // value the user is actively typing.
+  const hasSyncedInitialRate = useRef(false);
   useEffect(() => {
+    if (!hasSyncedInitialRate.current) {
+      hasSyncedInitialRate.current = true;
+      return;
+    }
+
     if (!isIndefinida && quote) {
-      setValue("totalPrice", quote.total, {
+      setValue("dailyRateApplied", formatCurrencyInputValue(quote.dailyRate), {
         shouldDirty: true,
         shouldValidate: true,
       });
     }
   }, [isIndefinida, quote, setValue]);
-
-  useEffect(() => {
-    if (isIndefinida) {
-      setValue("totalPrice", effectiveTotal, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    }
-  }, [effectiveTotal, isIndefinida, setValue]);
 
   const onInvalid = () => {
     const message = "Revisa los campos marcados antes de guardar la renta.";
@@ -239,6 +239,8 @@ export default function RentalForm({
   const onSubmit = async (data: FormData) => {
     setSubmitError("");
     setIsSaving(true);
+
+    const rateForSubmit = data.dailyRateApplied ?? 0;
 
     const payload = {
       ...data,
@@ -252,11 +254,11 @@ export default function RentalForm({
       endDate:
         isIndefinida && !isCompletingIndefinida ? undefined : data.endDate,
       totalPrice: isCompletingIndefinida
-        ? (completionQuote?.total ?? data.dailyRateApplied ?? 0)
+        ? (completionQuote?.total ?? rateForSubmit)
         : isIndefinida
-          ? (data.dailyRateApplied ?? 0)
-          : (quote?.total ?? data.totalPrice ?? 0),
-      dailyRateApplied: isIndefinida ? data.dailyRateApplied : undefined,
+          ? rateForSubmit
+          : (quote ? quote.days * rateForSubmit : 0),
+      dailyRateApplied: rateForSubmit,
       advancePayment: data.advancePayment ?? 0,
     };
 
@@ -375,24 +377,24 @@ export default function RentalForm({
             </Field>
           )}
 
-          {isIndefinida && (
-            <Field
-              label="Tarifa diaria"
-              error={errors.dailyRateApplied?.message}
-            >
-              <input
-                type="text"
-                inputMode="numeric"
-                {...register("dailyRateApplied")}
-                onInput={formatCurrencyInput}
-                className="input"
-                placeholder="0"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Precio por día definido manualmente para esta renta.
-              </p>
-            </Field>
-          )}
+          <Field
+            label={isIndefinida ? "Tarifa diaria" : "Precio por día"}
+            error={errors.dailyRateApplied?.message}
+          >
+            <input
+              type="text"
+              inputMode="numeric"
+              {...register("dailyRateApplied")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="0"
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              {isIndefinida
+                ? "Precio por día definido manualmente para esta renta."
+                : "Se sugiere según el vehículo y las fechas; puedes ajustarlo solo para esta renta, sin cambiar el precio general del carro."}
+            </p>
+          </Field>
 
           <Field label="Estado de la renta" error={errors.status?.message}>
             <select {...register("status")} className="input">
@@ -478,15 +480,8 @@ export default function RentalForm({
 
         {quote?.isUsingCommissionFallback && (
           <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
-            Este carro no tiene precio de comisionista configurado. Se usÃ³ el
+            Este carro no tiene precio de comisionista configurado. Se usó el
             precio normal.
-          </p>
-        )}
-
-        <input type="hidden" {...register("totalPrice")} />
-        {errors.totalPrice?.message && (
-          <p className="mt-3 text-sm text-red-600">
-            {errors.totalPrice.message}
           </p>
         )}
       </section>

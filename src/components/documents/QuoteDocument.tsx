@@ -22,7 +22,7 @@ const conditions = [
   "Licencia de conducir vigente.",
   "Tarjeta de crédito o débito a nombre del conductor para el depósito.",
   "El vehículo se entrega con tanque lleno y debe devolverse igual.",
-  "Kilometraje libre.",
+  "El kilometraje será libre siempre y cuando el carro se encuentre dentro de Quintana Roo y Yucatán; de lo contrario, se les cobrará kilometraje extra.",
   "No incluye seguro de daños a terceros (opcional con costo adicional).",
   "Cualquier multa, daño o pérdida es responsabilidad del arrendatario.",
   "Vigencia de la cotización: 3 días naturales.",

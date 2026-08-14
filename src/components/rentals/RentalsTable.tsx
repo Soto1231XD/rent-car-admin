@@ -113,7 +113,7 @@ export default function RentalsTable({ rentals }: Props) {
                 {formatDate(rental.startDate)}
               </td>
               <td className="px-6 py-4 text-slate-900">
-                {rental.rentalType === "INDEFINIDA"
+                {rental.rentalType === "INDEFINIDA" && !rental.endDate
                   ? "Indefinida"
                   : formatDate(rental.endDate)}
               </td>

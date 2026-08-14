@@ -103,7 +103,7 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
             <Info
               label="Fecha de devolución"
               value={
-                rental.rentalType === "INDEFINIDA"
+                rental.rentalType === "INDEFINIDA" && !rental.endDate
                   ? "Sin fecha definida"
                   : formatDate(rental.endDate)
               }
