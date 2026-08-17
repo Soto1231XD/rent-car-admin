@@ -10,6 +10,7 @@ export type RentalStatus =
 export type RentalPriceMode = "NORMAL" | "TEMPORADA_ALTA";
 export type RenterType = "CLIENTE" | "COMISIONISTA";
 export type RentalType = "NORMAL" | "INDEFINIDA";
+export type RentalSource = "STAFF" | "WEB";
 
 export type Rental = {
   id: string;
@@ -26,6 +27,9 @@ export type Rental = {
   advancePayment: number;
   status: RentalStatus;
   notes?: string | null;
+  source: RentalSource;
+  isNewClient: boolean;
+  confirmedAt?: string | null;
   client?: Client;
   car?: Car;
   createdAt?: string;

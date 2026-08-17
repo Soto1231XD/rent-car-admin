@@ -62,6 +62,8 @@ const carSchema = z.object({
   status: z.enum(["DISPONIBLE", "RENTADO", "MANTENIMIENTO", "NO_DISPONIBLE"], {
     message: "El estado es obligatorio",
   }),
+  currentMileage: optionalCurrencyNumber,
+  nextServiceMileage: optionalCurrencyNumber,
   description: optionalText,
   featuresText: optionalText,
 });
@@ -142,6 +144,10 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       ),
       deposit: formatCurrencyInputValue(initialData?.deposit),
       status: initialData?.status ?? "DISPONIBLE",
+      currentMileage: formatCurrencyInputValue(initialData?.currentMileage ?? undefined),
+      nextServiceMileage: formatCurrencyInputValue(
+        initialData?.nextServiceMileage ?? undefined
+      ),
       description: initialData?.description ?? "",
       featuresText: initialData?.features?.join("\n") ?? "",
     },
@@ -193,6 +199,8 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       commissionHighSeasonPrice: data.commissionHighSeasonPrice,
       deposit: data.deposit,
       status: data.status,
+      currentMileage: data.currentMileage,
+      nextServiceMileage: data.nextServiceMileage,
       description: data.description,
       features: parseFeatures(data.featuresText),
       images: primaryId.startsWith("existing:")
@@ -367,6 +375,35 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
               <option value="MANTENIMIENTO">Mantenimiento</option>
               <option value="NO_DISPONIBLE">No disponible</option>
             </select>
+          </Field>
+
+          <Field label="Kilometraje actual" error={errors.currentMileage?.message}>
+            <input
+              type="text"
+              inputMode="numeric"
+              {...register("currentMileage")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="45,000"
+            />
+          </Field>
+
+          <Field
+            label="Kilometraje para próximo servicio"
+            error={errors.nextServiceMileage?.message}
+          >
+            <input
+              type="text"
+              inputMode="numeric"
+              {...register("nextServiceMileage")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="50,000"
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Cuando el kilometraje actual llegue a este número, se avisará que
+              el auto necesita servicio.
+            </p>
           </Field>
         </div>
       </div>

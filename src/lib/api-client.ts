@@ -108,6 +108,8 @@ export type SaveCarPayload = {
   commissionHighSeasonPrice?: number;
   deposit: number;
   status?: string;
+  currentMileage?: number;
+  nextServiceMileage?: number;
   description?: string;
   features: string[];
   images: string[];
@@ -304,6 +306,7 @@ export type SaveRentalPayload = {
   priceMode?: string;
   status?: string;
   notes?: string;
+  returnMileage?: number;
 };
 
 export function createRental(
@@ -342,6 +345,12 @@ export function updateRentalResult(id: string, payload: SaveRentalPayload) {
 export function deleteRentalResult(id: string) {
   return requestResult<Rental>(`/rentals/${id}`, {
     method: "DELETE",
+  });
+}
+
+export function confirmRentalResult(id: string) {
+  return requestResult<Rental>(`/rentals/${id}/confirm`, {
+    method: "PATCH",
   });
 }
 
@@ -438,4 +447,34 @@ export function deleteQuoteResult(id: string) {
   return requestResult<Quote>(`/quotes/${id}`, {
     method: "DELETE",
   });
+}
+
+export type DashboardBadges = {
+  pendingRentals: number;
+  pendingClients: number;
+  pendingServiceCars: number;
+};
+
+export function getDashboardBadgesResult(since?: {
+  sinceRentals?: string | null;
+  sinceClients?: string | null;
+  sinceCars?: string | null;
+}) {
+  const params = new URLSearchParams();
+
+  if (since?.sinceRentals) {
+    params.set("sinceRentals", since.sinceRentals);
+  }
+  if (since?.sinceClients) {
+    params.set("sinceClients", since.sinceClients);
+  }
+  if (since?.sinceCars) {
+    params.set("sinceCars", since.sinceCars);
+  }
+
+  const query = params.toString();
+
+  return requestResult<DashboardBadges>(
+    `/dashboard/badges${query ? `?${query}` : ""}`
+  );
 }

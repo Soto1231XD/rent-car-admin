@@ -32,6 +32,7 @@ const schema = z
     renterType: z.enum(["CLIENTE", "COMISIONISTA"]),
     status: z.enum(["RESERVACION", "ACTIVO", "COMPLETADO", "CANCELADO"]),
     notes: z.string().optional(),
+    returnMileage: optionalCurrencyNumber,
   })
   .superRefine((data, ctx) => {
     if (data.rentalType === "NORMAL") {
@@ -130,6 +131,7 @@ export default function RentalForm({
       renterType: initialData?.renterType ?? "CLIENTE",
       status: initialData?.status ?? "RESERVACION",
       notes: initialData?.notes ?? "",
+      returnMileage: "",
     },
   });
 
@@ -146,6 +148,7 @@ export default function RentalForm({
   const dailyRateInput = useWatch({ control, name: "dailyRateApplied" });
   const isIndefinida = rentalType === "INDEFINIDA";
   const isCompletingIndefinida = isIndefinida && status === "COMPLETADO";
+  const isCompleting = status === "COMPLETADO";
   const selectedCar = useMemo(
     () => cars.find((car) => car.id === selectedCarId) ?? null,
     [cars, selectedCarId]
@@ -260,6 +263,7 @@ export default function RentalForm({
           : (quote ? quote.days * rateForSubmit : 0),
       dailyRateApplied: rateForSubmit,
       advancePayment: data.advancePayment ?? 0,
+      returnMileage: isCompleting ? data.returnMileage : undefined,
     };
 
     const result =
@@ -404,6 +408,26 @@ export default function RentalForm({
               <option value="CANCELADO">Cancelada</option>
             </select>
           </Field>
+
+          {isCompleting && (
+            <Field
+              label="Kilometraje de entrega"
+              error={errors.returnMileage?.message}
+            >
+              <input
+                type="text"
+                inputMode="numeric"
+                {...register("returnMileage")}
+                onInput={formatCurrencyInput}
+                className="input"
+                placeholder="45,000"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Kilometraje con el que se devolvió el vehículo. Actualiza el
+                kilometraje actual del carro.
+              </p>
+            </Field>
+          )}
         </div>
       </section>
 

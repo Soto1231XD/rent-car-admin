@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   CalendarDays,
   Car,
@@ -14,6 +15,12 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
+import { getDashboardBadgesResult } from "@/lib/api-client";
+
+const BADGE_POLL_INTERVAL_MS = 60000;
+const RENTALS_SEEN_KEY = "rentamivar_rentals_seen_at";
+const CLIENTS_SEEN_KEY = "rentamivar_clients_seen_at";
+const CARS_SEEN_KEY = "rentamivar_cars_seen_at";
 
 const menu = [
   {
@@ -25,16 +32,19 @@ const menu = [
     name: "Carros",
     href: "/dashboard/cars",
     icon: Car,
+    badgeKey: "pendingServiceCars" as const,
   },
   {
     name: "Clientes",
     href: "/dashboard/clients",
     icon: Users,
+    badgeKey: "pendingClients" as const,
   },
   {
     name: "Rentas",
     href: "/dashboard/rentals",
     icon: CalendarDays,
+    badgeKey: "pendingRentals" as const,
   },
   {
     name: "Cotizaciones",
@@ -75,6 +85,52 @@ type Props = {
 
 export default function Sidebar({ isOpen = false, onClose }: Props) {
   const pathname = usePathname();
+  const [badges, setBadges] = useState<{
+    pendingRentals: number;
+    pendingClients: number;
+    pendingServiceCars: number;
+  }>({
+    pendingRentals: 0,
+    pendingClients: 0,
+    pendingServiceCars: 0,
+  });
+
+  useEffect(() => {
+    // Visiting a module clears its bubble: anything already listed there
+    // counts as "seen" from now on, even if still unconfirmed. Only items
+    // created after this visit will make the bubble reappear.
+    if (pathname.startsWith("/dashboard/rentals")) {
+      localStorage.setItem(RENTALS_SEEN_KEY, new Date().toISOString());
+    }
+    if (pathname.startsWith("/dashboard/clients")) {
+      localStorage.setItem(CLIENTS_SEEN_KEY, new Date().toISOString());
+    }
+    if (pathname.startsWith("/dashboard/cars")) {
+      localStorage.setItem(CARS_SEEN_KEY, new Date().toISOString());
+    }
+
+    let isMounted = true;
+
+    const loadBadges = async () => {
+      const result = await getDashboardBadgesResult({
+        sinceRentals: localStorage.getItem(RENTALS_SEEN_KEY),
+        sinceClients: localStorage.getItem(CLIENTS_SEEN_KEY),
+        sinceCars: localStorage.getItem(CARS_SEEN_KEY),
+      });
+
+      if (isMounted && result.data) {
+        setBadges(result.data);
+      }
+    };
+
+    loadBadges();
+    const interval = setInterval(loadBadges, BADGE_POLL_INTERVAL_MS);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [pathname]);
 
   return (
     <>
@@ -118,6 +174,8 @@ export default function Sidebar({ isOpen = false, onClose }: Props) {
                 ? pathname === "/dashboard"
                 : pathname.startsWith(item.href);
 
+            const badgeCount = item.badgeKey ? badges[item.badgeKey] : 0;
+
             return (
               <Link
                 key={item.name}
@@ -130,7 +188,12 @@ export default function Sidebar({ isOpen = false, onClose }: Props) {
                 }`}
               >
                 <Icon size={18} />
-                <span>{item.name}</span>
+                <span className="flex-1">{item.name}</span>
+                {badgeCount > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs font-bold text-white">
+                    {badgeCount > 99 ? "99+" : badgeCount}
+                  </span>
+                )}
               </Link>
             );
           })}

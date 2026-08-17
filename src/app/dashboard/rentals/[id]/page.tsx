@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { getRental } from "@/lib/api";
+import { isWithinHours } from "@/lib/time";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
+import ConfirmReservationButton from "@/components/rentals/ConfirmReservationButton";
+
+const NEW_CLIENT_BADGE_HOURS = 12;
 
 type Props = {
   params: Promise<{
@@ -58,9 +62,35 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
             <p className="mt-1 text-sm text-slate-600">
               Información detallada de la renta.
             </p>
+
+            {rental.source === "WEB" && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(!rental.isNewClient ||
+                  isWithinHours(rental.createdAt, NEW_CLIENT_BADGE_HOURS)) && (
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      rental.isNewClient
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {rental.isNewClient ? "Cliente nuevo · Web" : "Cliente recurrente · Web"}
+                  </span>
+                )}
+                {!rental.confirmedAt && rental.status === "RESERVACION" && (
+                  <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                    Sin confirmar
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">
+            {rental.source === "WEB" && !rental.confirmedAt && (
+              <ConfirmReservationButton id={rental.id} />
+            )}
+
             <Link
               href={`/dashboard/rentals/${rental.id}/edit`}
               className="inline-flex w-full justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 sm:w-auto"

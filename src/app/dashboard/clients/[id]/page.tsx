@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { getClient } from "@/lib/api";
 import { getAssetUrl } from "@/lib/assets";
+import { isWithinHours } from "@/lib/time";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 import { Rental, RentalStatus } from "@/types/rental";
+
+const NEW_CLIENT_BADGE_HOURS = 12;
 
 type Props = {
   params: Promise<{
@@ -57,6 +60,13 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
             <p className="mt-1 text-sm text-slate-600">
               Información detallada del cliente.
             </p>
+
+            {client.source === "WEB" &&
+              isWithinHours(client.createdAt, NEW_CLIENT_BADGE_HOURS) && (
+                <span className="mt-2 inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                  Cliente nuevo · Web
+                </span>
+              )}
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">

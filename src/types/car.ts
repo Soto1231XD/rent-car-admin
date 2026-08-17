@@ -28,6 +28,8 @@ export type Car = {
   commissionDailyPrice?: number | null;
   commissionHighSeasonPrice?: number | null;
   deposit: number;
+  currentMileage?: number | null;
+  nextServiceMileage?: number | null;
   weeklyPrice?: number;
   monthlyPrice?: number;
   description?: string | null;

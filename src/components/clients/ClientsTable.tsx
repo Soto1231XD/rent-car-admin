@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Client } from "@/types/client";
 import { RenterType } from "@/types/rental";
 import DataTableShell from "@/components/ui/DataTableShell";
+import { isWithinHours } from "@/lib/time";
+
+const NEW_CLIENT_BADGE_HOURS = 12;
 
 type Props = {
   clients: Client[];
@@ -88,6 +91,12 @@ export default function ClientsTable({ clients }: Props) {
             <tr key={client.id} className="transition hover:bg-slate-50">
               <td className="px-6 py-4 font-medium text-slate-900">
                 {client.fullName}
+                {client.source === "WEB" &&
+                  isWithinHours(client.createdAt, NEW_CLIENT_BADGE_HOURS) && (
+                    <span className="mt-1 flex w-fit rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                      Cliente nuevo · Web
+                    </span>
+                  )}
               </td>
               <td className="px-6 py-4">
                 <ClientTypeBadge type={client.type ?? "CLIENTE"} />

@@ -5,6 +5,9 @@ import Link from "next/link";
 import StatusBadge from "@/components/ui/StatusBadge";
 import DataTableShell from "@/components/ui/DataTableShell";
 import { Rental } from "@/types/rental";
+import { isWithinHours } from "@/lib/time";
+
+const NEW_CLIENT_BADGE_HOURS = 12;
 
 type Props = {
   rentals: Rental[];
@@ -104,6 +107,27 @@ export default function RentalsTable({ rentals }: Props) {
             <tr key={rental.id} className="transition hover:bg-slate-50">
               <td className="px-6 py-4 font-medium text-slate-900">
                 {getClientName(rental)}
+                {rental.source === "WEB" && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {(!rental.isNewClient ||
+                      isWithinHours(rental.createdAt, NEW_CLIENT_BADGE_HOURS)) && (
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          rental.isNewClient
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        {rental.isNewClient ? "Cliente nuevo · Web" : "Cliente recurrente · Web"}
+                      </span>
+                    )}
+                    {!rental.confirmedAt && rental.status === "RESERVACION" && (
+                      <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                        Sin confirmar
+                      </span>
+                    )}
+                  </div>
+                )}
               </td>
               <td className="px-6 py-4 text-slate-900">
                 {rental.renterType === "COMISIONISTA" ? "Comisionista" : "Cliente"}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCar } from "@/lib/api";
 import { getAssetUrl } from "@/lib/assets";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
+import { Car } from "@/types/car";
 
 type Props = {
   params: Promise<{
@@ -55,6 +56,12 @@ export default async function CarDetailPage({ params, searchParams }: Props) {
             <p className="mt-1 text-sm text-slate-600">
               Información detallada del vehículo.
             </p>
+
+            {needsService(car) && (
+              <span className="mt-2 inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                Servicio pendiente
+              </span>
+            )}
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -167,6 +174,22 @@ export default async function CarDetailPage({ params, searchParams }: Props) {
               label="Depósito en garantía"
               value={`$${car.deposit.toLocaleString("es-MX")} MXN`}
             />
+            <Info
+              label="Kilometraje actual"
+              value={
+                car.currentMileage != null
+                  ? `${car.currentMileage.toLocaleString("es-MX")} km`
+                  : "No registrado"
+              }
+            />
+            <Info
+              label="Próximo servicio"
+              value={
+                car.nextServiceMileage != null
+                  ? `${car.nextServiceMileage.toLocaleString("es-MX")} km`
+                  : "No definido"
+              }
+            />
           </div>
         </section>
       </div>
@@ -193,6 +216,14 @@ function Info({ label, value }: { label: string; value: string | number }) {
 
 function formatTransmission(transmission: string) {
   return transmission === "AUTOMATICO" ? "Automática" : "Estándar";
+}
+
+function needsService(car: Car) {
+  return (
+    car.currentMileage != null &&
+    car.nextServiceMileage != null &&
+    car.currentMileage >= car.nextServiceMileage
+  );
 }
 
 function formatStatus(status: string) {

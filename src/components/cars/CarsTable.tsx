@@ -89,6 +89,11 @@ export default function CarsTable({ cars }: Props) {
             <tr key={car.id} className="transition hover:bg-slate-50">
               <td className="px-6 py-4 font-medium text-slate-900">
                 {car.brand} {car.model}
+                {needsService(car) && (
+                  <span className="mt-1 flex w-fit rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                    Servicio pendiente
+                  </span>
+                )}
               </td>
               <td className="px-6 py-4 text-slate-900">{car.year}</td>
               <td className="px-6 py-4 text-slate-900">
@@ -113,5 +118,13 @@ export default function CarsTable({ cars }: Props) {
         </tbody>
       </table>
     </DataTableShell>
+  );
+}
+
+function needsService(car: Car) {
+  return (
+    car.currentMileage != null &&
+    car.nextServiceMileage != null &&
+    car.currentMileage >= car.nextServiceMileage
   );
 }

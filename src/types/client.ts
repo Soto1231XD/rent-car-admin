@@ -1,4 +1,4 @@
-import { Rental, RenterType } from "@/types/rental";
+import { Rental, RentalSource, RenterType } from "@/types/rental";
 
 export type Client = {
   id: string;
@@ -13,6 +13,7 @@ export type Client = {
   notes?: string | null;
   idDocumentImage?: string | null;
   type?: RenterType;
+  source: RentalSource;
   rentals?: Rental[];
   createdAt?: string;
   updatedAt?: string;
