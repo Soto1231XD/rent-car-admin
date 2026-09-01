@@ -19,10 +19,30 @@ const successMessages: Record<string, Record<string, string>> = {
     updated: "Mantenimiento actualizado correctamente.",
     deleted: "Mantenimiento eliminado correctamente.",
   },
+  "/dashboard/mileage-control": {
+    created: "Revisión de kilometraje registrada correctamente.",
+    updated: "Revisión de kilometraje actualizada correctamente.",
+    deleted: "Revisión de kilometraje eliminada correctamente.",
+  },
   "/dashboard/extra-expenses": {
     created: "Gasto extra registrado correctamente.",
     updated: "Gasto extra actualizado correctamente.",
     deleted: "Gasto extra eliminado correctamente.",
+  },
+  "/dashboard/insurance-policies": {
+    created: "Póliza registrada correctamente.",
+    updated: "Póliza actualizada correctamente.",
+    deleted: "Póliza eliminada correctamente.",
+  },
+  "/dashboard/aveo": {
+    created: "Movimiento registrado correctamente.",
+    updated: "Movimiento actualizado correctamente.",
+    deleted: "Movimiento eliminado correctamente.",
+  },
+  "/dashboard/savings-fund": {
+    created: "Movimiento registrado correctamente.",
+    updated: "Movimiento actualizado correctamente.",
+    deleted: "Movimiento eliminado correctamente.",
   },
 };
 
@@ -81,6 +101,17 @@ function getDetailSuccessMessage(pathname: string, success: string) {
       ? "Renta guardada correctamente."
       : success === "updated"
         ? "Renta actualizada correctamente."
+        : null;
+  }
+
+  // Cada carro aparte redirige a su propia página (/dashboard/aveo/{carId}),
+  // no a la ruta exacta "/dashboard/aveo", así que necesita su propio caso
+  // aquí en vez de solo la entrada exacta de successMessages.
+  if (pathname.startsWith("/dashboard/aveo/")) {
+    return success === "created"
+      ? "Movimiento registrado correctamente."
+      : success === "updated"
+        ? "Movimiento actualizado correctamente."
         : null;
   }
 

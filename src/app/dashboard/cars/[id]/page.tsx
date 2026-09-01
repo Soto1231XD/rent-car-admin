@@ -1,8 +1,11 @@
 import Link from "next/link";
-import { getCar } from "@/lib/api";
+import { getCar, getMaintenances } from "@/lib/api";
 import { getAssetUrl } from "@/lib/assets";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
-import { Car } from "@/types/car";
+import StatusBadge from "@/components/ui/StatusBadge";
+import CarReportExclusionToggle from "@/components/cars/CarReportExclusionToggle";
+import { Maintenance } from "@/types/maintenance";
+import { formatCurrency } from "@/lib/format-currency";
 
 type Props = {
   params: Promise<{
@@ -36,6 +39,9 @@ export default async function CarDetailPage({ params, searchParams }: Props) {
   }
 
   const features = car.features ?? [];
+  const maintenanceHistory = (await getMaintenances())
+    .filter((maintenance) => maintenance.carId === car.id)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
 
   return (
     <div>
@@ -57,7 +63,7 @@ export default async function CarDetailPage({ params, searchParams }: Props) {
               Información detallada del vehículo.
             </p>
 
-            {needsService(car) && (
+            {car.serviceDue && (
               <span className="mt-2 inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
                 Servicio pendiente
               </span>
@@ -112,7 +118,7 @@ export default async function CarDetailPage({ params, searchParams }: Props) {
           <div className="grid gap-4 md:grid-cols-2">
             <Info label="Marca" value={car.brand} />
             <Info label="Modelo" value={car.model} />
-            <Info label="Año" value={car.year} />
+            <Info label="Año" value={car.year ?? "No registrado"} />
             <Info label="Placa" value={car.plate || "No registrada"} />
             <Info label="Color" value={car.color || "No registrado"} />
             <Info label="Transmisión" value={formatTransmission(car.transmission)} />
@@ -162,18 +168,12 @@ export default async function CarDetailPage({ params, searchParams }: Props) {
 
           <div className="space-y-4">
             <Info label="Estado" value={formatStatus(car.status)} />
-            <Info
-              label="Precio diario"
-              value={`$${car.dailyPrice.toLocaleString("es-MX")} MXN`}
-            />
+            <Info label="Precio diario" value={formatCurrency(car.dailyPrice)} />
             <Info
               label="Temporada alta"
-              value={`$${car.highSeasonPrice.toLocaleString("es-MX")} MXN`}
+              value={formatCurrency(car.highSeasonPrice)}
             />
-            <Info
-              label="Depósito en garantía"
-              value={`$${car.deposit.toLocaleString("es-MX")} MXN`}
-            />
+            <Info label="Depósito en garantía" value={formatCurrency(car.deposit)} />
             <Info
               label="Kilometraje actual"
               value={
@@ -185,21 +185,95 @@ export default async function CarDetailPage({ params, searchParams }: Props) {
             <Info
               label="Próximo servicio"
               value={
-                car.nextServiceMileage != null
-                  ? `${car.nextServiceMileage.toLocaleString("es-MX")} km`
+                car.nextServiceMileage != null || car.nextServiceDate != null
+                  ? [
+                      car.nextServiceMileage != null
+                        ? `${car.nextServiceMileage.toLocaleString("es-MX")} km`
+                        : null,
+                      car.nextServiceDate != null
+                        ? formatDate(car.nextServiceDate)
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")
                   : "No definido"
               }
+            />
+          </div>
+
+          <div className="mt-6">
+            <CarReportExclusionToggle
+              carId={car.id}
+              carName={`${car.brand} ${car.model}`.trim()}
+              excludedFromReportsAt={car.excludedFromReportsAt}
             />
           </div>
         </section>
       </div>
 
       <section className="mt-6 rounded-2xl bg-white p-4 shadow sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-900">Historial</h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Historial de mantenimiento
+          </h2>
 
-        <p className="mt-2 text-sm text-slate-600">
-          Aquí se mostrará el historial de rentas, mantenimientos y bloqueos del vehículo.
-        </p>
+          <Link
+            href={`/dashboard/maintenance/new?carId=${car.id}`}
+            className="text-sm font-medium text-slate-600 hover:text-slate-900"
+          >
+            + Nuevo mantenimiento
+          </Link>
+        </div>
+
+        {maintenanceHistory.length === 0 ? (
+          <p className="text-sm text-slate-600">
+            Este vehículo no tiene mantenimientos registrados.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr>
+                  <th className="px-4 py-3">Fecha</th>
+                  <th className="px-4 py-3">Servicio</th>
+                  <th className="px-4 py-3">Costo</th>
+                  <th className="px-4 py-3">Estado</th>
+                  <th className="px-4 py-3">Próximo servicio</th>
+                  <th className="px-4 py-3">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {maintenanceHistory.map((maintenance) => (
+                  <tr key={maintenance.id}>
+                    <td className="px-4 py-3 text-slate-900">
+                      {formatDate(maintenance.date)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-900">
+                      {maintenance.serviceType}
+                    </td>
+                    <td className="px-4 py-3 text-slate-900">
+                      {formatCurrency(maintenance.cost)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={maintenance.status} />
+                    </td>
+                    <td className="px-4 py-3 text-slate-900">
+                      {formatMaintenanceNextService(maintenance)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/dashboard/maintenance/${maintenance.id}/edit`}
+                        className="text-sm font-medium text-slate-600 hover:text-slate-900"
+                      >
+                        Editar
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );
@@ -218,12 +292,21 @@ function formatTransmission(transmission: string) {
   return transmission === "AUTOMATICO" ? "Automática" : "Estándar";
 }
 
-function needsService(car: Car) {
-  return (
-    car.currentMileage != null &&
-    car.nextServiceMileage != null &&
-    car.currentMileage >= car.nextServiceMileage
-  );
+function formatDate(value: string) {
+  return value.slice(0, 10);
+}
+
+function formatMaintenanceNextService(maintenance: Maintenance) {
+  const parts = [
+    maintenance.nextServiceMileage != null
+      ? `${maintenance.nextServiceMileage.toLocaleString("es-MX")} km`
+      : null,
+    maintenance.nextServiceDate != null
+      ? formatDate(maintenance.nextServiceDate)
+      : null,
+  ].filter(Boolean);
+
+  return parts.length ? parts.join(" · ") : "-";
 }
 
 function formatStatus(status: string) {

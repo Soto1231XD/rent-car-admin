@@ -1,6 +1,8 @@
 import Image from "next/image";
 import CarDamageDiagram from "./CarDamageDiagram";
 import { Rental } from "@/types/rental";
+import { formatCarLabel } from "@/lib/car-label";
+import { formatCurrency as formatMoney } from "@/lib/format-currency";
 
 type Props = {
   rental: Rental;
@@ -62,7 +64,7 @@ export default function UnifiedRentalDocument({ rental }: Props) {
     rental.rentalType === "INDEFINIDA" && !rental.daysCharged;
   const clientName = rental.client?.fullName ?? "________________________";
   const carName = rental.car
-    ? `${rental.car.brand} ${rental.car.model} ${rental.car.year}`
+    ? formatCarLabel(rental.car)
     : "________________________";
   const phone = rental.client?.phone ?? "________________________";
   const idNumber = rental.client?.idNumber ?? "________________________";
@@ -293,10 +295,6 @@ function Info({ label, value }: { label: string; value: string }) {
 
 function formatDate(value: string | null) {
   return value ? value.slice(0, 10) : "-";
-}
-
-function formatMoney(value: number) {
-  return `$${value.toLocaleString("es-MX")} MXN`;
 }
 
 function formatPriceMode(priceMode: string) {

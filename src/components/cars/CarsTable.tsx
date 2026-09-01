@@ -4,7 +4,10 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import StatusBadge from "@/components/ui/StatusBadge";
 import DataTableShell from "@/components/ui/DataTableShell";
+import Pagination, { paginate } from "@/components/ui/Pagination";
 import { Car } from "@/types/car";
+import { formatCarLabel } from "@/lib/car-label";
+import { formatCurrency } from "@/lib/format-currency";
 
 type Props = {
   cars: Car[];
@@ -13,19 +16,21 @@ type Props = {
 export default function CarsTable({ cars }: Props) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
 
   const hasFilters = search !== "" || statusFilter !== "";
 
   const clearFilters = () => {
     setSearch("");
     setStatusFilter("");
+    setPage(1);
   };
 
   const filteredCars = useMemo(() => {
     const value = search.toLowerCase().trim();
 
     return cars.filter((car) => {
-      const fullCarName = `${car.brand} ${car.model} ${car.year}`.toLowerCase();
+      const fullCarName = formatCarLabel(car).toLowerCase();
 
       const matchesSearch =
         !value ||
@@ -38,6 +43,8 @@ export default function CarsTable({ cars }: Props) {
       return matchesSearch && matchesStatus;
     });
   }, [cars, search, statusFilter]);
+
+  const { pageItems: pagedCars, totalPages, safePage } = paginate(filteredCars, page);
 
   return (
     <DataTableShell
@@ -71,6 +78,9 @@ export default function CarsTable({ cars }: Props) {
       onClearFilters={clearFilters}
       emptyTitle="No se encontraron carros"
       emptyDescription="Intenta ajustar la búsqueda o limpiar los filtros aplicados."
+      pagination={
+        <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
+      }
     >
       <table className="w-full min-w-[760px] border-collapse text-left text-sm">
         <thead className="bg-slate-50 text-slate-600">
@@ -85,17 +95,17 @@ export default function CarsTable({ cars }: Props) {
         </thead>
 
         <tbody className="divide-y divide-slate-100">
-          {filteredCars.map((car) => (
+          {pagedCars.map((car) => (
             <tr key={car.id} className="transition hover:bg-slate-50">
               <td className="px-6 py-4 font-medium text-slate-900">
                 {car.brand} {car.model}
-                {needsService(car) && (
+                {car.serviceDue && (
                   <span className="mt-1 flex w-fit rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                     Servicio pendiente
                   </span>
                 )}
               </td>
-              <td className="px-6 py-4 text-slate-900">{car.year}</td>
+              <td className="px-6 py-4 text-slate-900">{car.year ?? "—"}</td>
               <td className="px-6 py-4 text-slate-900">
                 {car.plate || "No registrada"}
               </td>
@@ -103,7 +113,7 @@ export default function CarsTable({ cars }: Props) {
                 <StatusBadge status={car.status} />
               </td>
               <td className="px-6 py-4 text-slate-900">
-                ${car.dailyPrice.toLocaleString("es-MX")} MXN
+                {formatCurrency(car.dailyPrice)}
               </td>
               <td className="px-6 py-4">
                 <Link
@@ -118,13 +128,5 @@ export default function CarsTable({ cars }: Props) {
         </tbody>
       </table>
     </DataTableShell>
-  );
-}
-
-function needsService(car: Car) {
-  return (
-    car.currentMileage != null &&
-    car.nextServiceMileage != null &&
-    car.currentMileage >= car.nextServiceMileage
   );
 }

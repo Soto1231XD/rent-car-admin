@@ -4,6 +4,9 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Quote } from "@/types/quote";
 import DataTableShell from "@/components/ui/DataTableShell";
+import Pagination, { paginate } from "@/components/ui/Pagination";
+import { formatCarLabel } from "@/lib/car-label";
+import { formatCurrency } from "@/lib/format-currency";
 
 type Props = {
   quotes: Quote[];
@@ -11,15 +14,14 @@ type Props = {
 
 export default function QuotesTable({ quotes }: Props) {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const hasFilters = search !== "";
 
   const filteredQuotes = useMemo(() => {
     const value = search.toLowerCase().trim();
 
     return quotes.filter((quote) => {
-      const carName = quote.car
-        ? `${quote.car.brand} ${quote.car.model} ${quote.car.year}`.toLowerCase()
-        : "";
+      const carName = quote.car ? formatCarLabel(quote.car).toLowerCase() : "";
 
       return (
         !value ||
@@ -28,6 +30,8 @@ export default function QuotesTable({ quotes }: Props) {
       );
     });
   }, [quotes, search]);
+
+  const { pageItems: pagedQuotes, totalPages, safePage } = paginate(filteredQuotes, page);
 
   return (
     <DataTableShell
@@ -44,9 +48,15 @@ export default function QuotesTable({ quotes }: Props) {
       totalCount={quotes.length}
       itemLabel="cotizaciones"
       hasFilters={hasFilters}
-      onClearFilters={() => setSearch("")}
+      onClearFilters={() => {
+        setSearch("");
+        setPage(1);
+      }}
       emptyTitle="No se encontraron cotizaciones"
       emptyDescription="Intenta buscar por otro folio o vehículo."
+      pagination={
+        <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
+      }
     >
       <table className="w-full min-w-[720px] border-collapse text-left text-sm">
         <thead className="bg-slate-50 text-slate-600">
@@ -61,21 +71,19 @@ export default function QuotesTable({ quotes }: Props) {
         </thead>
 
         <tbody className="divide-y divide-slate-100">
-          {filteredQuotes.map((quote) => (
+          {pagedQuotes.map((quote) => (
             <tr key={quote.id} className="transition hover:bg-slate-50">
               <td className="px-6 py-4 font-medium tracking-wide text-slate-900">
                 {quote.folio}
               </td>
               <td className="px-6 py-4 text-slate-900">
-                {quote.car
-                  ? `${quote.car.brand} ${quote.car.model} ${quote.car.year}`
-                  : "Vehículo no disponible"}
+                {quote.car ? formatCarLabel(quote.car) : "Vehículo no disponible"}
               </td>
               <td className="px-6 py-4 text-slate-700">
                 {formatDate(quote.startDate)} - {formatDate(quote.endDate)}
               </td>
               <td className="px-6 py-4 text-slate-900">
-                ${quote.totalPrice.toLocaleString("es-MX")} MXN
+                {formatCurrency(quote.totalPrice)}
               </td>
               <td className="px-6 py-4 text-slate-700">
                 {formatDate(quote.createdAt ?? quote.startDate)}

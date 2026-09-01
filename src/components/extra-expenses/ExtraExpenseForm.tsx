@@ -7,15 +7,21 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Car } from "@/types/car";
 import { ExtraExpense } from "@/types/extra-expense";
+import { formatCarLabel } from "@/lib/car-label";
 import {
   createExtraExpenseResult,
   updateExtraExpenseResult,
 } from "@/lib/api-client";
 import FormAlert from "@/components/ui/FormAlert";
 import { showErrorToast } from "@/lib/toast";
+import {
+  formatCurrencyInput,
+  formatCurrencyInputValue,
+  normalizeCurrencyValue,
+} from "@/lib/format-currency";
 
 const schema = z.object({
-  carId: z.string().min(1, "Selecciona un vehiculo"),
+  carId: z.string().optional(),
   concept: z.string().min(1, "El concepto es obligatorio"),
   cost: z.preprocess(
     normalizeCurrencyValue,
@@ -72,11 +78,19 @@ export default function ExtraExpenseForm({
     setSubmitError("");
     setIsSaving(true);
 
+    const payload = {
+      ...data,
+      // Explicit null (not omitted) so switching an expense back to "sin
+      // vehículo" on edit actually clears it — an omitted key in a PATCH
+      // leaves the existing DB value untouched.
+      carId: data.carId || null,
+    };
+
     const result =
       mode === "create"
-        ? await createExtraExpenseResult(data)
+        ? await createExtraExpenseResult(payload)
         : extraExpenseId
-          ? await updateExtraExpenseResult(extraExpenseId, data)
+          ? await updateExtraExpenseResult(extraExpenseId, payload)
           : { data: null, error: "No se encontro el gasto extra a actualizar." };
 
     setIsSaving(false);
@@ -106,12 +120,12 @@ export default function ExtraExpenseForm({
         </h2>
 
         <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Vehiculo" error={errors.carId?.message}>
+          <Field label="Vehículo (opcional)" error={errors.carId?.message}>
             <select {...register("carId")} className="input">
-              <option value="">Selecciona un vehiculo</option>
+              <option value="">Sin vehículo asociado</option>
               {cars.map((car) => (
                 <option key={car.id} value={car.id}>
-                  {car.brand} {car.model} {car.year}
+                  {formatCarLabel(car)}
                   {car.plate ? ` - ${car.plate}` : ""}
                 </option>
               ))}
@@ -129,7 +143,7 @@ export default function ExtraExpenseForm({
           <Field label="Costo" error={errors.cost?.message}>
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               {...register("cost")}
               onInput={formatCurrencyInput}
               className="input"
@@ -216,20 +230,3 @@ function formatDateInput(value?: string) {
   return value.slice(0, 10);
 }
 
-function normalizeCurrencyValue(value: unknown) {
-  return typeof value === "string" ? value.replace(/,/g, "") : value;
-}
-
-function formatCurrencyInput(event: FormEvent<HTMLInputElement>) {
-  event.currentTarget.value = formatCurrencyInputValue(event.currentTarget.value);
-}
-
-function formatCurrencyInputValue(value?: string | number | null) {
-  if (value === undefined || value === null || value === "") {
-    return "";
-  }
-
-  const digits = String(value).replace(/\D/g, "");
-
-  return digits ? Number(digits).toLocaleString("es-MX") : "";
-}

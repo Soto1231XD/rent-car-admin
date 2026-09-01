@@ -14,12 +14,15 @@ import {
 import { ReactNode } from "react";
 import { Quote } from "@/types/quote";
 import { getAssetUrl } from "@/lib/assets";
+import { formatCarLabel } from "@/lib/car-label";
+import { formatCurrency as formatMoney } from "@/lib/format-currency";
 
 const WHATSAPP_DISPLAY = "998 399 8112";
 
 const conditions = [
   "Edad mínima del conductor: 18 años.",
   "Licencia de conducir vigente.",
+  "Periodo mínimo de renta: 2 días.",
   "Tarjeta de crédito o débito a nombre del conductor para el depósito.",
   "El vehículo se entrega con tanque lleno y debe devolverse igual.",
   "El kilometraje será libre siempre y cuando el carro se encuentre dentro de Quintana Roo y Yucatán; de lo contrario, se les cobrará kilometraje extra.",
@@ -35,7 +38,7 @@ type Props = {
 
 export default function QuoteDocument({ quote, qrDataUrl }: Props) {
   const car = quote.car;
-  const carName = car ? `${car.brand} ${car.model} ${car.year}` : "Vehículo no disponible";
+  const carName = car ? formatCarLabel(car) : "Vehículo no disponible";
   const carPhoto = car?.images?.[0] ? getAssetUrl(car.images[0]) : null;
   const days = quote.daysCharged;
 
@@ -153,7 +156,7 @@ export default function QuoteDocument({ quote, qrDataUrl }: Props) {
 
           {car && (
             <div className="absolute bottom-3 right-3 rounded-lg bg-[#0b477d] px-3 py-1.5 text-sm font-black uppercase text-white shadow-lg">
-              {car.model} {car.year}
+              {car.year ? `${car.model} ${car.year}` : car.model}
             </div>
           )}
         </div>
@@ -411,10 +414,6 @@ function formatLongDate(value: string) {
     month: "long",
     year: "numeric",
   }).format(new Date(value));
-}
-
-function formatMoney(value: number) {
-  return `$${value.toLocaleString("es-MX")} MXN`;
 }
 
 function formatPriceMode(priceMode: string) {

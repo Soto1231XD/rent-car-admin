@@ -10,6 +10,7 @@ import {
   Tag,
 } from "lucide-react";
 import { Rental } from "@/types/rental";
+import { formatCarLabel } from "@/lib/car-label";
 
 type Props = {
   rental: Rental;
@@ -29,9 +30,7 @@ export default function RentalTicket({ rental }: Props) {
   const advancePayment = toMoneyNumber(rental.advancePayment);
   const pendingBalance = Math.max(totalPrice - advancePayment, 0);
   const totalToCover = pendingBalance + deposit;
-  const carName = rental.car
-    ? `${rental.car.brand} ${rental.car.model} ${rental.car.year}`
-    : "Vehículo no disponible";
+  const carName = rental.car ? formatCarLabel(rental.car) : "Vehículo no disponible";
 
   return (
     <article className="relative mx-auto max-w-[920px] overflow-hidden rounded-2xl bg-white text-slate-950 shadow-xl ring-1 ring-slate-200 print:w-full print:max-w-none print:overflow-visible print:rounded-none print:shadow-none print:ring-0">

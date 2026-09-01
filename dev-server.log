@@ -1,0 +1,37 @@
+
+> rent-car-admin@0.1.0 dev
+> next dev
+
+⚠ Port 3000 is in use by process 10248, using available port 3001 instead.
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.68.110:3001
+✓ Ready in 1164ms
+
+ GET / 307 in 3.0s (next.js: 2.6s, application-code: 362ms)
+ GET /login 200 in 693ms (next.js: 600ms, application-code: 93ms)
+ GET /login 200 in 70ms (next.js: 11ms, application-code: 58ms)
+ GET /dashboard 200 in 1326ms (next.js: 676ms, proxy.ts: 8ms, application-code: 641ms)
+ GET /dashboard/rentals 200 in 760ms (next.js: 527ms, proxy.ts: 7ms, application-code: 226ms)
+ GET /dashboard/extra-expenses 200 in 759ms (next.js: 556ms, proxy.ts: 8ms, application-code: 195ms)
+ GET /dashboard/maintenance 200 in 625ms (next.js: 465ms, proxy.ts: 7ms, application-code: 153ms)
+ GET /dashboard/savings-fund 200 in 728ms (next.js: 537ms, proxy.ts: 6ms, application-code: 185ms)
+ GET /dashboard/prices 200 in 684ms (next.js: 529ms, proxy.ts: 7ms, application-code: 149ms)
+ GET /dashboard/aveo 200 in 669ms (next.js: 467ms, proxy.ts: 7ms, application-code: 196ms)
+ GET /dashboard/aveo 200 in 242ms (next.js: 7ms, proxy.ts: 8ms, application-code: 227ms)
+ GET /dashboard/aveo/0db9017f-b9a5-4fa2-b743-895e93da6950 200 in 1683ms (next.js: 1471ms, proxy.ts: 7ms, application-code: 205ms)
+ GET /dashboard/aveo/3dd55c43-3b3c-445f-ab43-c32f8bb09267 200 in 222ms (next.js: 24ms, proxy.ts: 11ms, application-code: 187ms)
+ GET /dashboard/monthly-breakdown 200 in 1047ms (next.js: 707ms, proxy.ts: 5ms, application-code: 335ms)
+ GET /dashboard/aveo/0db9017f-b9a5-4fa2-b743-895e93da6950 200 in 558ms (next.js: 31ms, proxy.ts: 11ms, application-code: 516ms)
+ GET /login 200 in 198ms (next.js: 124ms, application-code: 75ms)
+ GET /dashboard/aveo/0db9017f-b9a5-4fa2-b743-895e93da6950 200 in 553ms (next.js: 111ms, proxy.ts: 62ms, application-code: 380ms)
+ GET /dashboard/aveo/0db9017f-b9a5-4fa2-b743-895e93da6950 200 in 341ms (next.js: 33ms, proxy.ts: 10ms, application-code: 298ms)
+ GET /dashboard/monthly-breakdown 200 in 399ms (next.js: 35ms, proxy.ts: 7ms, application-code: 357ms)
+ GET /dashboard/aveo 200 in 384ms (next.js: 53ms, proxy.ts: 10ms, application-code: 321ms)
+ GET /dashboard/aveo/0db9017f-b9a5-4fa2-b743-895e93da6950 200 in 144ms (next.js: 28ms, proxy.ts: 9ms, application-code: 107ms)
+ GET /dashboard 200 in 577ms (next.js: 85ms, proxy.ts: 7ms, application-code: 485ms)
+ GET /dashboard 200 in 213ms (next.js: 5ms, proxy.ts: 9ms, application-code: 200ms)
+ GET /dashboard/rentals 200 in 176ms (next.js: 83ms, proxy.ts: 5ms, application-code: 88ms)
+ GET /dashboard/monthly-history 200 in 1070ms (next.js: 722ms, proxy.ts: 7ms, application-code: 341ms)
+ GET /dashboard/aveo 200 in 266ms (next.js: 6ms, proxy.ts: 8ms, application-code: 253ms)
+[?25h

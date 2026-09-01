@@ -4,6 +4,8 @@ import { getAssetUrl } from "@/lib/assets";
 import { isWithinHours } from "@/lib/time";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 import { Rental, RentalStatus } from "@/types/rental";
+import { formatCarLabel } from "@/lib/car-label";
+import { formatCurrency } from "@/lib/format-currency";
 
 const NEW_CLIENT_BADGE_HOURS = 12;
 
@@ -106,27 +108,39 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
               label="Licencia"
               value={client.driverLicenseNumber || "No registrada"}
             />
+            <Info
+              label="Fecha de nacimiento"
+              value={client.birthDate ? formatDate(client.birthDate) : "No registrada"}
+            />
             {client.address && <Info label="Dirección" value={client.address} />}
           </div>
 
-          {client.idDocumentImage && (
+          {client.documents && client.documents.length > 0 && (
             <div className="mt-5 border-t border-slate-100 pt-5">
               <p className="mb-2 text-sm font-medium text-slate-500">
-                Foto de la identificación
+                Documentos
               </p>
-              <a
-                href={getAssetUrl(client.idDocumentImage)}
-                target="_blank"
-                rel="noreferrer"
-                className="block w-fit"
-              >
-                <div
-                  className="h-32 w-52 rounded-xl border border-slate-200 bg-slate-100 bg-cover bg-center shadow-sm transition hover:opacity-90"
-                  style={{
-                    backgroundImage: `url("${getAssetUrl(client.idDocumentImage)}")`,
-                  }}
-                />
-              </a>
+              <div className="flex flex-wrap gap-4">
+                {client.documents.map((document) => (
+                  <a
+                    key={document.id}
+                    href={getAssetUrl(document.url)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block w-fit"
+                  >
+                    <div
+                      className="h-32 w-52 rounded-xl border border-slate-200 bg-slate-100 bg-cover bg-center shadow-sm transition hover:opacity-90"
+                      style={{
+                        backgroundImage: `url("${getAssetUrl(document.url)}")`,
+                      }}
+                    />
+                    <p className="mt-1.5 text-sm font-medium text-slate-700">
+                      {document.label}
+                    </p>
+                  </a>
+                ))}
+              </div>
             </div>
           )}
         </section>
@@ -260,7 +274,7 @@ function formatCarName(rental: Rental) {
     return "Vehículo no disponible";
   }
 
-  return `${rental.car.brand} ${rental.car.model} ${rental.car.year}`;
+  return formatCarLabel(rental.car);
 }
 
 function formatDate(value: string | null) {
@@ -284,13 +298,6 @@ function formatPeriod(rental: { startDate: string; endDate: string | null; renta
   }
 
   return `${formatDate(rental.startDate)} - ${formatDate(rental.endDate)}`;
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "MXN",
-  }).format(value);
 }
 
 function formatRentalStatus(status: RentalStatus) {

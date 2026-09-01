@@ -20,26 +20,33 @@ export default async function EditMaintenancePage({ params }: Props) {
     notFound();
   }
 
+  const isRevision = maintenance.recordType === "REVISION";
+  const redirectBase = isRevision
+    ? "/dashboard/mileage-control"
+    : "/dashboard/maintenance";
+
   return (
     <div>
       <div className="mb-6">
         <Link
-          href="/dashboard/maintenance"
+          href={redirectBase}
           className="text-sm text-slate-600 hover:text-slate-900"
         >
-          ← Volver a mantenimiento
+          ← Volver a {isRevision ? "control de kilometraje" : "mantenimiento"}
         </Link>
 
         <h1 className="mt-3 text-2xl font-bold text-slate-900">
-          Editar mantenimiento
+          Editar {isRevision ? "revisión de kilometraje" : "mantenimiento"}
         </h1>
       </div>
 
       <MaintenanceForm
         mode="edit"
+        recordType={maintenance.recordType}
         cars={cars}
         initialData={maintenance}
         maintenanceId={maintenance.id}
+        redirectBase={redirectBase}
       />
     </div>
   );

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getQuote } from "@/lib/api";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
+import { formatCarLabel } from "@/lib/car-label";
+import { formatCurrency as formatMoney } from "@/lib/format-currency";
 
 type Props = {
   params: Promise<{
@@ -33,9 +35,7 @@ export default async function QuoteDetailPage({ params, searchParams }: Props) {
     );
   }
 
-  const carName = quote.car
-    ? `${quote.car.brand} ${quote.car.model} ${quote.car.year}`
-    : "Vehículo no disponible";
+  const carName = quote.car ? formatCarLabel(quote.car) : "Vehículo no disponible";
 
   return (
     <div>
@@ -130,10 +130,6 @@ function Info({ label, value }: { label: string; value: string | number }) {
 
 function formatDate(value: string) {
   return value.slice(0, 10);
-}
-
-function formatMoney(value: number) {
-  return `$${value.toLocaleString("es-MX")} MXN`;
 }
 
 function formatPriceMode(priceMode: string) {

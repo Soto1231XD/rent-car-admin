@@ -6,6 +6,9 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { Maintenance } from "@/types/maintenance";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 import DataTableShell from "@/components/ui/DataTableShell";
+import Pagination, { paginate } from "@/components/ui/Pagination";
+import { formatCarLabel } from "@/lib/car-label";
+import { formatCurrency } from "@/lib/format-currency";
 
 type Props = {
   maintenances: Maintenance[];
@@ -15,6 +18,7 @@ export default function MaintenanceTable({ maintenances }: Props) {
   const [carSearch, setCarSearch] = useState("");
   const [serviceSearch, setServiceSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
 
   const hasFilters =
     carSearch !== "" || serviceSearch !== "" || statusFilter !== "";
@@ -23,6 +27,7 @@ export default function MaintenanceTable({ maintenances }: Props) {
     setCarSearch("");
     setServiceSearch("");
     setStatusFilter("");
+    setPage(1);
   };
 
   const filteredMaintenances = useMemo(() => {
@@ -35,7 +40,9 @@ export default function MaintenanceTable({ maintenances }: Props) {
 
       const matchesService =
         !serviceSearch ||
-        maintenance.serviceType.toLowerCase().includes(serviceSearch.toLowerCase());
+        (maintenance.serviceType ?? "")
+          .toLowerCase()
+          .includes(serviceSearch.toLowerCase());
 
       const matchesStatus =
         !statusFilter || maintenance.status === statusFilter;
@@ -43,6 +50,12 @@ export default function MaintenanceTable({ maintenances }: Props) {
       return matchesCar && matchesService && matchesStatus;
     });
   }, [maintenances, carSearch, serviceSearch, statusFilter]);
+
+  const {
+    pageItems: pagedMaintenances,
+    totalPages,
+    safePage,
+  } = paginate(filteredMaintenances, page);
 
   return (
     <DataTableShell
@@ -83,8 +96,11 @@ export default function MaintenanceTable({ maintenances }: Props) {
       onClearFilters={clearFilters}
       emptyTitle="No se encontraron mantenimientos"
       emptyDescription="Intenta ajustar el vehículo, servicio o estado seleccionado."
+      pagination={
+        <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
+      }
     >
-      <table className="w-full min-w-[980px] text-left text-sm">
+      <table className="w-full min-w-[900px] text-left text-sm">
         <thead className="bg-slate-50 text-slate-600">
           <tr>
             <th className="px-6 py-4">Vehículo</th>
@@ -98,7 +114,7 @@ export default function MaintenanceTable({ maintenances }: Props) {
         </thead>
 
         <tbody className="divide-y">
-          {filteredMaintenances.map((maintenance) => (
+          {pagedMaintenances.map((maintenance) => (
             <tr key={maintenance.id} className="transition hover:bg-slate-50">
               <td className="px-6 py-4 text-slate-900">{getCarName(maintenance)}</td>
               <td className="px-6 py-4 text-slate-900">
@@ -106,7 +122,7 @@ export default function MaintenanceTable({ maintenances }: Props) {
               </td>
               <td className="px-6 py-4 text-slate-900">{formatDate(maintenance.date)}</td>
               <td className="px-6 py-4 text-slate-900">
-                ${maintenance.cost.toLocaleString("es-MX")} MXN
+                {formatCurrency(maintenance.cost)}
               </td>
               <td className="whitespace-nowrap px-6 py-4">
                 <StatusBadge status={maintenance.status} />
@@ -144,7 +160,7 @@ function getCarName(maintenance: Maintenance) {
     return "Vehículo no disponible";
   }
 
-  return `${maintenance.car.brand} ${maintenance.car.model} ${maintenance.car.year}`;
+  return formatCarLabel(maintenance.car);
 }
 
 function formatDate(value: string) {

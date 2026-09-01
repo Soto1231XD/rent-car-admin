@@ -22,6 +22,12 @@ import {
 import { getAssetUrl } from "@/lib/assets";
 import FormAlert from "@/components/ui/FormAlert";
 import { showErrorToast } from "@/lib/toast";
+import {
+  formatCurrencyInput,
+  formatCurrencyInputValue,
+  normalizeCurrencyValue,
+} from "@/lib/format-currency";
+import { formatIntegerInput, formatIntegerInputValue } from "@/lib/format-number";
 
 const requiredCurrencyNumber = (message: string) =>
   z.preprocess(normalizeCurrencyValue, z.coerce.number().min(1, message));
@@ -38,10 +44,19 @@ const optionalText = z
   .optional()
   .transform((value) => value || undefined);
 
+const optionalYear = z.preprocess(
+  (value) => (value === "" || value === undefined || value === null ? undefined : value),
+  z.coerce
+    .number()
+    .min(1990, "El año debe ser válido")
+    .max(new Date().getFullYear() + 1, "El año debe ser válido")
+    .optional()
+);
+
 const carSchema = z.object({
   brand: z.string().min(1, "La marca es obligatoria"),
   model: z.string().min(1, "El modelo es obligatorio"),
-  year: z.coerce.number().min(1990, "El año es obligatorio"),
+  year: optionalYear,
   plate: optionalText,
   color: optionalText,
   transmission: z.enum(["AUTOMATICO", "ESTANDAR"], {
@@ -63,7 +78,6 @@ const carSchema = z.object({
     message: "El estado es obligatorio",
   }),
   currentMileage: optionalCurrencyNumber,
-  nextServiceMileage: optionalCurrencyNumber,
   description: optionalText,
   featuresText: optionalText,
 });
@@ -144,10 +158,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       ),
       deposit: formatCurrencyInputValue(initialData?.deposit),
       status: initialData?.status ?? "DISPONIBLE",
-      currentMileage: formatCurrencyInputValue(initialData?.currentMileage ?? undefined),
-      nextServiceMileage: formatCurrencyInputValue(
-        initialData?.nextServiceMileage ?? undefined
-      ),
+      currentMileage: formatIntegerInputValue(initialData?.currentMileage ?? undefined),
       description: initialData?.description ?? "",
       featuresText: initialData?.features?.join("\n") ?? "",
     },
@@ -184,7 +195,10 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
     const payload = {
       brand: data.brand,
       model: data.model,
-      year: data.year,
+      // Explicit null (not omitted) so clearing the field actually clears it
+      // server-side — JSON.stringify drops `undefined` keys entirely, and a
+      // PATCH with a missing key leaves the existing DB value untouched.
+      year: data.year ?? null,
       plate: data.plate,
       color: data.color,
       passengers: data.passengers,
@@ -200,7 +214,6 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       deposit: data.deposit,
       status: data.status,
       currentMileage: data.currentMileage,
-      nextServiceMileage: data.nextServiceMileage,
       description: data.description,
       features: parseFeatures(data.featuresText),
       images: primaryId.startsWith("existing:")
@@ -312,7 +325,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
             <input {...register("model")} className="input" placeholder="Versa" />
           </Field>
 
-          <Field label="Año" required error={errors.year?.message}>
+          <Field label="Año" error={errors.year?.message}>
             <input type="number" {...register("year")} className="input" placeholder="2025" />
           </Field>
 
@@ -382,29 +395,12 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
               type="text"
               inputMode="numeric"
               {...register("currentMileage")}
-              onInput={formatCurrencyInput}
+              onInput={formatIntegerInput}
               className="input"
               placeholder="45,000"
             />
           </Field>
 
-          <Field
-            label="Kilometraje para próximo servicio"
-            error={errors.nextServiceMileage?.message}
-          >
-            <input
-              type="text"
-              inputMode="numeric"
-              {...register("nextServiceMileage")}
-              onInput={formatCurrencyInput}
-              className="input"
-              placeholder="50,000"
-            />
-            <p className="mt-1 text-xs text-slate-500">
-              Cuando el kilometraje actual llegue a este número, se avisará que
-              el auto necesita servicio.
-            </p>
-          </Field>
         </div>
       </div>
 
@@ -422,7 +418,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
           <Field label="Precio diario" required error={errors.dailyPrice?.message}>
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               {...register("dailyPrice")}
               onInput={formatCurrencyInput}
               className="input"
@@ -433,7 +429,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
           <Field label="Precio temporada alta" required error={errors.highSeasonPrice?.message}>
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               {...register("highSeasonPrice")}
               onInput={formatCurrencyInput}
               className="input"
@@ -444,7 +440,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
           <Field label="Precio comisionista" error={errors.commissionDailyPrice?.message}>
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               {...register("commissionDailyPrice")}
               onInput={formatCurrencyInput}
               className="input"
@@ -458,7 +454,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
           >
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               {...register("commissionHighSeasonPrice")}
               onInput={formatCurrencyInput}
               className="input"
@@ -469,7 +465,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
           <Field label="Depósito en garantía" required error={errors.deposit?.message}>
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               {...register("deposit")}
               onInput={formatCurrencyInput}
               className="input"
@@ -715,24 +711,6 @@ function parseFeatures(value?: string) {
     .split("\n")
     .map((feature) => feature.trim())
     .filter(Boolean);
-}
-
-function normalizeCurrencyValue(value: unknown) {
-  return typeof value === "string" ? value.replace(/,/g, "") : value;
-}
-
-function formatCurrencyInput(event: FormEvent<HTMLInputElement>) {
-  event.currentTarget.value = formatCurrencyInputValue(event.currentTarget.value);
-}
-
-function formatCurrencyInputValue(value?: string | number | null) {
-  if (value === undefined || value === null || value === "") {
-    return "";
-  }
-
-  const digits = String(value).replace(/\D/g, "");
-
-  return digits ? Number(digits).toLocaleString("es-MX") : "";
 }
 
 function getExistingImageId(image: string) {

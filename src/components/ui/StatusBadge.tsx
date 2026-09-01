@@ -23,6 +23,7 @@ function getStyles(status: string) {
     case "COMPLETADO":
     case "COMPLETED":
     case "PAGADO":
+    case "CONVERTIDA":
       return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
 
     case "MANTENIMIENTO":
@@ -30,6 +31,7 @@ function getStyles(status: string) {
     case "MAINTENANCE":
     case "PENDING":
     case "RESERVACION":
+    case "NUEVA":
       return "bg-amber-50 text-amber-700 ring-1 ring-amber-200";
 
     case "ACTIVO":
@@ -38,6 +40,7 @@ function getStyles(status: string) {
     case "EN PROGRESO":
     case "EN_PROGRESO":
     case "IN_PROGRESS":
+    case "CONTACTADA":
       return "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200";
 
     case "CANCELADO":
@@ -116,6 +119,15 @@ function formatLabel(status: string) {
     case "NO DISPONIBLE":
     case "NO_DISPONIBLE":
       return "No disponible";
+
+    case "NUEVA":
+      return "Nueva";
+    case "CONTACTADA":
+      return "Contactada";
+    case "CERRADA":
+      return "Cerrada";
+    case "CONVERTIDA":
+      return "Convertida";
 
     default:
       return status;

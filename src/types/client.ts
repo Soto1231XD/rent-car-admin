@@ -1,5 +1,13 @@
 import { Rental, RentalSource, RenterType } from "@/types/rental";
 
+export type ClientDocument = {
+  id: string;
+  clientId: string;
+  label: string;
+  url: string;
+  createdAt?: string;
+};
+
 export type Client = {
   id: string;
   fullName: string;
@@ -11,7 +19,8 @@ export type Client = {
   emergencyContactName?: string | null;
   emergencyContactPhone?: string | null;
   notes?: string | null;
-  idDocumentImage?: string | null;
+  documents?: ClientDocument[];
+  birthDate?: string | null;
   type?: RenterType;
   source: RentalSource;
   rentals?: Rental[];

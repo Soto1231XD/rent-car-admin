@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import QuoteDocument from "@/components/documents/QuoteDocument";
 import PrintButton from "@/components/documents/PrintButton";
 import { getQuote } from "@/lib/api";
+import { formatCarLabel } from "@/lib/car-label";
 
 const WHATSAPP_PHONE = "529983998112";
 
@@ -34,9 +35,7 @@ export default async function PrintQuotePage({ params }: Props) {
     );
   }
 
-  const carName = quote.car
-    ? `${quote.car.brand} ${quote.car.model} ${quote.car.year}`
-    : "un vehículo";
+  const carName = quote.car ? formatCarLabel(quote.car) : "un vehículo";
   const whatsappUrl = `https://api.whatsapp.com/send?phone=${WHATSAPP_PHONE}&text=${encodeURIComponent(
     `Hola, quiero información sobre la cotización del ${carName}`
   )}`;

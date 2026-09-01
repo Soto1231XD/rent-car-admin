@@ -4,7 +4,10 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import StatusBadge from "@/components/ui/StatusBadge";
 import DataTableShell from "@/components/ui/DataTableShell";
+import Pagination, { paginate } from "@/components/ui/Pagination";
 import { Car } from "@/types/car";
+import { formatCarLabel } from "@/lib/car-label";
+import { formatCurrency, toMoneyNumber } from "@/lib/format-currency";
 
 type Props = {
   cars: Car[];
@@ -14,6 +17,7 @@ export default function PricesTable({ cars }: Props) {
   const [modelSearch, setModelSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [transmissionFilter, setTransmissionFilter] = useState("");
+  const [page, setPage] = useState(1);
 
   const hasFilters =
     modelSearch !== "" || statusFilter !== "" || transmissionFilter !== "";
@@ -22,6 +26,7 @@ export default function PricesTable({ cars }: Props) {
     setModelSearch("");
     setStatusFilter("");
     setTransmissionFilter("");
+    setPage(1);
   };
 
   const filteredCars = useMemo(() => {
@@ -42,6 +47,8 @@ export default function PricesTable({ cars }: Props) {
       return matchesModel && matchesStatus && matchesTransmission;
     });
   }, [cars, modelSearch, statusFilter, transmissionFilter]);
+
+  const { pageItems: pagedCars, totalPages, safePage } = paginate(filteredCars, page);
 
   return (
     <DataTableShell
@@ -85,6 +92,9 @@ export default function PricesTable({ cars }: Props) {
       onClearFilters={clearFilters}
       emptyTitle="No se encontraron tarifas"
       emptyDescription="Intenta ajustar el modelo, placa, estado o transmisión."
+      pagination={
+        <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
+      }
     >
       <table className="w-full min-w-[1180px] text-left text-sm">
         <thead className="bg-slate-100 text-slate-600">
@@ -104,7 +114,7 @@ export default function PricesTable({ cars }: Props) {
         </thead>
 
         <tbody className="divide-y divide-slate-100">
-          {filteredCars.map((car) => (
+          {pagedCars.map((car) => (
             <tr
               key={car.id}
               className={
@@ -158,22 +168,15 @@ export default function PricesTable({ cars }: Props) {
 }
 
 function getModelName(car: Car) {
-  return `${car.brand} ${car.model} ${car.year}`;
+  return formatCarLabel(car);
 }
 
 function formatMoney(value?: number | string | null) {
-  if (value === undefined || value === null) {
+  if (value === undefined || value === null || toMoneyNumber(value) <= 0) {
     return "No definido";
   }
 
-  const numericValue =
-    typeof value === "string" ? Number(value.replace(/,/g, "")) : value;
-
-  if (!Number.isFinite(numericValue) || numericValue <= 0) {
-    return "No definido";
-  }
-
-  return `$${numericValue.toLocaleString("es-MX")} MXN`;
+  return formatCurrency(value);
 }
 
 function formatTransmission(transmission: string) {

@@ -1,7 +1,12 @@
 import { Car } from "@/types/car";
 import { Client } from "@/types/client";
 import { ExtraExpense } from "@/types/extra-expense";
-import { Maintenance } from "@/types/maintenance";
+import { GeneralExpense } from "@/types/general-expense";
+import { AveoEntry } from "@/types/aveo";
+import { InsurancePolicy } from "@/types/insurance-policy";
+import { SavingsFundEntry } from "@/types/savings-fund";
+import { Lead, LeadStatus } from "@/types/lead";
+import { Maintenance, MaintenanceFieldHistory } from "@/types/maintenance";
 import { Quote } from "@/types/quote";
 import { Rental } from "@/types/rental";
 import { getStoredToken } from "@/lib/auth";
@@ -93,7 +98,7 @@ async function getApiErrorMessage(response: Response) {
 export type SaveCarPayload = {
   brand: string;
   model: string;
-  year: number;
+  year?: number | null;
   plate?: string;
   color?: string;
   passengers: number;
@@ -109,7 +114,6 @@ export type SaveCarPayload = {
   deposit: number;
   status?: string;
   currentMileage?: number;
-  nextServiceMileage?: number;
   description?: string;
   features: string[];
   images: string[];
@@ -149,6 +153,13 @@ export function updateCarResult(id: string, payload: SaveCarPayload) {
 export function deleteCarResult(id: string) {
   return requestResult<Car>(`/cars/${id}`, {
     method: "DELETE",
+  });
+}
+
+export function setCarReportExclusionResult(id: string, excluded: boolean) {
+  return requestResult<Car>(`/cars/${id}/report-exclusion`, {
+    method: "PATCH",
+    body: JSON.stringify({ excluded }),
   });
 }
 
@@ -210,7 +221,7 @@ export type SaveClientPayload = {
   emergencyContactName?: string;
   emergencyContactPhone?: string;
   notes?: string;
-  idDocumentImage?: string | null;
+  birthDate?: string;
   type?: string;
 };
 
@@ -253,25 +264,38 @@ export function deleteClientResult(id: string) {
   });
 }
 
-export async function uploadClientIdentificationImageResult(
+export function updateLeadStatusResult(id: string, status: LeadStatus) {
+  return requestResult<Lead>(`/leads/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function convertLeadResult(id: string, clientId: string) {
+  return requestResult<Lead>(`/leads/${id}/convert`, {
+    method: "PATCH",
+    body: JSON.stringify({ clientId }),
+  });
+}
+
+export async function addClientDocumentResult(
   id: string,
+  label: string,
   file: File
 ): Promise<ApiResult<Client>> {
   try {
     const token = getStoredToken();
     const formData = new FormData();
     formData.append("image", file);
+    formData.append("label", label);
 
-    const response = await fetch(
-      `${API_URL}/clients/${id}/identification-image`,
-      {
-        method: "POST",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      }
-    );
+    const response = await fetch(`${API_URL}/clients/${id}/documents`, {
+      method: "POST",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
 
     if (!response.ok) {
       return {
@@ -287,10 +311,18 @@ export async function uploadClientIdentificationImageResult(
   } catch {
     return {
       data: null,
-      error:
-        "No se pudo subir la imagen de identificación. Revisa que la API esté encendida.",
+      error: `No se pudo subir "${label}". Revisa que la API esté encendida.`,
     };
   }
+}
+
+export async function deleteClientDocumentResult(
+  id: string,
+  documentId: string
+): Promise<ApiResult<Client>> {
+  return requestResult<Client>(`/clients/${id}/documents/${documentId}`, {
+    method: "DELETE",
+  });
 }
 
 export type SaveRentalPayload = {
@@ -354,13 +386,35 @@ export function confirmRentalResult(id: string) {
   });
 }
 
+export function releaseDepositResult(id: string) {
+  return requestResult<Rental>(`/rentals/${id}/release-deposit`, {
+    method: "PATCH",
+  });
+}
+
+export function captureDepositResult(id: string, amount?: number) {
+  return requestResult<Rental>(`/rentals/${id}/capture-deposit`, {
+    method: "PATCH",
+    body: JSON.stringify(amount !== undefined ? { amount } : {}),
+  });
+}
+
 export type SaveMaintenancePayload = {
   carId: string;
-  serviceType: string;
-  cost: number;
+  recordType: "REVISION" | "SERVICIO";
+  serviceType?: string;
+  cost?: number;
   date: string;
   status?: string;
   notes?: string;
+  reviewDate?: string;
+  serviceMileage?: number;
+  previousMileage?: number;
+  nextServiceMileage?: number;
+  nextServiceDate?: string;
+  providerType?: string;
+  location?: string;
+  includesMaterial?: boolean;
 };
 
 export function createMaintenance(
@@ -395,8 +449,12 @@ export function deleteMaintenanceResult(id: string) {
   });
 }
 
+export function getMaintenanceHistoryResult(id: string) {
+  return requestResult<MaintenanceFieldHistory[]>(`/maintenances/${id}/history`);
+}
+
 export type SaveExtraExpensePayload = {
-  carId: string;
+  carId?: string | null;
   concept: string;
   cost: number;
   date: string;
@@ -427,6 +485,159 @@ export function deleteExtraExpenseResult(id: string) {
   });
 }
 
+export type SaveAveoEntryPayload = {
+  carId: string;
+  date: string;
+  incomeAmount: number;
+  incomeNote?: string;
+  days?: number;
+  companyProfit?: number;
+  notes?: string;
+  expenses: { amount: number; description: string }[];
+};
+
+export function createAveoEntryResult(payload: SaveAveoEntryPayload) {
+  return requestResult<AveoEntry>("/aveo", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAveoEntryResult(
+  id: string,
+  payload: SaveAveoEntryPayload
+) {
+  return requestResult<AveoEntry>(`/aveo/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteAveoEntryResult(id: string) {
+  return requestResult<AveoEntry>(`/aveo/${id}`, {
+    method: "DELETE",
+  });
+}
+
+// Edita solo la "ganancia de la rentadora" de un movimiento manual del
+// Aveo, sin reenviar el resto del registro (el backend soporta updates
+// parciales).
+export function updateAveoEntryCompanyProfitResult(
+  id: string,
+  companyProfit: number
+) {
+  return requestResult<AveoEntry>(`/aveo/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ companyProfit }),
+  });
+}
+
+// Anota/edita la ganancia de la rentadora directamente sobre una renta real
+// (automática) del auto marcado como "aparte", sin pasar por el módulo de
+// Rentas (que no tiene ni debe tener este campo).
+export function setAveoRentalProfitResult(
+  rentalId: string,
+  companyProfit: number
+) {
+  return requestResult<{ id: string; rentalId: string; companyProfit: number }>(
+    `/aveo/rentals/${rentalId}/profit`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ companyProfit }),
+    }
+  );
+}
+
+export type SaveSavingsFundEntryPayload = {
+  date: string;
+  clientName: string;
+  incomeAmount: number;
+  expenseAmount: number;
+  carId?: string | null;
+  notes?: string;
+};
+
+export function createSavingsFundEntryResult(
+  payload: SaveSavingsFundEntryPayload
+) {
+  return requestResult<SavingsFundEntry>("/savings-fund", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateSavingsFundEntryResult(
+  id: string,
+  payload: SaveSavingsFundEntryPayload
+) {
+  return requestResult<SavingsFundEntry>(`/savings-fund/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteSavingsFundEntryResult(id: string) {
+  return requestResult<SavingsFundEntry>(`/savings-fund/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export type SaveInsurancePolicyPayload = {
+  carId: string;
+  type: string;
+  contractDate?: string;
+  expirationDate: string;
+  policyNumber?: string;
+  company?: string;
+  servicePhone?: string;
+  notes?: string;
+};
+
+export function createInsurancePolicyResult(
+  payload: SaveInsurancePolicyPayload
+) {
+  return requestResult<InsurancePolicy>("/insurance-policies", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateInsurancePolicyResult(
+  id: string,
+  payload: SaveInsurancePolicyPayload
+) {
+  return requestResult<InsurancePolicy>(`/insurance-policies/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteInsurancePolicyResult(id: string) {
+  return requestResult<InsurancePolicy>(`/insurance-policies/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export type SaveGeneralExpensePayload = {
+  type: string;
+  amount: number;
+  date: string;
+  notes?: string;
+};
+
+export function createGeneralExpenseResult(payload: SaveGeneralExpensePayload) {
+  return requestResult<GeneralExpense>("/general-expenses", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteGeneralExpenseResult(id: string) {
+  return requestResult<GeneralExpense>(`/general-expenses/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export type SaveQuotePayload = {
   carId: string;
   startDate: string;
@@ -453,12 +664,16 @@ export type DashboardBadges = {
   pendingRentals: number;
   pendingClients: number;
   pendingServiceCars: number;
+  pendingInsurancePolicies: number;
+  pendingLeads: number;
 };
 
 export function getDashboardBadgesResult(since?: {
   sinceRentals?: string | null;
   sinceClients?: string | null;
   sinceCars?: string | null;
+  sincePolicies?: string | null;
+  sinceLeads?: string | null;
 }) {
   const params = new URLSearchParams();
 
@@ -470,6 +685,12 @@ export function getDashboardBadgesResult(since?: {
   }
   if (since?.sinceCars) {
     params.set("sinceCars", since.sinceCars);
+  }
+  if (since?.sincePolicies) {
+    params.set("sincePolicies", since.sincePolicies);
+  }
+  if (since?.sinceLeads) {
+    params.set("sinceLeads", since.sinceLeads);
   }
 
   const query = params.toString();

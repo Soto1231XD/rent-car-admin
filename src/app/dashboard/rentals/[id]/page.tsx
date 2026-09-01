@@ -3,6 +3,10 @@ import { getRental } from "@/lib/api";
 import { isWithinHours } from "@/lib/time";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 import ConfirmReservationButton from "@/components/rentals/ConfirmReservationButton";
+import ReleaseDepositButton from "@/components/rentals/ReleaseDepositButton";
+import CaptureDepositButton from "@/components/rentals/CaptureDepositButton";
+import { formatCarLabel } from "@/lib/car-label";
+import { formatCurrency } from "@/lib/format-currency";
 
 const NEW_CLIENT_BADGE_HOURS = 12;
 
@@ -39,9 +43,7 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
 
   const clientName = rental.client?.fullName ?? "Cliente no disponible";
   const isCommissionerRental = rental.renterType === "COMISIONISTA";
-  const carName = rental.car
-    ? `${rental.car.brand} ${rental.car.model} ${rental.car.year}`
-    : "Vehículo no disponible";
+  const carName = rental.car ? formatCarLabel(rental.car) : "Vehículo no disponible";
 
   return (
     <div>
@@ -56,7 +58,7 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
             </Link>
 
             <h1 className="mt-3 text-2xl font-bold text-slate-900">
-              Renta #{rental.id.slice(0, 8)}
+              Renta #{rental.id.slice(-8).toUpperCase()}
             </h1>
 
             <p className="mt-1 text-sm text-slate-600">
@@ -140,7 +142,7 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
             />
             <Info
               label={rental.rentalType === "INDEFINIDA" ? "Tarifa diaria" : "Total"}
-              value={`$${rental.totalPrice.toLocaleString("es-MX")} MXN`}
+              value={formatCurrency(rental.totalPrice)}
             />
             <Info label="Estado" value={formatStatus(rental.status)} />
           </div>
@@ -190,20 +192,54 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
                   ? "Tarifa diaria"
                   : "Total de la renta"
               }
-              value={`$${rental.totalPrice.toLocaleString("es-MX")} MXN`}
+              value={formatCurrency(rental.totalPrice)}
             />
             <Info
               label="Anticipo recibido"
-              value={`$${rental.advancePayment.toLocaleString("es-MX")} MXN`}
+              value={formatCurrency(rental.advancePayment)}
             />
             <Info
               label="Saldo pendiente"
-              value={`$${Math.max(
-                rental.totalPrice - rental.advancePayment,
-                0
-              ).toLocaleString("es-MX")} MXN`}
+              value={formatCurrency(
+                Math.max(rental.totalPrice - rental.advancePayment, 0)
+              )}
             />
           </div>
+
+          {rental.depositStatus && (
+            <div className="mt-6 border-t border-slate-200 pt-4">
+              <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                Depósito de seguridad
+              </h3>
+
+              <div className="space-y-4">
+                <Info
+                  label="Estado"
+                  value={formatDepositStatus(
+                    rental.depositStatus,
+                    rental.depositCapturedAmount
+                  )}
+                />
+                <Info
+                  label="Monto retenido"
+                  value={`$${(rental.depositAmount ?? 0).toLocaleString(
+                    "es-MX"
+                  )} MXN`}
+                />
+              </div>
+
+              {rental.depositStatus === "HELD" && (
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                  <ReleaseDepositButton id={rental.id} clientName={clientName} />
+                  <CaptureDepositButton
+                    id={rental.id}
+                    depositAmount={rental.depositAmount ?? 0}
+                    clientName={clientName}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
@@ -239,6 +275,21 @@ function Info({ label, value }: { label: string; value: string | number }) {
 
 function formatDate(value: string | null) {
   return value ? value.slice(0, 10) : "-";
+}
+
+function formatDepositStatus(
+  status: string,
+  capturedAmount?: number | null
+) {
+  const labels: Record<string, string> = {
+    HELD: "Retenido",
+    RELEASED: "Liberado",
+    CAPTURED: `Capturado${
+      capturedAmount != null ? ` · ${formatCurrency(capturedAmount)}` : ""
+    }`,
+  };
+
+  return labels[status] ?? status;
 }
 
 function formatStatus(status: string) {

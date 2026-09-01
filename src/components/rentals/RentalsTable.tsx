@@ -4,8 +4,11 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import StatusBadge from "@/components/ui/StatusBadge";
 import DataTableShell from "@/components/ui/DataTableShell";
+import Pagination, { paginate } from "@/components/ui/Pagination";
 import { Rental } from "@/types/rental";
 import { isWithinHours } from "@/lib/time";
+import { formatCarLabel } from "@/lib/car-label";
+import { formatCurrency } from "@/lib/format-currency";
 
 const NEW_CLIENT_BADGE_HOURS = 12;
 
@@ -17,20 +20,28 @@ export default function RentalsTable({ rentals }: Props) {
   const [clientSearch, setClientSearch] = useState("");
   const [carSearch, setCarSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [codeSearch, setCodeSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const hasFilters =
-    clientSearch !== "" || carSearch !== "" || statusFilter !== "";
+    clientSearch !== "" ||
+    carSearch !== "" ||
+    statusFilter !== "" ||
+    codeSearch !== "";
 
   const clearFilters = () => {
     setClientSearch("");
     setCarSearch("");
     setStatusFilter("");
+    setCodeSearch("");
+    setPage(1);
   };
 
   const filteredRentals = useMemo(() => {
     return rentals.filter((rental) => {
       const clientName = getClientName(rental).toLowerCase();
       const carName = getCarName(rental).toLowerCase();
+      const code = getRentalCode(rental);
 
       const matchesClient =
         !clientSearch ||
@@ -43,14 +54,27 @@ export default function RentalsTable({ rentals }: Props) {
       const matchesStatus =
         !statusFilter || rental.status === statusFilter;
 
-      return matchesClient && matchesCar && matchesStatus;
+      const matchesCode =
+        !codeSearch || code.includes(codeSearch.toUpperCase());
+
+      return matchesClient && matchesCar && matchesStatus && matchesCode;
     });
-  }, [rentals, clientSearch, carSearch, statusFilter]);
+  }, [rentals, clientSearch, carSearch, statusFilter, codeSearch]);
+
+  const { pageItems: pagedRentals, totalPages, safePage } = paginate(filteredRentals, page);
 
   return (
     <DataTableShell
       filters={
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
+          <input
+            type="text"
+            placeholder="Buscar por código..."
+            value={codeSearch}
+            onChange={(event) => setCodeSearch(event.target.value)}
+            className="input"
+          />
+
           <input
             type="text"
             placeholder="Buscar por cliente..."
@@ -87,10 +111,14 @@ export default function RentalsTable({ rentals }: Props) {
       onClearFilters={clearFilters}
       emptyTitle="No se encontraron rentas"
       emptyDescription="Intenta ajustar el cliente, vehículo o estado seleccionado."
+      pagination={
+        <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
+      }
     >
       <table className="w-full min-w-[980px] text-left text-sm">
         <thead className="bg-slate-50 text-slate-600">
           <tr>
+            <th className="px-6 py-4 font-semibold">Código</th>
             <th className="px-6 py-4 font-semibold">Cliente</th>
             <th className="px-6 py-4 font-semibold">Tipo</th>
             <th className="px-6 py-4 font-semibold">Vehículo</th>
@@ -103,8 +131,11 @@ export default function RentalsTable({ rentals }: Props) {
         </thead>
 
         <tbody className="divide-y divide-slate-100">
-          {filteredRentals.map((rental) => (
+          {pagedRentals.map((rental) => (
             <tr key={rental.id} className="transition hover:bg-slate-50">
+              <td className="px-6 py-4 font-mono text-xs font-semibold text-slate-600">
+                {getRentalCode(rental)}
+              </td>
               <td className="px-6 py-4 font-medium text-slate-900">
                 {getClientName(rental)}
                 {rental.source === "WEB" && (
@@ -142,7 +173,7 @@ export default function RentalsTable({ rentals }: Props) {
                   : formatDate(rental.endDate)}
               </td>
               <td className="px-6 py-4 text-slate-900">
-                ${rental.totalPrice.toLocaleString("es-MX")} MXN
+                {formatCurrency(rental.totalPrice)}
               </td>
               <td className="px-6 py-4">
                 <StatusBadge status={rental.status} />
@@ -163,6 +194,10 @@ export default function RentalsTable({ rentals }: Props) {
   );
 }
 
+function getRentalCode(rental: Rental) {
+  return rental.id.slice(-8).toUpperCase();
+}
+
 function getClientName(rental: Rental) {
   return rental.client?.fullName ?? "Cliente no disponible";
 }
@@ -172,7 +207,7 @@ function getCarName(rental: Rental) {
     return "Vehículo no disponible";
   }
 
-  return `${rental.car.brand} ${rental.car.model} ${rental.car.year}`;
+  return formatCarLabel(rental.car);
 }
 
 function formatDate(value: string | null) {

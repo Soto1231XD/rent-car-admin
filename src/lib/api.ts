@@ -1,9 +1,15 @@
 import { cookies } from "next/headers";
+import { AveoEntry, AveoLedger } from "@/types/aveo";
 import { Car } from "@/types/car";
+import { SavingsFundEntry } from "@/types/savings-fund";
 import { Client } from "@/types/client";
 import { ExtraExpense } from "@/types/extra-expense";
+import { GeneralExpense } from "@/types/general-expense";
+import { InsurancePolicy } from "@/types/insurance-policy";
+import { Lead } from "@/types/lead";
 import { Maintenance } from "@/types/maintenance";
 import { Quote } from "@/types/quote";
+import { MonthlyBreakdownEntry } from "@/types/monthly-breakdown";
 import { Rental } from "@/types/rental";
 import { AUTH_COOKIE } from "@/lib/auth";
 
@@ -86,6 +92,14 @@ export async function getClient(id: string): Promise<Client | null> {
   return request<Client>(`/clients/${id}`);
 }
 
+export async function getLeads(): Promise<Lead[]> {
+  return (await request<Lead[]>("/leads")) ?? [];
+}
+
+export async function getLead(id: string): Promise<Lead | null> {
+  return request<Lead>(`/leads/${id}`);
+}
+
 export async function getRentals(): Promise<Rental[]> {
   return (await request<Rental[]>("/rentals")) ?? [];
 }
@@ -106,10 +120,42 @@ export async function getExtraExpenses(): Promise<ExtraExpense[]> {
   return (await request<ExtraExpense[]>("/extra-expenses")) ?? [];
 }
 
+export async function getAveoEntries(): Promise<AveoEntry[]> {
+  return (await request<AveoEntry[]>("/aveo")) ?? [];
+}
+
+export async function getAveoEntry(id: string): Promise<AveoEntry | null> {
+  return request<AveoEntry>(`/aveo/${id}`);
+}
+
+export async function getAveoLedger(): Promise<AveoLedger[]> {
+  return (await request<AveoLedger[]>("/aveo/ledger")) ?? [];
+}
+
+export async function getSavingsFundEntries(): Promise<SavingsFundEntry[]> {
+  return (await request<SavingsFundEntry[]>("/savings-fund")) ?? [];
+}
+
+export async function getSavingsFundEntry(
+  id: string
+): Promise<SavingsFundEntry | null> {
+  return request<SavingsFundEntry>(`/savings-fund/${id}`);
+}
+
 export async function getExtraExpense(
   id: string
 ): Promise<ExtraExpense | null> {
   return request<ExtraExpense>(`/extra-expenses/${id}`);
+}
+
+export async function getInsurancePolicies(): Promise<InsurancePolicy[]> {
+  return (await request<InsurancePolicy[]>("/insurance-policies")) ?? [];
+}
+
+export async function getInsurancePolicy(
+  id: string
+): Promise<InsurancePolicy | null> {
+  return request<InsurancePolicy>(`/insurance-policies/${id}`);
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary | null> {
@@ -118,6 +164,16 @@ export async function getDashboardSummary(): Promise<DashboardSummary | null> {
 
 export async function getMonthlyHistory(): Promise<MonthlyHistoryEntry[]> {
   return (await request<MonthlyHistoryEntry[]>("/dashboard/monthly-history")) ?? [];
+}
+
+export async function getMonthlyBreakdown(): Promise<MonthlyBreakdownEntry[]> {
+  return (
+    (await request<MonthlyBreakdownEntry[]>("/dashboard/monthly-breakdown")) ?? []
+  );
+}
+
+export async function getGeneralExpenses(): Promise<GeneralExpense[]> {
+  return (await request<GeneralExpense[]>("/general-expenses")) ?? [];
 }
 
 export async function getQuotes(): Promise<Quote[]> {

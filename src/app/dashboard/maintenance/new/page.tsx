@@ -2,7 +2,14 @@ import Link from "next/link";
 import MaintenanceForm from "@/components/maintenance/MaintenanceForm";
 import { getCars } from "@/lib/api";
 
-export default async function NewMaintenancePage() {
+type Props = {
+  searchParams: Promise<{
+    carId?: string;
+  }>;
+};
+
+export default async function NewMaintenancePage({ searchParams }: Props) {
+  const { carId } = await searchParams;
   const cars = await getCars();
 
   return (
@@ -20,7 +27,13 @@ export default async function NewMaintenancePage() {
         </h1>
       </div>
 
-      <MaintenanceForm mode="create" cars={cars} />
+      <MaintenanceForm
+        mode="create"
+        cars={cars}
+        initialData={{ carId }}
+        recordType="SERVICIO"
+        redirectBase="/dashboard/maintenance"
+      />
     </div>
   );
 }

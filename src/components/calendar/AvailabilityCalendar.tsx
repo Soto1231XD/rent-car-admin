@@ -28,6 +28,13 @@ const MAINTENANCE_COLOR = {
   text: "#ffffff",
 };
 
+// A renta indefinida has no real end date, so the calendar has to pick some
+// visual block window for it. This isn't a real availability rule (the
+// backend never blocks other reservations for an INDEFINIDA rental — see
+// rentals.service.ts's validateRentalAvailability), it's just how far ahead
+// this event paints as occupied until staff update/complete it.
+const INDEFINIDA_CALENDAR_BLOCK_DAYS = 7;
+
 export default function AvailabilityCalendar({ rentals, maintenances }: Props) {
   const rentalEvents = rentals
     .filter((rental) => rental.status !== "CANCELADO")
@@ -42,7 +49,7 @@ export default function AvailabilityCalendar({ rentals, maintenances }: Props) {
         }`,
         start: toDateOnly(rental.startDate),
         end: isIndefinida
-          ? addDays(rental.startDate, 365)
+          ? addDays(rental.startDate, INDEFINIDA_CALENDAR_BLOCK_DAYS)
           : addOneDay(rental.endDate as string),
         allDay: true,
         backgroundColor: color.background,

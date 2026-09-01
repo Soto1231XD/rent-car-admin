@@ -5,7 +5,10 @@ import { useMemo, useState } from "react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 import DataTableShell from "@/components/ui/DataTableShell";
+import Pagination, { paginate } from "@/components/ui/Pagination";
 import { ExtraExpense } from "@/types/extra-expense";
+import { formatCarLabel } from "@/lib/car-label";
+import { formatCurrency } from "@/lib/format-currency";
 
 type Props = {
   extraExpenses: ExtraExpense[];
@@ -15,6 +18,7 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
   const [carSearch, setCarSearch] = useState("");
   const [conceptSearch, setConceptSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
 
   const hasFilters =
     carSearch !== "" || conceptSearch !== "" || statusFilter !== "";
@@ -23,6 +27,7 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
     setCarSearch("");
     setConceptSearch("");
     setStatusFilter("");
+    setPage(1);
   };
 
   const filteredExtraExpenses = useMemo(() => {
@@ -42,6 +47,12 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
       return matchesCar && matchesConcept && matchesStatus;
     });
   }, [extraExpenses, carSearch, conceptSearch, statusFilter]);
+
+  const {
+    pageItems: pagedExtraExpenses,
+    totalPages,
+    safePage,
+  } = paginate(filteredExtraExpenses, page);
 
   return (
     <DataTableShell
@@ -82,6 +93,9 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
       onClearFilters={clearFilters}
       emptyTitle="No se encontraron gastos extras"
       emptyDescription="Intenta ajustar el vehiculo, concepto o estado seleccionado."
+      pagination={
+        <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
+      }
     >
       <table className="w-full min-w-[980px] text-left text-sm">
         <thead className="bg-slate-50 text-slate-600">
@@ -97,7 +111,7 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
         </thead>
 
         <tbody className="divide-y">
-          {filteredExtraExpenses.map((extraExpense) => (
+          {pagedExtraExpenses.map((extraExpense) => (
             <tr key={extraExpense.id} className="transition hover:bg-slate-50">
               <td className="px-6 py-4 text-slate-900">
                 {getCarName(extraExpense)}
@@ -109,7 +123,7 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
                 {formatDate(extraExpense.date)}
               </td>
               <td className="px-6 py-4 text-slate-900">
-                ${extraExpense.cost.toLocaleString("es-MX")} MXN
+                {formatCurrency(extraExpense.cost)}
               </td>
               <td className="whitespace-nowrap px-6 py-4">
                 <StatusBadge status={extraExpense.status} />
@@ -144,10 +158,10 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
 
 function getCarName(extraExpense: ExtraExpense) {
   if (!extraExpense.car) {
-    return "Vehiculo no disponible";
+    return "Sin vehículo asociado";
   }
 
-  return `${extraExpense.car.brand} ${extraExpense.car.model} ${extraExpense.car.year}`;
+  return formatCarLabel(extraExpense.car);
 }
 
 function formatDate(value: string) {

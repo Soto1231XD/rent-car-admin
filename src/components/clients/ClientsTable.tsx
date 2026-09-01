@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Client } from "@/types/client";
 import { RenterType } from "@/types/rental";
 import DataTableShell from "@/components/ui/DataTableShell";
+import Pagination, { paginate } from "@/components/ui/Pagination";
 import { isWithinHours } from "@/lib/time";
 
 const NEW_CLIENT_BADGE_HOURS = 12;
@@ -16,6 +17,7 @@ type Props = {
 export default function ClientsTable({ clients }: Props) {
   const [clientSearch, setClientSearch] = useState("");
   const [clientType, setClientType] = useState<RenterType | "">("");
+  const [page, setPage] = useState(1);
   const hasFilters = clientSearch !== "" || clientType !== "";
 
   const filteredClients = useMemo(() => {
@@ -33,6 +35,8 @@ export default function ClientsTable({ clients }: Props) {
       return matchesSearch && matchesType;
     });
   }, [clients, clientSearch, clientType]);
+
+  const { pageItems: pagedClients, totalPages, safePage } = paginate(filteredClients, page);
 
   return (
     <DataTableShell
@@ -70,9 +74,13 @@ export default function ClientsTable({ clients }: Props) {
       onClearFilters={() => {
         setClientSearch("");
         setClientType("");
+        setPage(1);
       }}
       emptyTitle="No se encontraron clientes"
       emptyDescription="Intenta buscar por otro nombre, correo, teléfono o tipo de cliente."
+      pagination={
+        <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
+      }
     >
       <table className="w-full min-w-[760px] border-collapse text-left text-sm">
         <thead className="bg-slate-50 text-slate-600">
@@ -87,7 +95,7 @@ export default function ClientsTable({ clients }: Props) {
         </thead>
 
         <tbody className="divide-y divide-slate-100">
-          {filteredClients.map((client) => (
+          {pagedClients.map((client) => (
             <tr key={client.id} className="transition hover:bg-slate-50">
               <td className="px-6 py-4 font-medium text-slate-900">
                 {client.fullName}

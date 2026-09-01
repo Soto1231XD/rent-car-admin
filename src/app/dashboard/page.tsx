@@ -11,9 +11,12 @@ import {
 } from "lucide-react";
 import { getDashboardSummary, getExtraExpenses } from "@/lib/api";
 import StatusBadge from "@/components/ui/StatusBadge";
+import SummaryCard from "@/components/ui/SummaryCard";
 import { Rental } from "@/types/rental";
 import { Maintenance } from "@/types/maintenance";
+import { formatCarLabel } from "@/lib/car-label";
 import { ExtraExpense } from "@/types/extra-expense";
+import { formatCurrency as formatMoney, toMoneyNumber } from "@/lib/format-currency";
 
 export default async function DashboardPage() {
   const [summary, extraExpenses] = await Promise.all([
@@ -55,6 +58,7 @@ export default async function DashboardPage() {
           detail={`${summary.cars.total} unidades registradas`}
           icon={<Car />}
           className="xl:col-span-2"
+          valueClassName="text-3xl"
         />
         <SummaryCard
           title="Rentas activas"
@@ -62,6 +66,7 @@ export default async function DashboardPage() {
           detail={`${summary.rentals.reserved} reservaciones`}
           icon={<CalendarDays />}
           className="xl:col-span-2"
+          valueClassName="text-3xl"
         />
         <SummaryCard
           title="Clientes"
@@ -69,6 +74,7 @@ export default async function DashboardPage() {
           detail="Clientes registrados"
           icon={<Users />}
           className="xl:col-span-2"
+          valueClassName="text-3xl"
         />
         <SummaryCard
           title="Ingreso del mes"
@@ -299,44 +305,6 @@ export default async function DashboardPage() {
   );
 }
 
-function SummaryCard({
-  title,
-  value,
-  detail,
-  icon,
-  className = "",
-  valueClassName = "text-3xl",
-}: {
-  title: string;
-  value: number | string;
-  detail: string;
-  icon: React.ReactNode;
-  className?: string;
-  valueClassName?: string;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 ${className}`}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <p
-            className={`mt-2 break-words font-bold leading-tight tracking-normal text-slate-900 tabular-nums ${valueClassName}`}
-          >
-            {value}
-          </p>
-          <p className="mt-1 text-xs text-slate-500">{detail}</p>
-        </div>
-
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 ring-1 ring-slate-200">
-          {icon}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function StatusPanel({
   title,
   items,
@@ -399,7 +367,7 @@ function getRentalCarName(rental: Rental) {
     return "Vehículo no disponible";
   }
 
-  return `${rental.car.brand} ${rental.car.model} ${rental.car.year}`;
+  return formatCarLabel(rental.car);
 }
 
 function getRentalClientName(rental: Rental) {
@@ -411,7 +379,7 @@ function getMaintenanceCarName(maintenance: Maintenance) {
     return "Vehículo no disponible";
   }
 
-  return `${maintenance.car.brand} ${maintenance.car.model} ${maintenance.car.year}`;
+  return formatCarLabel(maintenance.car);
 }
 
 function QuickAction({
@@ -453,12 +421,11 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function formatMoney(value: number) {
-  return `$${toMoneyNumber(value).toLocaleString("es-MX")} MXN`;
-}
-
 function formatSummaryMoney(value: number | string | null | undefined) {
-  return `$${toMoneyNumber(value).toLocaleString("es-MX")}`;
+  return `$${toMoneyNumber(value).toLocaleString("es-MX", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 function getMonthlyPaidExtraExpenses(extraExpenses: ExtraExpense[]) {
@@ -480,18 +447,4 @@ function getMonthlyPaidExtraExpenses(extraExpenses: ExtraExpense[]) {
       return date >= currentMonthStart && date < nextMonthStart;
     })
     .reduce((total, extraExpense) => total + toMoneyNumber(extraExpense.cost), 0);
-}
-
-function toMoneyNumber(value: number | string | null | undefined) {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : 0;
-  }
-
-  if (typeof value === "string") {
-    const parsedValue = Number(value.replace(/,/g, "").trim());
-
-    return Number.isFinite(parsedValue) ? parsedValue : 0;
-  }
-
-  return 0;
 }

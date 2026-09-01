@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { MonthlyHistoryEntry } from "@/lib/api";
+import { formatCurrency as formatMoney } from "@/lib/format-currency";
 
 type Props = {
   entries: MonthlyHistoryEntry[];
@@ -145,8 +146,4 @@ function formatMonth(value: string) {
   }).format(date);
 
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-}
-
-function formatMoney(value: number) {
-  return `$${value.toLocaleString("es-MX")} MXN`;
 }

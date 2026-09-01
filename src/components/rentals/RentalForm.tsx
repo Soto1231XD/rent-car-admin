@@ -6,13 +6,24 @@ import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Car } from "@/types/car";
+import { formatCarLabel } from "@/lib/car-label";
 import { Client } from "@/types/client";
 import { Rental } from "@/types/rental";
 import { createRentalResult, updateRentalResult } from "@/lib/api-client";
 import FormAlert from "@/components/ui/FormAlert";
 import { showErrorToast } from "@/lib/toast";
+import {
+  formatCurrency,
+  formatCurrencyInput,
+  formatCurrencyInputValue,
+  normalizeCurrencyValue,
+  toMoneyNumber,
+} from "@/lib/format-currency";
+import { formatIntegerInput, formatIntegerInputValue } from "@/lib/format-number";
 
 type PriceMode = "daily" | "highSeason";
+
+const MINIMUM_RENTAL_DAYS = 2;
 
 const optionalCurrencyNumber = z.preprocess((value) => {
   const normalizedValue = normalizeCurrencyValue(value);
@@ -48,6 +59,12 @@ const schema = z
           message: "La fecha de devolución no puede ser anterior a la entrega",
           path: ["endDate"],
         });
+      } else if (getRentalDays(data.startDate, data.endDate) < MINIMUM_RENTAL_DAYS) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `La renta mínima es de ${MINIMUM_RENTAL_DAYS} días`,
+          path: ["endDate"],
+        });
       }
 
       if (data.dailyRateApplied === undefined || data.dailyRateApplied <= 0) {
@@ -77,6 +94,12 @@ const schema = z
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "La fecha de devolución no puede ser anterior a la entrega",
+            path: ["endDate"],
+          });
+        } else if (getRentalDays(data.startDate, data.endDate) < MINIMUM_RENTAL_DAYS) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `La renta mínima es de ${MINIMUM_RENTAL_DAYS} días`,
             path: ["endDate"],
           });
         }
@@ -284,6 +307,15 @@ export default function RentalForm({
       return;
     }
 
+    if (result.data.mileageControlMissing) {
+      const carLabel = result.data.car
+        ? formatCarLabel(result.data.car)
+        : "Este carro";
+      showErrorToast(
+        `${carLabel} no tiene Control de kilometraje. Agrégalo en el módulo de Control de kilometraje.`
+      );
+    }
+
     router.refresh();
     router.push(
       `/dashboard/rentals/${result.data.id}?success=${
@@ -316,7 +348,7 @@ export default function RentalForm({
               <option value="">Selecciona un vehículo</option>
               {cars.map((car) => (
                 <option key={car.id} value={car.id}>
-                  {car.brand} {car.model} {car.year}
+                  {formatCarLabel(car)}
                   {car.plate ? ` - ${car.plate}` : ""}
                 </option>
               ))}
@@ -387,7 +419,7 @@ export default function RentalForm({
           >
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               {...register("dailyRateApplied")}
               onInput={formatCurrencyInput}
               className="input"
@@ -418,7 +450,7 @@ export default function RentalForm({
                 type="text"
                 inputMode="numeric"
                 {...register("returnMileage")}
-                onInput={formatCurrencyInput}
+                onInput={formatIntegerInput}
                 className="input"
                 placeholder="45,000"
               />
@@ -456,17 +488,17 @@ export default function RentalForm({
           <SummaryItem
             label="Precio por día"
             value={
-              effectiveDailyRate > 0 ? formatMoney(effectiveDailyRate) : "-"
+              effectiveDailyRate > 0 ? formatCurrency(effectiveDailyRate) : "-"
             }
           />
           <SummaryItem
             label="Depósito sugerido"
-            value={quote?.deposit ? formatMoney(quote.deposit) : "No definido"}
+            value={quote?.deposit ? formatCurrency(quote.deposit) : "No definido"}
           />
           {(!isIndefinida || isCompletingIndefinida) && (
             <SummaryItem
               label="Total"
-              value={effectiveTotal > 0 ? formatMoney(effectiveTotal) : "-"}
+              value={effectiveTotal > 0 ? formatCurrency(effectiveTotal) : "-"}
               strong
             />
           )}
@@ -476,7 +508,7 @@ export default function RentalForm({
           <Field label="Anticipo recibido" error={errors.advancePayment?.message}>
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               {...register("advancePayment")}
               onInput={formatCurrencyInput}
               className="input"
@@ -488,7 +520,7 @@ export default function RentalForm({
             label="Saldo pendiente"
             value={
               effectiveTotal > 0
-                ? formatMoney(Math.max(effectiveTotal - advancePaymentValue, 0))
+                ? formatCurrency(Math.max(effectiveTotal - advancePaymentValue, 0))
                 : "-"
             }
             strong
@@ -632,28 +664,6 @@ function isHighSeasonDate(date: Date) {
   );
 }
 
-function formatMoney(value: number) {
-  return `$${value.toLocaleString("es-MX")} MXN`;
-}
-
-function normalizeCurrencyValue(value: unknown) {
-  return typeof value === "string" ? value.replace(/,/g, "") : value;
-}
-
-function formatCurrencyInput(event: FormEvent<HTMLInputElement>) {
-  event.currentTarget.value = formatCurrencyInputValue(event.currentTarget.value);
-}
-
-function formatCurrencyInputValue(value?: string | number | null) {
-  if (value === undefined || value === null || value === "") {
-    return "";
-  }
-
-  const digits = String(value).replace(/\D/g, "");
-
-  return digits ? Number(digits).toLocaleString("es-MX") : "";
-}
-
 function getDailyRate(
   car: Car,
   priceMode: PriceMode,
@@ -680,21 +690,6 @@ function getDailyRate(
 
 function hasMoneyValue(value?: number | string | null) {
   return toMoneyNumber(value) > 0;
-}
-
-function toMoneyNumber(value?: number | string | null) {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : 0;
-  }
-
-  if (typeof value === "string") {
-    const normalizedValue = value.replace(/,/g, "").trim();
-    const parsedValue = Number(normalizedValue);
-
-    return Number.isFinite(parsedValue) ? parsedValue : 0;
-  }
-
-  return 0;
 }
 
 function inferInitialPriceMode(

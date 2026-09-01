@@ -7,8 +7,16 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Car } from "@/types/car";
 import { createQuoteResult } from "@/lib/api-client";
+import { formatCarLabel } from "@/lib/car-label";
 import FormAlert from "@/components/ui/FormAlert";
 import { showErrorToast } from "@/lib/toast";
+import {
+  formatCurrency,
+  formatCurrencyInput,
+  formatCurrencyInputValue,
+  normalizeCurrencyValue,
+  toMoneyNumber,
+} from "@/lib/format-currency";
 
 const optionalCurrencyNumber = z.preprocess((value) => {
   const normalizedValue = normalizeCurrencyValue(value);
@@ -144,7 +152,7 @@ export default function QuoteForm({ cars }: Props) {
               <option value="">Selecciona un vehículo</option>
               {cars.map((car) => (
                 <option key={car.id} value={car.id}>
-                  {car.brand} {car.model} {car.year}
+                  {formatCarLabel(car)}
                 </option>
               ))}
             </select>
@@ -163,7 +171,7 @@ export default function QuoteForm({ cars }: Props) {
           <Field label="Cuota de entrega" error={errors.deliveryFee?.message}>
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               {...register("deliveryFee")}
               onInput={formatCurrencyInput}
               className="input"
@@ -174,7 +182,7 @@ export default function QuoteForm({ cars }: Props) {
           <Field label="Cuota de devolución" error={errors.returnFee?.message}>
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               {...register("returnFee")}
               onInput={formatCurrencyInput}
               className="input"
@@ -193,32 +201,32 @@ export default function QuoteForm({ cars }: Props) {
           <SummaryItem label="Días" value={quote ? quote.days : "-"} />
           <SummaryItem
             label="Precio por día"
-            value={quote ? formatMoney(quote.dailyRate) : "-"}
+            value={quote ? formatCurrency(quote.dailyRate) : "-"}
           />
           <SummaryItem
             label="Total renta"
-            value={quote ? formatMoney(quote.total) : "-"}
+            value={quote ? formatCurrency(quote.total) : "-"}
           />
         </div>
 
         <div className="mt-4 grid gap-4 md:grid-cols-4">
           <SummaryItem
             label="Depósito sugerido"
-            value={quote?.deposit ? formatMoney(quote.deposit) : "No definido"}
+            value={quote?.deposit ? formatCurrency(quote.deposit) : "No definido"}
           />
           <SummaryItem
             label="Cuota de entrega"
-            value={deliveryFeeValue > 0 ? formatMoney(deliveryFeeValue) : "-"}
+            value={deliveryFeeValue > 0 ? formatCurrency(deliveryFeeValue) : "-"}
           />
           <SummaryItem
             label="Cuota de devolución"
-            value={returnFeeValue > 0 ? formatMoney(returnFeeValue) : "-"}
+            value={returnFeeValue > 0 ? formatCurrency(returnFeeValue) : "-"}
           />
           <SummaryItem
             label="Total a cubrir"
             value={
               quote
-                ? formatMoney(
+                ? formatCurrency(
                     quote.total + quote.deposit + deliveryFeeValue + returnFeeValue
                   )
                 : "-"
@@ -345,43 +353,6 @@ function isHighSeasonDate(date: Date) {
   );
 }
 
-function formatMoney(value: number) {
-  return `$${value.toLocaleString("es-MX")} MXN`;
-}
-
 function hasMoneyValue(value?: number | string | null) {
   return toMoneyNumber(value) > 0;
-}
-
-function toMoneyNumber(value?: number | string | null) {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : 0;
-  }
-
-  if (typeof value === "string") {
-    const normalizedValue = value.replace(/,/g, "").trim();
-    const parsedValue = Number(normalizedValue);
-
-    return Number.isFinite(parsedValue) ? parsedValue : 0;
-  }
-
-  return 0;
-}
-
-function normalizeCurrencyValue(value: unknown) {
-  return typeof value === "string" ? value.replace(/,/g, "") : value;
-}
-
-function formatCurrencyInput(event: FormEvent<HTMLInputElement>) {
-  event.currentTarget.value = formatCurrencyInputValue(event.currentTarget.value);
-}
-
-function formatCurrencyInputValue(value?: string | number | null) {
-  if (value === undefined || value === null || value === "") {
-    return "";
-  }
-
-  const digits = String(value).replace(/\D/g, "");
-
-  return digits ? Number(digits).toLocaleString("es-MX") : "";
 }

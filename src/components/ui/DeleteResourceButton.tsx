@@ -6,12 +6,16 @@ import { Trash2 } from "lucide-react";
 import FormAlert from "@/components/ui/FormAlert";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
+  deleteAveoEntryResult,
   deleteCarResult,
   deleteClientResult,
   deleteExtraExpenseResult,
+  deleteGeneralExpenseResult,
+  deleteInsurancePolicyResult,
   deleteMaintenanceResult,
   deleteQuoteResult,
   deleteRentalResult,
+  deleteSavingsFundEntryResult,
 } from "@/lib/api-client";
 import { showErrorToast } from "@/lib/toast";
 
@@ -21,7 +25,11 @@ type ResourceType =
   | "rental"
   | "maintenance"
   | "extraExpense"
-  | "quote";
+  | "insurancePolicy"
+  | "generalExpense"
+  | "quote"
+  | "aveoEntry"
+  | "savingsFundEntry";
 
 type DeleteResourceButtonProps = {
   id: string;
@@ -36,7 +44,11 @@ const deleteByType = {
   rental: deleteRentalResult,
   maintenance: deleteMaintenanceResult,
   extraExpense: deleteExtraExpenseResult,
+  insurancePolicy: deleteInsurancePolicyResult,
+  generalExpense: deleteGeneralExpenseResult,
   quote: deleteQuoteResult,
+  aveoEntry: deleteAveoEntryResult,
+  savingsFundEntry: deleteSavingsFundEntryResult,
 };
 
 const labels: Record<ResourceType, string> = {
@@ -45,7 +57,11 @@ const labels: Record<ResourceType, string> = {
   rental: "renta",
   maintenance: "mantenimiento",
   extraExpense: "gasto extra",
+  insurancePolicy: "póliza",
+  generalExpense: "gasto",
   quote: "cotización",
+  aveoEntry: "registro de Aveo",
+  savingsFundEntry: "registro del fondo de ahorro",
 };
 
 export default function DeleteResourceButton({

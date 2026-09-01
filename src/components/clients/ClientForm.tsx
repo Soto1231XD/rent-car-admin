@@ -5,16 +5,37 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IdCard, UploadCloud, X } from "lucide-react";
-import { Client } from "@/types/client";
+import { FileText, Plus, Trash2, UploadCloud } from "lucide-react";
+import { Client, ClientDocument } from "@/types/client";
 import {
+  addClientDocumentResult,
+  convertLeadResult,
   createClientResult,
+  deleteClientDocumentResult,
   updateClientResult,
-  uploadClientIdentificationImageResult,
 } from "@/lib/api-client";
 import { getAssetUrl } from "@/lib/assets";
 import FormAlert from "@/components/ui/FormAlert";
 import { showErrorToast } from "@/lib/toast";
+
+// No es una lista cerrada: de vez en cuando se piden documentos distintos
+// según el cliente (comprobante de domicilio si es local; itinerario de
+// vuelo o reserva de hospedaje si es extranjero, etc.). Estas son solo
+// sugerencias rápidas — "Otro" permite escribir cualquier etiqueta.
+const DOCUMENT_LABEL_PRESETS = [
+  "Identificación",
+  "Comprobante de domicilio",
+  "Itinerario de vuelo",
+  "Reserva de hospedaje",
+  "Otro",
+];
+
+type PendingDocument = {
+  key: string;
+  label: string;
+  file: File;
+  previewUrl: string;
+};
 
 const optionalText = z
   .string()
@@ -52,6 +73,7 @@ const clientSchema = z.object({
   emergencyContactName: optionalText,
   emergencyContactPhone: optionalPhone,
   notes: optionalText,
+  birthDate: optionalText,
 });
 
 export type ClientFormData = z.infer<typeof clientSchema>;
@@ -61,49 +83,101 @@ type ClientFormProps = {
   mode: "create" | "edit";
   initialData?: Partial<Client>;
   clientId?: string;
+  leadId?: string;
 };
 
 export default function ClientForm({
   mode,
   initialData,
   clientId,
+  leadId,
 }: ClientFormProps) {
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [existingIdImage, setExistingIdImage] = useState(
-    initialData?.idDocumentImage ?? null
+
+  // Documentos ya guardados en el cliente (solo aplica en modo edición).
+  // Se quitan de esta lista al presionar "Quitar", pero el borrado real en
+  // el servidor ocurre hasta guardar el formulario, igual que el resto de
+  // los campos.
+  const [existingDocuments, setExistingDocuments] = useState<ClientDocument[]>(
+    initialData?.documents ?? []
   );
-  const [selectedIdFile, setSelectedIdFile] = useState<File | null>(null);
-  const [idImagePreviewUrl, setIdImagePreviewUrl] = useState<string | null>(
-    null
+  const [removedDocumentIds, setRemovedDocumentIds] = useState<string[]>([]);
+
+  // Documentos nuevos agregados en esta sesión de edición, pendientes de
+  // subir hasta que se guarde el formulario.
+  const [pendingDocuments, setPendingDocuments] = useState<PendingDocument[]>(
+    []
   );
+  const [documentLabelChoice, setDocumentLabelChoice] = useState(
+    DOCUMENT_LABEL_PRESETS[0]
+  );
+  const [customDocumentLabel, setCustomDocumentLabel] = useState("");
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentError, setDocumentError] = useState("");
 
   useEffect(() => {
-    if (!selectedIdFile) {
-      setIdImagePreviewUrl(null);
+    return () => {
+      pendingDocuments.forEach((document) => URL.revokeObjectURL(document.previewUrl));
+    };
+    // Solo se ejecuta al desmontar: revoca todas las previews creadas.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleDocumentFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setDocumentFile(event.target.files?.[0] ?? null);
+  };
+
+  const handleAddDocument = () => {
+    const label =
+      documentLabelChoice === "Otro"
+        ? customDocumentLabel.trim()
+        : documentLabelChoice;
+
+    if (!label) {
+      setDocumentError("Escribe una etiqueta para el documento.");
       return;
     }
 
-    const url = URL.createObjectURL(selectedIdFile);
-    setIdImagePreviewUrl(url);
-
-    return () => URL.revokeObjectURL(url);
-  }, [selectedIdFile]);
-
-  const handleIdImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (file) {
-      setSelectedIdFile(file);
+    if (!documentFile) {
+      setDocumentError("Selecciona un archivo para agregar.");
+      return;
     }
 
-    event.target.value = "";
+    setDocumentError("");
+    setPendingDocuments((current) => [
+      ...current,
+      {
+        key: `${Date.now()}-${Math.random()}`,
+        label,
+        file: documentFile,
+        previewUrl: URL.createObjectURL(documentFile),
+      },
+    ]);
+    setDocumentFile(null);
+    setCustomDocumentLabel("");
+    const fileInput = window.document.getElementById(
+      "client-document-file"
+    ) as HTMLInputElement | null;
+    if (fileInput) {
+      fileInput.value = "";
+    }
   };
 
-  const handleRemoveIdImage = () => {
-    setSelectedIdFile(null);
-    setExistingIdImage(null);
+  const handleRemoveExistingDocument = (id: string) => {
+    setExistingDocuments((current) => current.filter((document) => document.id !== id));
+    setRemovedDocumentIds((current) => [...current, id]);
+  };
+
+  const handleRemovePendingDocument = (key: string) => {
+    setPendingDocuments((current) => {
+      const removed = current.find((document) => document.key === key);
+      if (removed) {
+        URL.revokeObjectURL(removed.previewUrl);
+      }
+      return current.filter((document) => document.key !== key);
+    });
   };
 
   const {
@@ -122,6 +196,7 @@ export default function ClientForm({
       emergencyContactName: initialData?.emergencyContactName ?? "",
       emergencyContactPhone: initialData?.emergencyContactPhone ?? "",
       notes: initialData?.notes ?? "",
+      birthDate: formatDateInput(initialData?.birthDate),
     },
   });
 
@@ -135,18 +210,11 @@ export default function ClientForm({
     setSubmitError("");
     setIsSaving(true);
 
-    const shouldClearIdImage =
-      !selectedIdFile && !existingIdImage && Boolean(initialData?.idDocumentImage);
-    const payload = {
-      ...data,
-      ...(shouldClearIdImage ? { idDocumentImage: null } : {}),
-    };
-
     const result =
       mode === "create"
-        ? await createClientResult(payload)
+        ? await createClientResult(data)
         : clientId
-          ? await updateClientResult(clientId, payload)
+          ? await updateClientResult(clientId, data)
           : { data: null, error: "No se encontró el cliente a actualizar." };
 
     if (!result.data) {
@@ -159,24 +227,53 @@ export default function ClientForm({
       return;
     }
 
-    const uploadResult = selectedIdFile
-      ? await uploadClientIdentificationImageResult(result.data.id, selectedIdFile)
-      : { data: result.data, error: null };
+    const savedClientId = result.data.id;
+    const documentErrors: string[] = [];
+
+    for (const documentId of removedDocumentIds) {
+      const deleteResult = await deleteClientDocumentResult(savedClientId, documentId);
+      if (!deleteResult.data) {
+        documentErrors.push(
+          deleteResult.error ?? "No se pudo eliminar uno de los documentos."
+        );
+      }
+    }
+
+    for (const document of pendingDocuments) {
+      const uploadResult = await addClientDocumentResult(
+        savedClientId,
+        document.label,
+        document.file
+      );
+      if (!uploadResult.data) {
+        documentErrors.push(
+          uploadResult.error ?? `No se pudo subir "${document.label}".`
+        );
+      }
+    }
 
     setIsSaving(false);
 
-    if (!uploadResult.data) {
-      const message =
-        uploadResult.error ??
-        "El cliente se guardó, pero no se pudo subir la imagen de identificación.";
+    if (documentErrors.length > 0) {
+      const message = `El cliente se guardó, pero hubo problemas con los documentos: ${documentErrors.join(" ")}`;
       setSubmitError(message);
       showErrorToast(message);
       return;
     }
 
+    if (mode === "create" && leadId) {
+      const convertResult = await convertLeadResult(leadId, savedClientId);
+
+      if (!convertResult.data) {
+        showErrorToast(
+          "El cliente se guardó, pero no se pudo marcar la solicitud como convertida."
+        );
+      }
+    }
+
     router.refresh();
     router.push(
-      `/dashboard/clients/${uploadResult.data.id}?success=${
+      `/dashboard/clients/${savedClientId}?success=${
         mode === "create" ? "created" : "updated"
       }`
     );
@@ -235,68 +332,164 @@ export default function ClientForm({
             />
           </Field>
 
+          <Field label="Fecha de nacimiento" error={errors.birthDate?.message}>
+            <input type="date" {...register("birthDate")} className="input" />
+          </Field>
+
           <div className="md:col-span-2">
             <span className="mb-1 block text-sm font-medium text-slate-700">
-              Foto de la identificación
+              Documentos del cliente
             </span>
+            <p className="mb-3 text-xs leading-5 text-slate-500">
+              Opcional. Agrega los documentos que apliquen: identificación,
+              comprobante de domicilio (clientes locales), itinerario de vuelo
+              o reserva de hospedaje (clientes extranjeros), u otro. Formatos
+              JPG, PNG o WEBP.
+            </p>
 
-            {idImagePreviewUrl || existingIdImage ? (
-              <div className="mt-1 flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-3">
-                <div
-                  className="h-24 w-36 shrink-0 rounded-xl bg-slate-100 bg-cover bg-center ring-1 ring-slate-200"
-                  style={{
-                    backgroundImage: `url("${
-                      idImagePreviewUrl ?? getAssetUrl(existingIdImage ?? "")
-                    }")`,
-                  }}
-                />
-                <div className="flex flex-1 flex-col gap-2 py-1">
-                  <p className="text-sm font-medium text-slate-900">
-                    {selectedIdFile ? selectedIdFile.name : "Identificación guardada"}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <label
-                      htmlFor="client-id-image"
-                      className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
-                    >
-                      <UploadCloud size={14} />
-                      Cambiar imagen
-                    </label>
+            {(existingDocuments.length > 0 || pendingDocuments.length > 0) && (
+              <ul className="mb-3 space-y-2">
+                {existingDocuments.map((document) => (
+                  <li
+                    key={document.id}
+                    className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
+                  >
+                    <a
+                      href={getAssetUrl(document.url)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="h-14 w-20 shrink-0 rounded-lg bg-slate-100 bg-cover bg-center ring-1 ring-slate-200"
+                      style={{
+                        backgroundImage: `url("${getAssetUrl(document.url)}")`,
+                      }}
+                    />
+                    <p className="flex-1 truncate text-sm font-medium text-slate-900">
+                      {document.label}
+                    </p>
                     <button
                       type="button"
-                      onClick={handleRemoveIdImage}
-                      className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                      onClick={() => handleRemoveExistingDocument(document.id)}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
                     >
-                      <X size={14} />
+                      <Trash2 size={14} />
                       Quitar
                     </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <label
-                htmlFor="client-id-image"
-                className="mt-1 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-6 text-center transition hover:border-slate-500 hover:bg-slate-100"
-              >
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-200">
-                  <IdCard size={20} />
-                </span>
-                <span className="mt-2 text-sm font-semibold text-slate-900">
-                  Subir foto de la identificación
-                </span>
-                <span className="mt-1 max-w-md text-xs leading-5 text-slate-500">
-                  Opcional. INE, pasaporte u otro documento. Formatos JPG, PNG o WEBP.
-                </span>
-              </label>
+                  </li>
+                ))}
+
+                {pendingDocuments.map((document) => (
+                  <li
+                    key={document.key}
+                    className="flex items-center gap-3 rounded-xl border border-dashed border-blue-300 bg-blue-50/40 p-3"
+                  >
+                    <div
+                      className="h-14 w-20 shrink-0 rounded-lg bg-slate-100 bg-cover bg-center ring-1 ring-slate-200"
+                      style={{ backgroundImage: `url("${document.previewUrl}")` }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-slate-900">
+                        {document.label}
+                      </p>
+                      <p className="truncate text-xs text-slate-500">
+                        {document.file.name} · se subirá al guardar
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePendingDocument(document.key)}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                    >
+                      <Trash2 size={14} />
+                      Quitar
+                    </button>
+                  </li>
+                ))}
+              </ul>
             )}
 
-            <input
-              id="client-id-image"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              onChange={handleIdImageChange}
-              className="sr-only"
-            />
+            <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-4">
+              <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-slate-600">
+                    Tipo de documento
+                  </span>
+                  <select
+                    value={documentLabelChoice}
+                    onChange={(event) => setDocumentLabelChoice(event.target.value)}
+                    className="input"
+                  >
+                    {DOCUMENT_LABEL_PRESETS.map((preset) => (
+                      <option key={preset} value={preset}>
+                        {preset}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {documentLabelChoice === "Otro" ? (
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-slate-600">
+                      Especifica el documento
+                    </span>
+                    <input
+                      type="text"
+                      value={customDocumentLabel}
+                      onChange={(event) => setCustomDocumentLabel(event.target.value)}
+                      className="input"
+                      placeholder="Ej. Carta de hospedaje"
+                    />
+                  </label>
+                ) : (
+                  <div>
+                    <span className="mb-1 block text-xs font-medium text-slate-600">
+                      Archivo
+                    </span>
+                    <label
+                      htmlFor="client-document-file"
+                      className="flex h-[42px] cursor-pointer items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-700 hover:bg-slate-100"
+                    >
+                      <UploadCloud size={14} className="shrink-0" />
+                      <span className="truncate">
+                        {documentFile ? documentFile.name : "Seleccionar archivo"}
+                      </span>
+                    </label>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleAddDocument}
+                  className="inline-flex h-[42px] items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-4 text-sm font-medium text-white hover:bg-slate-700"
+                >
+                  <Plus size={16} />
+                  Agregar
+                </button>
+              </div>
+
+              {documentLabelChoice === "Otro" && (
+                <label
+                  htmlFor="client-document-file"
+                  className="mt-3 flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100"
+                >
+                  <FileText size={14} className="shrink-0" />
+                  <span className="truncate">
+                    {documentFile ? documentFile.name : "Seleccionar archivo"}
+                  </span>
+                </label>
+              )}
+
+              <input
+                id="client-document-file"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={handleDocumentFileChange}
+                className="sr-only"
+              />
+
+              {documentError && (
+                <p className="mt-2 text-sm text-red-600">{documentError}</p>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -387,4 +580,12 @@ function Field({
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </label>
   );
+}
+
+function formatDateInput(value?: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  return value.slice(0, 10);
 }

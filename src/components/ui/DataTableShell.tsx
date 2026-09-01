@@ -11,6 +11,7 @@ type DataTableShellProps = {
   onClearFilters: () => void;
   emptyTitle: string;
   emptyDescription: string;
+  pagination?: ReactNode;
 };
 
 export default function DataTableShell({
@@ -23,6 +24,7 @@ export default function DataTableShell({
   onClearFilters,
   emptyTitle,
   emptyDescription,
+  pagination,
 }: DataTableShellProps) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -58,6 +60,8 @@ export default function DataTableShell({
           />
         )}
       </div>
+
+      {filteredCount > 0 && pagination}
     </div>
   );
 }

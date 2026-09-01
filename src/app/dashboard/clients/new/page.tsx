@@ -1,7 +1,19 @@
 import Link from "next/link";
 import ClientForm from "@/components/clients/ClientForm";
+import { getLead } from "@/lib/api";
+import { Lead } from "@/types/lead";
+import { formatCarLabel } from "@/lib/car-label";
 
-export default function NewClientPage() {
+type Props = {
+  searchParams: Promise<{
+    fromLead?: string;
+  }>;
+};
+
+export default async function NewClientPage({ searchParams }: Props) {
+  const { fromLead } = await searchParams;
+  const lead = fromLead ? await getLead(fromLead) : null;
+
   return (
     <div>
       <div className="mb-6">
@@ -17,11 +29,46 @@ export default function NewClientPage() {
         </h1>
 
         <p className="mt-1 text-sm text-slate-600">
-          Registra la información principal del cliente.
+          {lead
+            ? "Completa los datos que falten para convertir esta solicitud en cliente."
+            : "Registra la información principal del cliente."}
         </p>
       </div>
 
-      <ClientForm mode="create" />
+      <ClientForm
+        mode="create"
+        leadId={lead?.id}
+        initialData={
+          lead
+            ? {
+                fullName: lead.fullName,
+                phone: lead.phone,
+                email: lead.email ?? undefined,
+                notes: buildLeadNotes(lead),
+              }
+            : undefined
+        }
+      />
     </div>
   );
+}
+
+function buildLeadNotes(lead: Lead) {
+  const parts = [`Convertido desde solicitud web.`];
+
+  parts.push(
+    `Vehículo de interés: ${lead.car ? formatCarLabel(lead.car) : "No especificado"}.`
+  );
+
+  if (lead.pickupDate || lead.returnDate) {
+    parts.push(
+      `Fechas: ${lead.pickupDate ?? "?"} – ${lead.returnDate ?? "?"}.`
+    );
+  }
+
+  if (lead.message) {
+    parts.push(`Mensaje: "${lead.message}".`);
+  }
+
+  return parts.join(" ");
 }
