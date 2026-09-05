@@ -3,8 +3,6 @@ import { getRental } from "@/lib/api";
 import { isWithinHours } from "@/lib/time";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 import ConfirmReservationButton from "@/components/rentals/ConfirmReservationButton";
-import ReleaseDepositButton from "@/components/rentals/ReleaseDepositButton";
-import CaptureDepositButton from "@/components/rentals/CaptureDepositButton";
 import { formatCarLabel } from "@/lib/car-label";
 import { formatCurrency } from "@/lib/format-currency";
 
@@ -206,38 +204,18 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
             />
           </div>
 
-          {rental.depositStatus && (
+          {!!rental.depositAmount && (
             <div className="mt-6 border-t border-slate-200 pt-4">
               <h3 className="mb-3 text-sm font-semibold text-slate-900">
                 Depósito de seguridad
               </h3>
 
-              <div className="space-y-4">
-                <Info
-                  label="Estado"
-                  value={formatDepositStatus(
-                    rental.depositStatus,
-                    rental.depositCapturedAmount
-                  )}
-                />
-                <Info
-                  label="Monto retenido"
-                  value={`$${(rental.depositAmount ?? 0).toLocaleString(
-                    "es-MX"
-                  )} MXN`}
-                />
-              </div>
-
-              {rental.depositStatus === "HELD" && (
-                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                  <ReleaseDepositButton id={rental.id} clientName={clientName} />
-                  <CaptureDepositButton
-                    id={rental.id}
-                    depositAmount={rental.depositAmount ?? 0}
-                    clientName={clientName}
-                  />
-                </div>
-              )}
+              <Info
+                label="Monto a cobrar en persona"
+                value={`$${rental.depositAmount.toLocaleString(
+                  "es-MX"
+                )} MXN`}
+              />
             </div>
           )}
         </section>
@@ -275,21 +253,6 @@ function Info({ label, value }: { label: string; value: string | number }) {
 
 function formatDate(value: string | null) {
   return value ? value.slice(0, 10) : "-";
-}
-
-function formatDepositStatus(
-  status: string,
-  capturedAmount?: number | null
-) {
-  const labels: Record<string, string> = {
-    HELD: "Retenido",
-    RELEASED: "Liberado",
-    CAPTURED: `Capturado${
-      capturedAmount != null ? ` · ${formatCurrency(capturedAmount)}` : ""
-    }`,
-  };
-
-  return labels[status] ?? status;
 }
 
 function formatStatus(status: string) {

@@ -386,19 +386,6 @@ export function confirmRentalResult(id: string) {
   });
 }
 
-export function releaseDepositResult(id: string) {
-  return requestResult<Rental>(`/rentals/${id}/release-deposit`, {
-    method: "PATCH",
-  });
-}
-
-export function captureDepositResult(id: string, amount?: number) {
-  return requestResult<Rental>(`/rentals/${id}/capture-deposit`, {
-    method: "PATCH",
-    body: JSON.stringify(amount !== undefined ? { amount } : {}),
-  });
-}
-
 export type SaveMaintenancePayload = {
   carId: string;
   recordType: "REVISION" | "SERVICIO";

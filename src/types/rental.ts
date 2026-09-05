@@ -11,7 +11,6 @@ export type RentalPriceMode = "NORMAL" | "TEMPORADA_ALTA";
 export type RenterType = "CLIENTE" | "COMISIONISTA";
 export type RentalType = "NORMAL" | "INDEFINIDA";
 export type RentalSource = "STAFF" | "WEB";
-export type RentalDepositStatus = "HELD" | "RELEASED" | "CAPTURED";
 
 export type Rental = {
   id: string;
@@ -31,11 +30,7 @@ export type Rental = {
   source: RentalSource;
   isNewClient: boolean;
   confirmedAt?: string | null;
-  chargePaymentIntentId?: string | null;
-  depositPaymentIntentId?: string | null;
   depositAmount?: number | null;
-  depositStatus?: RentalDepositStatus | null;
-  depositCapturedAmount?: number | null;
   client?: Client;
   car?: Car;
   createdAt?: string;
