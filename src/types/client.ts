@@ -13,7 +13,7 @@ export type Client = {
   fullName: string;
   email?: string | null;
   phone: string;
-  idNumber: string;
+  idNumber?: string | null;
   address?: string | null;
   driverLicenseNumber?: string | null;
   emergencyContactName?: string | null;

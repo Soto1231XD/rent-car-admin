@@ -103,7 +103,7 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
             />
             <Info label="Correo" value={client.email || "No registrado"} />
             <Info label="Teléfono" value={client.phone} />
-            <Info label="Identificación" value={client.idNumber} />
+            <Info label="Identificación" value={client.idNumber || "No registrada"} />
             <Info
               label="Licencia"
               value={client.driverLicenseNumber || "No registrada"}

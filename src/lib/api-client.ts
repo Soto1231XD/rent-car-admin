@@ -215,7 +215,7 @@ export type SaveClientPayload = {
   fullName: string;
   email?: string;
   phone: string;
-  idNumber: string;
+  idNumber?: string;
   address?: string;
   driverLicenseNumber?: string;
   emergencyContactName?: string;

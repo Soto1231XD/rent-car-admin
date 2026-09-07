@@ -2,7 +2,7 @@
 
 import { ChangeEvent, ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileText, Plus, Trash2, UploadCloud } from "lucide-react";
@@ -63,18 +63,29 @@ const optionalPhone = z
   )
   .transform((value) => value || undefined);
 
-const clientSchema = z.object({
-  fullName: z.string().min(1, "El nombre es obligatorio"),
-  type: z.enum(["CLIENTE", "COMISIONISTA"]),
-  email: optionalEmail,
-  phone: z.string().min(7, "El teléfono debe tener al menos 7 dígitos"),
-  idNumber: z.string().min(1, "La identificación es obligatoria"),
-  driverLicenseNumber: optionalText,
-  emergencyContactName: optionalText,
-  emergencyContactPhone: optionalPhone,
-  notes: optionalText,
-  birthDate: optionalText,
-});
+const clientSchema = z
+  .object({
+    fullName: z.string().min(1, "El nombre es obligatorio"),
+    type: z.enum(["CLIENTE", "COMISIONISTA"]),
+    email: optionalEmail,
+    phone: z.string().min(7, "El teléfono debe tener al menos 7 dígitos"),
+    idNumber: optionalText,
+    driverLicenseNumber: optionalText,
+    emergencyContactName: optionalText,
+    emergencyContactPhone: optionalPhone,
+    notes: optionalText,
+    birthDate: optionalText,
+  })
+  .superRefine((data, ctx) => {
+    // La identificación es obligatoria salvo para comisionistas.
+    if (data.type !== "COMISIONISTA" && !data.idNumber) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["idNumber"],
+        message: "La identificación es obligatoria",
+      });
+    }
+  });
 
 export type ClientFormData = z.infer<typeof clientSchema>;
 type ClientFormInput = z.input<typeof clientSchema>;
@@ -183,6 +194,7 @@ export default function ClientForm({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<ClientFormInput, unknown, ClientFormData>({
     resolver: zodResolver(clientSchema),
@@ -199,6 +211,9 @@ export default function ClientForm({
       birthDate: formatDateInput(initialData?.birthDate),
     },
   });
+
+  const selectedType = useWatch({ control, name: "type" });
+  const isCommissioner = selectedType === "COMISIONISTA";
 
   const onInvalid = () => {
     const message = "Revisa los campos marcados antes de guardar el cliente.";
@@ -320,7 +335,11 @@ export default function ClientForm({
             <input {...register("phone")} className="input" placeholder="9981234567" />
           </Field>
 
-          <Field label="Identificación" required error={errors.idNumber?.message}>
+          <Field
+            label="Identificación"
+            required={!isCommissioner}
+            error={errors.idNumber?.message}
+          >
             <input {...register("idNumber")} className="input" placeholder="INE / Pasaporte" />
           </Field>
 
