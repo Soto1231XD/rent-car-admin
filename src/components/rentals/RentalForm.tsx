@@ -61,7 +61,10 @@ const schema = z
           message: "La fecha de devolución no puede ser anterior a la entrega",
           path: ["endDate"],
         });
-      } else if (getRentalDays(data.startDate, data.endDate) < MINIMUM_RENTAL_DAYS) {
+      } else if (
+        data.renterType !== "COMISIONISTA" &&
+        getRentalDays(data.startDate, data.endDate) < MINIMUM_RENTAL_DAYS
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: `La renta mínima es de ${MINIMUM_RENTAL_DAYS} días`,
@@ -98,7 +101,10 @@ const schema = z
             message: "La fecha de devolución no puede ser anterior a la entrega",
             path: ["endDate"],
           });
-        } else if (getRentalDays(data.startDate, data.endDate) < MINIMUM_RENTAL_DAYS) {
+        } else if (
+          data.renterType !== "COMISIONISTA" &&
+          getRentalDays(data.startDate, data.endDate) < MINIMUM_RENTAL_DAYS
+        ) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: `La renta mínima es de ${MINIMUM_RENTAL_DAYS} días`,
