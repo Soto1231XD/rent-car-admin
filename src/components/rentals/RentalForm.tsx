@@ -12,6 +12,8 @@ import { Rental } from "@/types/rental";
 import { createRentalResult, updateRentalResult } from "@/lib/api-client";
 import FormAlert from "@/components/ui/FormAlert";
 import { showErrorToast } from "@/lib/toast";
+import DeliveryPointFields from "@/components/rentals/DeliveryPointFields";
+import { getDeliveryFee } from "@/lib/delivery-locations";
 import {
   formatCurrency,
   formatCurrencyInput,
@@ -128,6 +130,27 @@ export default function RentalForm({
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [deliveryLocationId, setDeliveryLocationId] = useState(
+    initialData?.deliveryLocationId ?? ""
+  );
+  const [deliveryPlazaId, setDeliveryPlazaId] = useState(
+    initialData?.deliveryPlazaId ?? ""
+  );
+  const [deliveryAddress, setDeliveryAddress] = useState(
+    initialData?.deliveryAddress ?? ""
+  );
+  const [returnLocationId, setReturnLocationId] = useState(
+    initialData?.returnLocationId ?? ""
+  );
+  const [returnPlazaId, setReturnPlazaId] = useState(
+    initialData?.returnPlazaId ?? ""
+  );
+  const [returnAddress, setReturnAddress] = useState(
+    initialData?.returnAddress ?? ""
+  );
+  const deliveryFeePreview =
+    getDeliveryFee(deliveryLocationId, deliveryPlazaId) +
+    getDeliveryFee(returnLocationId, returnPlazaId);
   const initialPriceMode = useMemo(
     () => inferInitialPriceMode(cars, initialData),
     [cars, initialData]
@@ -287,6 +310,12 @@ export default function RentalForm({
       dailyRateApplied: rateForSubmit,
       advancePayment: data.advancePayment ?? 0,
       returnMileage: isCompleting ? data.returnMileage : undefined,
+      deliveryLocationId,
+      deliveryPlazaId,
+      deliveryAddress,
+      returnLocationId,
+      returnPlazaId,
+      returnAddress,
     };
 
     const result =
@@ -464,6 +493,38 @@ export default function RentalForm({
       </section>
 
       <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
+        <h2 className="mb-1 text-lg font-semibold text-slate-900">
+          Punto de entrega y devolución
+        </h2>
+        <p className="mb-5 text-sm text-slate-500">
+          Opcional: déjalo en &quot;No especificado&quot; si no se solicitó
+          entrega en un punto en particular.
+        </p>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <DeliveryPointFields
+            label="Punto de entrega"
+            locationId={deliveryLocationId}
+            plazaId={deliveryPlazaId}
+            address={deliveryAddress}
+            onLocationChange={setDeliveryLocationId}
+            onPlazaChange={setDeliveryPlazaId}
+            onAddressChange={setDeliveryAddress}
+          />
+
+          <DeliveryPointFields
+            label="Punto de devolución"
+            locationId={returnLocationId}
+            plazaId={returnPlazaId}
+            address={returnAddress}
+            onLocationChange={setReturnLocationId}
+            onPlazaChange={setReturnPlazaId}
+            onAddressChange={setReturnAddress}
+          />
+        </div>
+      </section>
+
+      <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="mb-5 text-lg font-semibold text-slate-900">
           Cálculo de renta
         </h2>
@@ -503,6 +564,14 @@ export default function RentalForm({
             />
           )}
         </div>
+
+        {deliveryFeePreview > 0 && (
+          <p className="mt-3 rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-800 ring-1 ring-blue-200">
+            Cargo adicional por entrega/devolución:{" "}
+            <strong>{formatCurrency(deliveryFeePreview)}</strong> (no incluido
+            en el total de arriba; se cobra aparte).
+          </p>
+        )}
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <Field label="Anticipo recibido" error={errors.advancePayment?.message}>

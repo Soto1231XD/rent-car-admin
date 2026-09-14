@@ -339,6 +339,12 @@ export type SaveRentalPayload = {
   status?: string;
   notes?: string;
   returnMileage?: number;
+  deliveryLocationId?: string;
+  deliveryPlazaId?: string;
+  deliveryAddress?: string;
+  returnLocationId?: string;
+  returnPlazaId?: string;
+  returnAddress?: string;
 };
 
 export function createRental(

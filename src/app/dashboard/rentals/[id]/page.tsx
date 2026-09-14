@@ -143,6 +143,18 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
               value={formatCurrency(rental.totalPrice)}
             />
             <Info label="Estado" value={formatStatus(rental.status)} />
+            {rental.deliveryLocation && (
+              <Info
+                label="Punto de entrega"
+                value={formatDeliveryPoint(rental.deliveryLocation, rental.deliveryFee)}
+              />
+            )}
+            {rental.returnLocation && (
+              <Info
+                label="Punto de devolución"
+                value={formatDeliveryPoint(rental.returnLocation, rental.returnFee)}
+              />
+            )}
           </div>
         </section>
 
@@ -249,6 +261,12 @@ function Info({ label, value }: { label: string; value: string | number }) {
       <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
     </div>
   );
+}
+
+function formatDeliveryPoint(location: string, fee?: number | null) {
+  return fee && fee > 0
+    ? `${location} (cargo adicional: ${formatCurrency(fee)})`
+    : `${location} (sin costo adicional)`;
 }
 
 function formatDate(value: string | null) {

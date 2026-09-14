@@ -136,6 +136,18 @@ export default function UnifiedRentalDocument({ rental }: Props) {
               label="Total a cubrir después del anticipo"
               value={formatMoney(remainingAfterAdvance)}
             />
+            {rental.deliveryLocation && (
+              <Info
+                label="Punto de entrega"
+                value={formatDeliveryPoint(rental.deliveryLocation, rental.deliveryFee)}
+              />
+            )}
+            {rental.returnLocation && (
+              <Info
+                label="Punto de devolución"
+                value={formatDeliveryPoint(rental.returnLocation, rental.returnFee)}
+              />
+            )}
           </div>
         </section>
 
@@ -291,6 +303,12 @@ function Info({ label, value }: { label: string; value: string }) {
       <span>{value}</span>
     </div>
   );
+}
+
+function formatDeliveryPoint(location: string, fee?: number | null) {
+  return fee && fee > 0
+    ? `${location} (cargo adicional: ${formatMoney(fee)})`
+    : `${location} (sin costo adicional)`;
 }
 
 function formatDate(value: string | null) {

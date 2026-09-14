@@ -31,6 +31,16 @@ export type Rental = {
   isNewClient: boolean;
   confirmedAt?: string | null;
   depositAmount?: number | null;
+  deliveryLocationId?: string | null;
+  deliveryPlazaId?: string | null;
+  deliveryAddress?: string | null;
+  deliveryFee?: number | null;
+  deliveryLocation?: string | null;
+  returnLocationId?: string | null;
+  returnPlazaId?: string | null;
+  returnAddress?: string | null;
+  returnFee?: number | null;
+  returnLocation?: string | null;
   client?: Client;
   car?: Car;
   createdAt?: string;
