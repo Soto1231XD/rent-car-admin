@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil } from "lucide-react";
+import writeExcelFile from "write-excel-file/browser";
+import { Download, Pencil } from "lucide-react";
 import { AveoEntry, AveoLedger } from "@/types/aveo";
 import DataTableShell from "@/components/ui/DataTableShell";
 import Pagination, { paginate } from "@/components/ui/Pagination";
@@ -44,6 +45,10 @@ type Props = {
   // eliminar un movimiento manual (cada carro aparte tiene su propia
   // página, ya no hay una sola "/dashboard/aveo" genérica).
   carId: string;
+  // Usados solo para el encabezado y el nombre de archivo del reporte de
+  // Excel (la tabla en pantalla no los necesita).
+  carName: string;
+  excludedSince?: string | null;
 };
 
 const MONTH_NAMES: Record<number, string> = {
@@ -61,7 +66,58 @@ const MONTH_NAMES: Record<number, string> = {
   12: "Diciembre",
 };
 
-export default function AveoUnifiedTable({ ledgers, entries, carId }: Props) {
+function titleCell(value: string) {
+  return { value, fontWeight: "bold" as const, fontSize: 14 };
+}
+
+function headerCell(value: string) {
+  return {
+    value,
+    fontWeight: "bold" as const,
+    backgroundColor: "#06b6d4",
+    textColor: "#ffffff",
+    align: "center" as const,
+  };
+}
+
+function labelCell(value: string) {
+  return { value };
+}
+
+function moneyCell(value: number, options?: { bold?: boolean; background?: string }) {
+  return {
+    value,
+    type: Number,
+    format: "#,##0.00",
+    align: "right" as const,
+    ...(options?.bold ? { fontWeight: "bold" as const } : {}),
+    ...(options?.background ? { backgroundColor: options.background } : {}),
+  };
+}
+
+function blankCell() {
+  return { value: undefined };
+}
+
+// Nombre de archivo simple, sin acentos ni caracteres especiales (la
+// librería de Excel no los necesita, pero el sistema de archivos del
+// usuario a veces sí se queja con ellos).
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+export default function AveoUnifiedTable({
+  ledgers,
+  entries,
+  carId,
+  carName,
+  excludedSince,
+}: Props) {
   const [typeFilter, setTypeFilter] = useState("");
   const [monthFilter, setMonthFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -177,32 +233,156 @@ export default function AveoUnifiedTable({ ledgers, entries, carId }: Props) {
 
   const { pageItems: pagedRows, totalPages, safePage } = paginate(filteredRows, page);
 
+  // El periodo del reporte sigue el filtro de mes ya elegido en la tabla —
+  // así "Descargar reporte" siempre coincide con lo que se está viendo en
+  // pantalla, sin pedir un segundo selector de fechas aparte.
+  const periodLabel =
+    monthOptions.find((option) => option.key === monthFilter)?.label ??
+    "Todos los meses";
+
+  // Los totales del reporte se calculan sobre lo filtrado (no sobre el
+  // histórico completo del carro), para que el resumen del Excel siempre
+  // cuadre con el periodo elegido.
+  const filteredTotals = useMemo(() => {
+    return filteredRows.reduce(
+      (totals, row) => {
+        if (row.type === "income") {
+          totals.income += row.amount;
+          totals.companyProfit += row.companyProfit ?? 0;
+        } else {
+          totals.expenses += row.amount;
+        }
+
+        return totals;
+      },
+      { income: 0, companyProfit: 0, expenses: 0 }
+    );
+  }, [filteredRows]);
+  const filteredDifference =
+    filteredTotals.income - filteredTotals.companyProfit - filteredTotals.expenses;
+
+  const handleDownloadExcel = async () => {
+    type Cell =
+      | ReturnType<typeof titleCell>
+      | ReturnType<typeof headerCell>
+      | ReturnType<typeof labelCell>
+      | ReturnType<typeof moneyCell>
+      | ReturnType<typeof blankCell>;
+
+    const summaryStyle = { bold: true, background: "#f1f5f9" };
+
+    const rowsForSheet: Cell[][] = [
+      [titleCell(`Reporte — ${carName}`)],
+      [labelCell(`Periodo: ${periodLabel}`)],
+      ...(excludedSince
+        ? [[labelCell(`Carro aparte desde: ${formatDate(excludedSince)}`)]]
+        : []),
+      [blankCell()],
+      [
+        headerCell("Ingresos"),
+        headerCell("Ganancia rentadora"),
+        headerCell("Gastos"),
+        headerCell("Diferencia neto"),
+      ],
+      [
+        moneyCell(filteredTotals.income, summaryStyle),
+        moneyCell(filteredTotals.companyProfit, summaryStyle),
+        moneyCell(filteredTotals.expenses, summaryStyle),
+        moneyCell(filteredDifference, summaryStyle),
+      ],
+      [blankCell()],
+      [
+        headerCell("Fecha"),
+        headerCell("Movimiento"),
+        headerCell("Tipo"),
+        headerCell("Días"),
+        headerCell("Monto"),
+        headerCell("Ganancia rentadora"),
+        headerCell("Neto Aveo"),
+      ],
+      ...filteredRows.map((row) => {
+        const isIncome = row.type === "income";
+        const netAmount = isIncome ? row.amount - (row.companyProfit ?? 0) : row.amount;
+
+        return [
+          labelCell(formatDate(row.date)),
+          labelCell(row.label),
+          labelCell(isIncome ? "Renta" : "Gastos"),
+          labelCell(row.days != null ? String(row.days) : "—"),
+          moneyCell(isIncome ? row.amount : -row.amount),
+          isIncome && row.companyProfit != null
+            ? moneyCell(row.companyProfit)
+            : labelCell("—"),
+          isIncome ? moneyCell(netAmount) : labelCell("—"),
+        ];
+      }),
+    ];
+
+    const fileSuffix = `${slugify(carName)}-${slugify(periodLabel)}`;
+
+    // Anchos por columna (Fecha, Movimiento, Tipo, Días, Monto, Ganancia
+    // rentadora, Neto Aveo) — sin esto, columnas como "Ganancia rentadora"
+    // y "Movimiento" quedan cortadas por defecto.
+    // La 4ta columna es "Días" en el cuadro de movimientos, pero también es
+    // donde cae "Diferencia neto" en la fila de resumen (que solo tiene 4
+    // columnas) — necesita el ancho de la etiqueta más larga de las dos.
+    const columns = [
+      { width: 14 },
+      { width: 34 },
+      { width: 10 },
+      { width: 18 },
+      { width: 14 },
+      { width: 20 },
+      { width: 14 },
+    ];
+
+    try {
+      await writeExcelFile([
+        { data: rowsForSheet, sheet: carName.slice(0, 31), columns },
+      ]).toFile(`carros-aparte-${fileSuffix}.xlsx`);
+    } catch {
+      showErrorToast("No se pudo generar el archivo de Excel. Intenta de nuevo.");
+    }
+  };
+
   return (
     <DataTableShell
       filters={
-        <div className="grid gap-3 sm:grid-cols-2">
-          <select
-            value={typeFilter}
-            onChange={(event) => setTypeFilter(event.target.value)}
-            className="input"
-          >
-            <option value="">Todos los tipos</option>
-            <option value="income">Renta</option>
-            <option value="expense">Gastos</option>
-          </select>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="grid flex-1 gap-3 sm:grid-cols-2">
+            <select
+              value={typeFilter}
+              onChange={(event) => setTypeFilter(event.target.value)}
+              className="input"
+            >
+              <option value="">Todos los tipos</option>
+              <option value="income">Renta</option>
+              <option value="expense">Gastos</option>
+            </select>
 
-          <select
-            value={monthFilter}
-            onChange={(event) => setMonthFilter(event.target.value)}
-            className="input"
+            <select
+              value={monthFilter}
+              onChange={(event) => setMonthFilter(event.target.value)}
+              className="input"
+            >
+              <option value="">Todos los meses</option>
+              {monthOptions.map((option) => (
+                <option key={option.key} value={option.key}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleDownloadExcel}
+            disabled={filteredRows.length === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
-            <option value="">Todos los meses</option>
-            {monthOptions.map((option) => (
-              <option key={option.key} value={option.key}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            <Download size={16} />
+            Descargar reporte
+          </button>
         </div>
       }
       filteredCount={filteredRows.length}

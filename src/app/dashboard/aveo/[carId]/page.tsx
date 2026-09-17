@@ -104,7 +104,13 @@ export default async function AveoCarPage({ params, searchParams }: Props) {
         rentadora sale de los ingresos (no se suma aparte), así que la
         diferencia total ya la descuenta, igual que los gastos.
       </p>
-      <AveoUnifiedTable ledgers={ledgers} entries={entries} carId={carId} />
+      <AveoUnifiedTable
+        ledgers={ledgers}
+        entries={entries}
+        carId={carId}
+        carName={formatCarLabel(car)}
+        excludedSince={car.excludedFromReportsAt}
+      />
     </div>
   );
 }
