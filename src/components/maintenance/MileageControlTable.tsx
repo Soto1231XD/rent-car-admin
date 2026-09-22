@@ -69,6 +69,7 @@ export default function MileageControlTable({ revisions }: Props) {
             <th className="px-6 py-4">Fecha de revisión</th>
             <th className="px-6 py-4">Kilometraje actual</th>
             <th className="px-6 py-4">Kilometraje previsto para próximo servicio</th>
+            <th className="px-6 py-4">Fecha prevista para próximo servicio</th>
             <th className="px-6 py-4">Kilometraje antes de ingresar a servicio</th>
             <th className="px-6 py-4">Agencia o independiente</th>
             <th className="px-6 py-4">Lugar donde se realizó</th>
@@ -93,12 +94,11 @@ export default function MileageControlTable({ revisions }: Props) {
                   ? `${revision.serviceMileage.toLocaleString("es-MX")} km`
                   : "-"}
               </td>
-              <td
-                className={`px-6 py-4 ${
-                  isServiceOverdue(revision) ? "font-semibold text-red-600" : "text-slate-900"
-                }`}
-              >
-                {formatNextService(revision)}
+              <td className="px-6 py-4">
+                <NextServiceCell revision={revision} />
+              </td>
+              <td className="px-6 py-4 text-slate-900">
+                {revision.nextServiceDate ? formatDate(revision.nextServiceDate) : "-"}
               </td>
               <td className="px-6 py-4 text-slate-900">
                 {revision.previousMileage != null
@@ -196,11 +196,51 @@ function formatIncludesMaterial(includesMaterial: Maintenance["includesMaterial"
   return includesMaterial ? "Sí" : "No";
 }
 
-function isServiceOverdue(revision: Maintenance) {
+// Qué tan cerca está el kilometraje actual del próximo servicio:
+// verde (aún falta bastante), amarillo (a menos de 1,000 km) y rojo (ya
+// llegó o se pasó).
+const SERVICE_DUE_SOON_THRESHOLD_KM = 1000;
+
+type ServiceMileageStatus = "ok" | "soon" | "due" | null;
+
+function getServiceMileageStatus(revision: Maintenance): ServiceMileageStatus {
+  if (revision.serviceMileage == null || revision.nextServiceMileage == null) {
+    return null;
+  }
+
+  const remaining = revision.nextServiceMileage - revision.serviceMileage;
+
+  if (remaining <= 0) {
+    return "due";
+  }
+
+  if (remaining <= SERVICE_DUE_SOON_THRESHOLD_KM) {
+    return "soon";
+  }
+
+  return "ok";
+}
+
+const SERVICE_MILEAGE_STYLES: Record<Exclude<ServiceMileageStatus, null>, string> = {
+  ok: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+  soon: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+  due: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
+};
+
+function NextServiceCell({ revision }: { revision: Maintenance }) {
+  const status = getServiceMileageStatus(revision);
+  const label = formatNextService(revision);
+
+  if (!status) {
+    return <span className="text-slate-900">{label}</span>;
+  }
+
   return (
-    revision.serviceMileage != null &&
-    revision.nextServiceMileage != null &&
-    revision.serviceMileage >= revision.nextServiceMileage
+    <span
+      className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${SERVICE_MILEAGE_STYLES[status]}`}
+    >
+      {label}
+    </span>
   );
 }
 

@@ -63,6 +63,7 @@ const mileageSchema = z.object({
   serviceMileage: optionalMileage,
   previousMileage: optionalMileage,
   nextServiceMileage: optionalMileage,
+  nextServiceDate: optionalDateInput,
   providerType: z
     .enum(["AGENCIA", "INDEPENDIENTE", ""])
     .optional()
@@ -273,6 +274,7 @@ function MileageRevisionForm({
       nextServiceMileage: formatIntegerInputValue(
         initialData?.nextServiceMileage ?? undefined
       ),
+      nextServiceDate: formatDateInput(initialData?.nextServiceDate ?? undefined),
       providerType: initialData?.providerType ?? "",
       location: initialData?.location ?? "",
       includesMaterial:
@@ -436,6 +438,13 @@ function MileageRevisionForm({
               className="input"
               placeholder="50,000"
             />
+          </Field>
+
+          <Field
+            label="Fecha prevista para próximo servicio"
+            error={errors.nextServiceDate?.message}
+          >
+            <input type="date" {...register("nextServiceDate")} className="input" />
           </Field>
 
           <Field label="Agencia o independiente" error={errors.providerType?.message}>

@@ -19,6 +19,7 @@ type ComparableFields = {
   date: string;
   serviceMileage: number | null;
   nextServiceMileage: number | null;
+  nextServiceDate: string | null;
   previousMileage: number | null;
   providerType: MaintenanceProviderType | null;
   location: string | null;
@@ -44,6 +45,7 @@ const FIELD_DEFS: {
   { key: "date", label: "Fecha de revisión", format: (value) => formatDate(value as string | null), isDate: true },
   { key: "serviceMileage", label: "Kilometraje actual", format: (value) => formatKm(value as number | null) },
   { key: "nextServiceMileage", label: "Kilometraje previsto", format: (value) => formatKm(value as number | null) },
+  { key: "nextServiceDate", label: "Fecha prevista próximo servicio", format: (value) => formatDate(value as string | null), isDate: true },
   { key: "previousMileage", label: "Kilometraje antes de servicio", format: (value) => formatKm(value as number | null) },
   { key: "providerType", label: "Agencia o independiente", format: (value) => formatProviderType(value as MaintenanceProviderType | null) },
   { key: "location", label: "Lugar donde se realizó", format: (value) => (value as string | null) || "-" },
@@ -263,6 +265,7 @@ function extractFields(source: {
   date: string;
   serviceMileage?: number | null;
   nextServiceMileage?: number | null;
+  nextServiceDate?: string | null;
   previousMileage?: number | null;
   providerType?: MaintenanceProviderType | null;
   location?: string | null;
@@ -275,6 +278,7 @@ function extractFields(source: {
     date: source.date,
     serviceMileage: source.serviceMileage ?? null,
     nextServiceMileage: source.nextServiceMileage ?? null,
+    nextServiceDate: source.nextServiceDate ?? null,
     previousMileage: source.previousMileage ?? null,
     providerType: source.providerType ?? null,
     location: source.location ?? null,

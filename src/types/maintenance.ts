@@ -36,6 +36,7 @@ export type MaintenanceFieldHistory = {
   serviceMileage?: number | null;
   previousMileage?: number | null;
   nextServiceMileage?: number | null;
+  nextServiceDate?: string | null;
   cost?: number | null;
   reviewDate?: string | null;
   providerType?: MaintenanceProviderType | null;
