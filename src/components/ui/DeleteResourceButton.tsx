@@ -13,6 +13,7 @@ import {
   deleteGeneralExpenseResult,
   deleteInsurancePolicyResult,
   deleteMaintenanceResult,
+  deleteMembershipResult,
   deleteQuoteResult,
   deleteRentalResult,
   deleteSavingsFundEntryResult,
@@ -29,7 +30,8 @@ type ResourceType =
   | "generalExpense"
   | "quote"
   | "aveoEntry"
-  | "savingsFundEntry";
+  | "savingsFundEntry"
+  | "membership";
 
 type DeleteResourceButtonProps = {
   id: string;
@@ -49,6 +51,7 @@ const deleteByType = {
   quote: deleteQuoteResult,
   aveoEntry: deleteAveoEntryResult,
   savingsFundEntry: deleteSavingsFundEntryResult,
+  membership: deleteMembershipResult,
 };
 
 const labels: Record<ResourceType, string> = {
@@ -62,6 +65,7 @@ const labels: Record<ResourceType, string> = {
   quote: "cotización",
   aveoEntry: "registro de Aveo",
   savingsFundEntry: "registro del fondo de ahorro",
+  membership: "membresía",
 };
 
 export default function DeleteResourceButton({

@@ -165,7 +165,8 @@ export default function MonthlyBreakdownTable({
 
         if (movement.type === "income") {
           bucket.income += movement.amount;
-        } else {
+        } else if (movement.paidBy !== "CLIENTE") {
+          // Los gastos que cubrió el cliente no cuentan en el total.
           bucket.expenses += movement.amount;
         }
 

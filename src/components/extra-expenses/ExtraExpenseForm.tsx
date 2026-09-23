@@ -29,6 +29,7 @@ const schema = z.object({
   ),
   date: z.string().min(1, "La fecha es obligatoria"),
   status: z.enum(["PENDIENTE", "PAGADO", "CANCELADO"]),
+  paidBy: z.enum(["CLIENTE", "EMPRESA"]),
   notes: z.string().optional(),
 });
 
@@ -64,6 +65,7 @@ export default function ExtraExpenseForm({
       cost: formatCurrencyInputValue(initialData?.cost),
       date: formatDateInput(initialData?.date),
       status: initialData?.status ?? "PENDIENTE",
+      paidBy: initialData?.paidBy ?? "EMPRESA",
       notes: initialData?.notes ?? "",
     },
   });
@@ -161,6 +163,20 @@ export default function ExtraExpenseForm({
               <option value="PAGADO">Pagado</option>
               <option value="CANCELADO">Cancelado</option>
             </select>
+          </Field>
+
+          <Field
+            label="¿El gasto lo cubre el cliente o la empresa?"
+            error={errors.paidBy?.message}
+          >
+            <select {...register("paidBy")} className="input">
+              <option value="EMPRESA">Empresa</option>
+              <option value="CLIENTE">Cliente</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Si lo cubre el cliente, este gasto no se suma en Dashboard,
+              Historial mensual, Control mensual ni Carros aparte.
+            </p>
           </Field>
 
           <div className="md:col-span-2">

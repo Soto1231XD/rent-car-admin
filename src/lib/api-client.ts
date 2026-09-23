@@ -1,5 +1,6 @@
 import { Car } from "@/types/car";
 import { Client } from "@/types/client";
+import { Membership, MembershipRenewalType } from "@/types/membership";
 import { ExtraExpense } from "@/types/extra-expense";
 import { GeneralExpense } from "@/types/general-expense";
 import { AveoEntry } from "@/types/aveo";
@@ -264,6 +265,45 @@ export function deleteClientResult(id: string) {
   });
 }
 
+export type SaveMembershipPayload = {
+  clientId: string;
+  renewalType: MembershipRenewalType;
+  notes?: string;
+};
+
+export function createMembershipResult(payload: SaveMembershipPayload) {
+  return requestResult<{ membership: Membership; checkoutUrl: string }>(
+    "/memberships",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export function updateMembershipResult(
+  id: string,
+  payload: Partial<SaveMembershipPayload> & { status?: Membership["status"] }
+) {
+  return requestResult<Membership>(`/memberships/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteMembershipResult(id: string) {
+  return requestResult<Membership>(`/memberships/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function resendMembershipPaymentLinkResult(id: string) {
+  return requestResult<{ checkoutUrl: string }>(
+    `/memberships/${id}/resend-payment-link`,
+    { method: "POST" }
+  );
+}
+
 export function updateLeadStatusResult(id: string, status: LeadStatus) {
   return requestResult<Lead>(`/leads/${id}`, {
     method: "PATCH",
@@ -452,6 +492,7 @@ export type SaveExtraExpensePayload = {
   cost: number;
   date: string;
   status?: string;
+  paidBy?: string;
   notes?: string;
 };
 

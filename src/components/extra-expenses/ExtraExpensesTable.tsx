@@ -18,15 +18,20 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
   const [carSearch, setCarSearch] = useState("");
   const [conceptSearch, setConceptSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [paidByFilter, setPaidByFilter] = useState("");
   const [page, setPage] = useState(1);
 
   const hasFilters =
-    carSearch !== "" || conceptSearch !== "" || statusFilter !== "";
+    carSearch !== "" ||
+    conceptSearch !== "" ||
+    statusFilter !== "" ||
+    paidByFilter !== "";
 
   const clearFilters = () => {
     setCarSearch("");
     setConceptSearch("");
     setStatusFilter("");
+    setPaidByFilter("");
     setPage(1);
   };
 
@@ -44,9 +49,12 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
       const matchesStatus =
         !statusFilter || extraExpense.status === statusFilter;
 
-      return matchesCar && matchesConcept && matchesStatus;
+      const matchesPaidBy =
+        !paidByFilter || extraExpense.paidBy === paidByFilter;
+
+      return matchesCar && matchesConcept && matchesStatus && matchesPaidBy;
     });
-  }, [extraExpenses, carSearch, conceptSearch, statusFilter]);
+  }, [extraExpenses, carSearch, conceptSearch, statusFilter, paidByFilter]);
 
   const {
     pageItems: pagedExtraExpenses,
@@ -57,7 +65,7 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
   return (
     <DataTableShell
       filters={
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
           <input
             type="text"
             placeholder="Buscar por vehiculo..."
@@ -84,6 +92,16 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
             <option value="PAGADO">Pagado</option>
             <option value="CANCELADO">Cancelado</option>
           </select>
+
+          <select
+            value={paidByFilter}
+            onChange={(event) => setPaidByFilter(event.target.value)}
+            className="input"
+          >
+            <option value="">Cliente o empresa</option>
+            <option value="EMPRESA">Lo cubrió la empresa</option>
+            <option value="CLIENTE">Lo cubrió el cliente</option>
+          </select>
         </div>
       }
       filteredCount={filteredExtraExpenses.length}
@@ -105,6 +123,7 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
             <th className="px-6 py-4">Fecha</th>
             <th className="px-6 py-4">Costo</th>
             <th className="px-6 py-4">Estado</th>
+            <th className="px-6 py-4">Lo cubrió</th>
             <th className="px-6 py-4">Comentarios</th>
             <th className="px-6 py-4">Acciones</th>
           </tr>
@@ -127,6 +146,15 @@ export default function ExtraExpensesTable({ extraExpenses }: Props) {
               </td>
               <td className="whitespace-nowrap px-6 py-4">
                 <StatusBadge status={extraExpense.status} />
+              </td>
+              <td className="whitespace-nowrap px-6 py-4">
+                {extraExpense.paidBy === "CLIENTE" ? (
+                  <span className="inline-flex rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700 ring-1 ring-violet-200">
+                    Cliente
+                  </span>
+                ) : (
+                  <span className="text-sm text-slate-500">Empresa</span>
+                )}
               </td>
               <td className="max-w-[200px] truncate px-6 py-4 text-slate-600">
                 {extraExpense.notes || "-"}

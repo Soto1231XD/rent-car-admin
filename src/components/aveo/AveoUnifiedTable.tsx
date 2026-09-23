@@ -36,6 +36,9 @@ type Row = {
   days?: number | null;
   companyProfit?: number | null;
   action?: RowAction;
+  // Solo en filas "expense" automáticas (de Gastos extras) — los
+  // movimientos manuales del Aveo no tienen este concepto.
+  paidByClient?: boolean;
 };
 
 type Props = {
@@ -139,6 +142,7 @@ export default function AveoUnifiedTable({
           type: movement.type,
           days: movement.days,
           companyProfit: movement.companyProfit,
+          paidByClient: !isIncome && movement.paidBy === "CLIENTE",
           action: resourceId
             ? isIncome
               ? {
@@ -415,7 +419,14 @@ export default function AveoUnifiedTable({
           {pagedRows.map((row) => (
             <tr key={row.id}>
               <td className="px-6 py-4 text-slate-900">{formatDate(row.date)}</td>
-              <td className="px-6 py-4 text-slate-900">{row.label}</td>
+              <td className="px-6 py-4 text-slate-900">
+                {row.label}
+                {row.paidByClient && (
+                  <span className="ml-2 inline-flex rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700 ring-1 ring-violet-200">
+                    Cliente
+                  </span>
+                )}
+              </td>
               <td className="px-6 py-4 text-slate-600">{row.carName ?? "—"}</td>
               <td className="px-6 py-4">
                 <span

@@ -3,6 +3,7 @@ import { AveoEntry, AveoLedger } from "@/types/aveo";
 import { Car } from "@/types/car";
 import { SavingsFundEntry } from "@/types/savings-fund";
 import { Client } from "@/types/client";
+import { Membership } from "@/types/membership";
 import { ExtraExpense } from "@/types/extra-expense";
 import { GeneralExpense } from "@/types/general-expense";
 import { InsurancePolicy } from "@/types/insurance-policy";
@@ -90,6 +91,14 @@ export async function getClients(): Promise<Client[]> {
 
 export async function getClient(id: string): Promise<Client | null> {
   return request<Client>(`/clients/${id}`);
+}
+
+export async function getMemberships(): Promise<Membership[]> {
+  return (await request<Membership[]>("/memberships")) ?? [];
+}
+
+export async function getMembership(id: string): Promise<Membership | null> {
+  return request<Membership>(`/memberships/${id}`);
 }
 
 export async function getLeads(): Promise<Lead[]> {

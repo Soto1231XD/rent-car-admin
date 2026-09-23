@@ -438,7 +438,7 @@ function getMonthlyPaidExtraExpenses(extraExpenses: ExtraExpense[]) {
 
   return extraExpenses
     .filter((extraExpense) => {
-      if (extraExpense.status !== "PAGADO") {
+      if (extraExpense.status !== "PAGADO" || extraExpense.paidBy === "CLIENTE") {
         return false;
       }
 

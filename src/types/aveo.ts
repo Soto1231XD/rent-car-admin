@@ -28,6 +28,10 @@ export type AveoLedgerMovement = {
   expenseId?: string;
   days?: number | null;
   companyProfit?: number | null;
+  // Solo aplica a movimientos type "expense" — si lo cubrió el cliente, el
+  // monto ya viene excluido de "totals.expenses", esto es solo para poder
+  // mostrar la leyenda en la fila.
+  paidBy?: "CLIENTE" | "EMPRESA";
 };
 
 export type AveoLedger = {
