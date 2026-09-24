@@ -54,8 +54,7 @@ export default function MembershipsTable({ memberships }: Props) {
               <option value="">Todos los estados</option>
               <option value="PENDIENTE">Pendiente</option>
               <option value="ACTIVA">Activa</option>
-              <option value="GRACIA">En gracia</option>
-              <option value="INACTIVA">Inactiva</option>
+              <option value="INACTIVA">En gracia (por vencer)</option>
               <option value="CANCELADA">Cancelada</option>
             </select>
           </div>
@@ -121,17 +120,15 @@ export default function MembershipsTable({ memberships }: Props) {
 const STATUS_LABELS: Record<MembershipStatus, string> = {
   PENDIENTE: "Pendiente",
   ACTIVA: "Activa",
-  GRACIA: "En gracia",
-  INACTIVA: "Inactiva",
+  INACTIVA: "En gracia (por vencer)",
   CANCELADA: "Cancelada",
 };
 
 const STATUS_STYLES: Record<MembershipStatus, string> = {
   PENDIENTE: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
   ACTIVA: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-  GRACIA: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-  INACTIVA: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
-  CANCELADA: "bg-slate-100 text-slate-500 ring-1 ring-slate-200",
+  INACTIVA: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+  CANCELADA: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
 };
 
 function StatusBadge({ status }: { status: MembershipStatus }) {

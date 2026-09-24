@@ -16,7 +16,9 @@ export default async function MembershipsPage({ searchParams }: Props) {
   return (
     <div>
       <MembershipAutoRefresh
-        hasPending={memberships.some((m) => m.status === "PENDIENTE")}
+        hasPending={memberships.some(
+          (m) => m.status === "PENDIENTE" || m.status === "INACTIVA"
+        )}
       />
 
       <div className="mb-6 space-y-4">

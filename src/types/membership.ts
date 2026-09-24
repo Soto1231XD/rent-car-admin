@@ -1,9 +1,11 @@
 import { Client } from "@/types/client";
 
+// "INACTIVA" es el periodo de gracia (5 días tras vencer sin renovar); si
+// pasa sin pago nuevo, cae sola a "CANCELADA" (ver expireOverdueMemberships
+// en el backend). No existe un estado intermedio "GRACIA" separado.
 export type MembershipStatus =
   | "PENDIENTE"
   | "ACTIVA"
-  | "GRACIA"
   | "INACTIVA"
   | "CANCELADA";
 

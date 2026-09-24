@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { notFound } from "next/navigation";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 import ResendMembershipPaymentLinkButton from "@/components/memberships/ResendMembershipPaymentLinkButton";
+import CancelMembershipButton from "@/components/memberships/CancelMembershipButton";
 import MembershipAutoRefresh from "@/components/memberships/MembershipAutoRefresh";
 import { getMembership } from "@/lib/api";
 import { formatCurrency } from "@/lib/format-currency";
@@ -10,8 +11,7 @@ import { formatCurrency } from "@/lib/format-currency";
 const STATUS_LABELS: Record<string, string> = {
   PENDIENTE: "Pendiente",
   ACTIVA: "Activa",
-  GRACIA: "En gracia",
-  INACTIVA: "Inactiva",
+  INACTIVA: "En gracia (por vencer)",
   CANCELADA: "Cancelada",
 };
 
@@ -37,13 +37,16 @@ export default async function MembershipDetailPage({ params }: Props) {
   );
   const clientName = membership.client?.fullName ?? "Cliente no disponible";
   const isActionable =
-    membership.status === "PENDIENTE" ||
-    membership.status === "GRACIA" ||
-    membership.status === "INACTIVA";
+    membership.status === "PENDIENTE" || membership.status === "INACTIVA";
+  const isCancellable = membership.status !== "CANCELADA";
 
   return (
     <div>
-      <MembershipAutoRefresh hasPending={membership.status === "PENDIENTE"} />
+      <MembershipAutoRefresh
+        hasPending={
+          membership.status === "PENDIENTE" || membership.status === "INACTIVA"
+        }
+      />
 
       <div className="mb-6 space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -66,12 +69,20 @@ export default async function MembershipDetailPage({ params }: Props) {
             </p>
           </div>
 
-          <DeleteResourceButton
-            id={membership.id}
-            resourceType="membership"
-            resourceName={`la membresía de ${clientName}`}
-            redirectTo="/dashboard/memberships"
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            {isCancellable && (
+              <CancelMembershipButton
+                membershipId={membership.id}
+                clientName={clientName}
+              />
+            )}
+            <DeleteResourceButton
+              id={membership.id}
+              resourceType="membership"
+              resourceName={`la membresía de ${clientName}`}
+              redirectTo="/dashboard/memberships"
+            />
+          </div>
         </div>
       </div>
 

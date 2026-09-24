@@ -304,6 +304,12 @@ export function resendMembershipPaymentLinkResult(id: string) {
   );
 }
 
+export function cancelMembershipResult(id: string) {
+  return requestResult<Membership>(`/memberships/${id}/cancel`, {
+    method: "POST",
+  });
+}
+
 export function updateLeadStatusResult(id: string, status: LeadStatus) {
   return requestResult<Lead>(`/leads/${id}`, {
     method: "PATCH",
