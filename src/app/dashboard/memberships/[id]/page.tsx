@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { notFound } from "next/navigation";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 import ResendMembershipPaymentLinkButton from "@/components/memberships/ResendMembershipPaymentLinkButton";
+import MembershipAutoRefresh from "@/components/memberships/MembershipAutoRefresh";
 import { getMembership } from "@/lib/api";
 import { formatCurrency } from "@/lib/format-currency";
 
@@ -42,6 +43,8 @@ export default async function MembershipDetailPage({ params }: Props) {
 
   return (
     <div>
+      <MembershipAutoRefresh hasPending={membership.status === "PENDIENTE"} />
+
       <div className="mb-6 space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>

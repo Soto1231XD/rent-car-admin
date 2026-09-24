@@ -1,5 +1,6 @@
 import Link from "next/link";
 import MembershipsTable from "@/components/memberships/MembershipsTable";
+import MembershipAutoRefresh from "@/components/memberships/MembershipAutoRefresh";
 import { getMemberships } from "@/lib/api";
 
 type Props = {
@@ -14,6 +15,10 @@ export default async function MembershipsPage({ searchParams }: Props) {
 
   return (
     <div>
+      <MembershipAutoRefresh
+        hasPending={memberships.some((m) => m.status === "PENDIENTE")}
+      />
+
       <div className="mb-6 space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
