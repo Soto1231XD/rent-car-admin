@@ -1,4 +1,4 @@
-import { ReactNode, WheelEvent } from "react";
+import { ReactNode } from "react";
 import EmptyState from "@/components/ui/EmptyState";
 
 type DataTableShellProps = {
@@ -48,7 +48,7 @@ export default function DataTableShell({
         </div>
       </div>
 
-      <div className="overflow-x-auto" onWheel={handleHorizontalWheelScroll}>
+      <div className="overflow-x-auto">
         {children}
 
         {filteredCount === 0 && (
@@ -64,23 +64,4 @@ export default function DataTableShell({
       {filteredCount > 0 && pagination}
     </div>
   );
-}
-
-// Con mouse (a diferencia de un touchpad) no hay forma natural de moverse a
-// los lados en una tabla ancha — hay que bajar hasta el final para toparse
-// con la barra de scroll horizontal. Esto convierte el scroll vertical
-// normal del mouse en scroll horizontal mientras el cursor esté sobre la
-// tabla, para poder ver las columnas de la derecha sin bajar. Si la tabla
-// no tiene nada que desplazar (cabe completa), no se toca el scroll normal
-// de la página.
-function handleHorizontalWheelScroll(event: WheelEvent<HTMLDivElement>) {
-  const container = event.currentTarget;
-  const canScrollHorizontally = container.scrollWidth > container.clientWidth;
-
-  if (!canScrollHorizontally || event.deltaY === 0) {
-    return;
-  }
-
-  event.preventDefault();
-  container.scrollLeft += event.deltaY;
 }
