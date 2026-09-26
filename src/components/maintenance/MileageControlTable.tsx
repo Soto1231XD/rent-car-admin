@@ -6,6 +6,7 @@ import { History } from "lucide-react";
 import DataTableShell from "@/components/ui/DataTableShell";
 import Pagination, { paginate } from "@/components/ui/Pagination";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
+import TextPreviewDialog from "@/components/ui/TextPreviewDialog";
 import MileageHistoryDialog from "@/components/maintenance/MileageHistoryDialog";
 import { Maintenance } from "@/types/maintenance";
 import { formatCarLabel } from "@/lib/car-label";
@@ -19,6 +20,9 @@ export default function MileageControlTable({ revisions }: Props) {
   const [carSearch, setCarSearch] = useState("");
   const [page, setPage] = useState(1);
   const [historyTarget, setHistoryTarget] = useState<Maintenance | null>(null);
+  const [descriptionPreview, setDescriptionPreview] = useState<string | null>(
+    null
+  );
 
   const hasFilters = carSearch !== "";
 
@@ -109,7 +113,22 @@ export default function MileageControlTable({ revisions }: Props) {
                 {formatProviderType(revision.providerType)}
               </td>
               <td className="px-6 py-4 text-slate-900">{revision.location || "-"}</td>
-              <td className="px-6 py-4 text-slate-900">{revision.serviceType || "-"}</td>
+              <td className="max-w-[220px] truncate px-6 py-4 text-slate-900">
+                {revision.serviceType ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDescriptionPreview(revision.serviceType ?? null)
+                    }
+                    className="block w-full truncate text-left hover:text-slate-900 hover:underline"
+                    title="Ver descripción completa"
+                  >
+                    {revision.serviceType}
+                  </button>
+                ) : (
+                  "-"
+                )}
+              </td>
               <td className="px-6 py-4 text-slate-900">
                 {formatIncludesMaterial(revision.includesMaterial)}
               </td>
@@ -159,6 +178,13 @@ export default function MileageControlTable({ revisions }: Props) {
         carName={historyTarget ? getCarName(historyTarget) : ""}
         current={historyTarget}
         onClose={() => setHistoryTarget(null)}
+      />
+
+      <TextPreviewDialog
+        isOpen={descriptionPreview !== null}
+        title="Descripción del trabajo realizado"
+        text={descriptionPreview ?? ""}
+        onClose={() => setDescriptionPreview(null)}
       />
     </DataTableShell>
   );
