@@ -442,6 +442,13 @@ function getMonthlyPaidExtraExpenses(extraExpenses: ExtraExpense[]) {
         return false;
       }
 
+      // Un auto marcado como "aparte" no cuenta aquí -- su historia
+      // completa (de antes y de después de volverse aparte) vive solo en
+      // su propio libro de "Carros aparte".
+      if (extraExpense.car?.excludedFromReportsAt) {
+        return false;
+      }
+
       const date = new Date(extraExpense.date);
 
       return date >= currentMonthStart && date < nextMonthStart;

@@ -22,6 +22,7 @@ type AveoMonthlyRow = {
   carName: string;
   income: number;
   expenses: number;
+  companyProfit: number;
   difference: number;
 };
 
@@ -92,7 +93,13 @@ const MONTH_NAMES: Record<number, string> = {
 
 const HEADER_ROW_COLOR = "#06b6d4";
 const TOTAL_ROW_COLOR = "#f1f5f9";
-const SINGLE_TABLE_COLUMN_WIDTHS = [{ width: 30 }, { width: 16 }, { width: 16 }, { width: 18 }];
+const SINGLE_TABLE_COLUMN_WIDTHS = [
+  { width: 30 },
+  { width: 16 },
+  { width: 16 },
+  { width: 18 },
+  { width: 18 },
+];
 
 function headerCell(value: string, options?: { background?: string }) {
   return {
@@ -156,15 +163,20 @@ export default function MonthlyBreakdownTable({
     const map = new Map<string, AveoMonthlyRow[]>();
 
     for (const ledger of aveoLedgers) {
-      const perMonth = new Map<string, { income: number; expenses: number }>();
+      const perMonth = new Map<
+        string,
+        { income: number; expenses: number; companyProfit: number }
+      >();
 
       for (const movement of ledger.movements) {
         const date = new Date(movement.date);
         const key = `${date.getUTCFullYear()}-${date.getUTCMonth() + 1}`;
-        const bucket = perMonth.get(key) ?? { income: 0, expenses: 0 };
+        const bucket =
+          perMonth.get(key) ?? { income: 0, expenses: 0, companyProfit: 0 };
 
         if (movement.type === "income") {
           bucket.income += movement.amount;
+          bucket.companyProfit += movement.companyProfit ?? 0;
         } else if (movement.paidBy !== "CLIENTE") {
           // Los gastos que cubrió el cliente no cuentan en el total.
           bucket.expenses += movement.amount;
@@ -180,6 +192,7 @@ export default function MonthlyBreakdownTable({
           carName: ledger.car.name,
           income: totals.income,
           expenses: totals.expenses,
+          companyProfit: totals.companyProfit,
           difference: totals.income - totals.expenses,
         });
         map.set(key, rows);
@@ -260,7 +273,13 @@ export default function MonthlyBreakdownTable({
       | ReturnType<typeof labelCell>
       | ReturnType<typeof blankCell>;
 
-    const blankRow = (): Cell[] => [blankCell(), blankCell(), blankCell(), blankCell()];
+    const blankRow = (): Cell[] => [
+      blankCell(),
+      blankCell(),
+      blankCell(),
+      blankCell(),
+      blankCell(),
+    ];
 
     const sheets = monthKeysForExport.map((key) => {
       const [year, month] = key.split("-").map(Number);
@@ -331,18 +350,21 @@ export default function MonthlyBreakdownTable({
             headerCell("Vehículo", { background: color }),
             headerCell("Ingreso", { background: color }),
             headerCell("Egreso", { background: color }),
+            headerCell("Ganancia rentadora", { background: color }),
             headerCell("Diferencia", { background: color }),
           ],
           [
             labelCell(row.carName),
             moneyCell(row.income),
             moneyCell(row.expenses),
+            moneyCell(row.companyProfit),
             moneyCell(row.difference),
           ],
           [
             labelCell("Total", totalStyle),
             moneyCell(row.income, totalStyle),
             moneyCell(row.expenses, totalStyle),
+            moneyCell(row.companyProfit, totalStyle),
             moneyCell(row.difference, totalStyle),
           ],
         ];
@@ -545,6 +567,7 @@ export default function MonthlyBreakdownTable({
                           <th className="px-6 py-2.5">Vehículo</th>
                           <th className="px-6 py-2.5">Ingresos</th>
                           <th className="px-6 py-2.5">Egresos</th>
+                          <th className="px-6 py-2.5">Ganancia rentadora</th>
                           <th className="px-6 py-2.5">Diferencia</th>
                         </tr>
                       </thead>
@@ -561,6 +584,9 @@ export default function MonthlyBreakdownTable({
                             {formatMoney(row.expenses)}
                           </td>
                           <td className="px-6 py-2.5 text-slate-900">
+                            {formatMoney(row.companyProfit)}
+                          </td>
+                          <td className="px-6 py-2.5 text-slate-900">
                             {formatMoney(row.difference)}
                           </td>
                         </tr>
@@ -569,6 +595,7 @@ export default function MonthlyBreakdownTable({
                           <td className="px-6 py-3">Total</td>
                           <td className="px-6 py-3">{formatMoney(row.income)}</td>
                           <td className="px-6 py-3">{formatMoney(row.expenses)}</td>
+                          <td className="px-6 py-3">{formatMoney(row.companyProfit)}</td>
                           <td className="px-6 py-3">{formatMoney(row.difference)}</td>
                         </tr>
                       </tbody>
@@ -605,7 +632,11 @@ function ExpenseCategoryRows({
         <td className="px-6 py-3 text-slate-400">—</td>
         <td className="px-6 py-3 text-slate-900">{formatMoney(total)}</td>
         <td className="px-6 py-3">
-          <AddGeneralExpenseButton type={type} label={label} defaultDate={defaultDate} />
+          {type === "NOMINA" ? (
+            <AddGeneralExpenseButton type={type} label={label} defaultDate={defaultDate} />
+          ) : (
+            <span className="text-xs text-slate-400">Automático</span>
+          )}
         </td>
       </tr>
 
