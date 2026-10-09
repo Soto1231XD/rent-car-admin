@@ -5,6 +5,7 @@ import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 import ResendMembershipPaymentLinkButton from "@/components/memberships/ResendMembershipPaymentLinkButton";
 import CancelMembershipButton from "@/components/memberships/CancelMembershipButton";
 import MembershipAutoRefresh from "@/components/memberships/MembershipAutoRefresh";
+import MembershipDaysCard from "@/components/memberships/MembershipDaysCard";
 import { getMembership } from "@/lib/api";
 import { formatCurrency } from "@/lib/format-currency";
 
@@ -143,6 +144,16 @@ export default async function MembershipDetailPage({ params }: Props) {
           </p>
         </section>
       </div>
+
+      {membership.status === "ACTIVA" && membership.daysSummary && (
+        <div className="mt-6">
+          <MembershipDaysCard
+            membershipId={membership.id}
+            summary={membership.daysSummary}
+            redemptions={membership.dayRedemptions ?? []}
+          />
+        </div>
+      )}
 
       <section className="mt-6 rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="mb-5 text-lg font-semibold text-slate-900">

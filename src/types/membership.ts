@@ -22,6 +22,35 @@ export type MembershipPayment = {
   createdAt?: string;
 };
 
+// "REGULAR" son los días con tarifa preferencial acumulados por
+// antigüedad (tabulador); "CUMPLEANOS" es el día de regalo de
+// cumpleaños -- bolsa separada, 1 por año.
+export type MembershipDaySource = "REGULAR" | "CUMPLEANOS";
+
+export type MembershipDayRedemption = {
+  id: string;
+  membershipId: string;
+  source: MembershipDaySource;
+  days: number;
+  date: string;
+  notes?: string | null;
+  createdAt?: string;
+};
+
+// Nunca viene guardado como número suelto -- el backend lo calcula al
+// vuelo (acumulados según pagos exitosos, menos lo ya canjeado), así que
+// esto siempre refleja el estado real del momento en que se consultó.
+export type MembershipDaysSummary = {
+  accruedDays: number;
+  redeemedDays: number;
+  availableDays: number;
+  lastRegularRedemptionDate?: string | null;
+  nextRegularRedemptionEligibleDate?: string | null;
+  birthdayMonth?: number | null;
+  isBirthdayMonth: boolean;
+  birthdayAvailable: boolean;
+};
+
 export type Membership = {
   id: string;
   clientId: string;
@@ -36,6 +65,8 @@ export type Membership = {
   notes?: string | null;
   client?: Client;
   payments?: MembershipPayment[];
+  dayRedemptions?: MembershipDayRedemption[];
+  daysSummary?: MembershipDaysSummary;
   createdAt?: string;
   updatedAt?: string;
 };

@@ -58,7 +58,10 @@ const mileageSchema = z.object({
   carId: z.string().min(1, "Selecciona un vehículo"),
   date: z.string().min(1, "La fecha es obligatoria"),
   reviewDate: optionalDateInput,
-  serviceType: z.string().optional(),
+  serviceType: z
+    .string()
+    .optional()
+    .transform((value) => (value?.trim() ? value.trim() : undefined)),
   cost: optionalCost,
   serviceMileage: optionalMileage,
   previousMileage: optionalMileage,

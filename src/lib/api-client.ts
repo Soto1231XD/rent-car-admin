@@ -1,6 +1,10 @@
 import { Car } from "@/types/car";
 import { Client } from "@/types/client";
-import { Membership, MembershipRenewalType } from "@/types/membership";
+import {
+  Membership,
+  MembershipDaySource,
+  MembershipRenewalType,
+} from "@/types/membership";
 import { ExtraExpense } from "@/types/extra-expense";
 import { GeneralExpense } from "@/types/general-expense";
 import { AveoEntry } from "@/types/aveo";
@@ -307,6 +311,16 @@ export function resendMembershipPaymentLinkResult(id: string) {
 export function cancelMembershipResult(id: string) {
   return requestResult<Membership>(`/memberships/${id}/cancel`, {
     method: "POST",
+  });
+}
+
+export function redeemMembershipDaysResult(
+  id: string,
+  payload: { source: MembershipDaySource; days: number; notes?: string }
+) {
+  return requestResult<Membership>(`/memberships/${id}/redeem-days`, {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }
 
