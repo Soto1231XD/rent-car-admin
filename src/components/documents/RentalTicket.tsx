@@ -26,7 +26,9 @@ export default function RentalTicket({ rental }: Props) {
   const days = rental.daysCharged || 1;
   const totalPrice = toMoneyNumber(rental.totalPrice);
   const dailyRate = toMoneyNumber(rental.dailyRateApplied) || totalPrice / days;
-  const deposit = toMoneyNumber(rental.car?.deposit);
+  // El depósito real de esta renta -- solo se recurre al depósito actual
+  // del auto si la renta nunca guardó uno propio (rentas viejas).
+  const deposit = toMoneyNumber(rental.depositAmount ?? rental.car?.deposit);
   const advancePayment = toMoneyNumber(rental.advancePayment);
   const pendingBalance = Math.max(totalPrice - advancePayment, 0);
   const totalToCover = pendingBalance + deposit;

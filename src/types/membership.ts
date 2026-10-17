@@ -37,13 +37,15 @@ export type MembershipDayRedemption = {
   createdAt?: string;
 };
 
-// Nunca viene guardado como número suelto -- el backend lo calcula al
-// vuelo (acumulados según pagos exitosos, menos lo ya canjeado), así que
-// esto siempre refleja el estado real del momento en que se consultó.
+// Nunca viene guardado como número suelto -- el backend lo recalcula
+// recorriendo el historial completo (pagos y canjes en orden). Los días
+// NO son acumulables sin límite: cada canje reinicia el avance por la
+// tabla desde cero, conservando solo lo que haya quedado sin usar.
+// "lifetimeRedeemedDays" es solo informativo (total histórico, no
+// participa en el cálculo de "availableDays").
 export type MembershipDaysSummary = {
-  accruedDays: number;
-  redeemedDays: number;
   availableDays: number;
+  lifetimeRedeemedDays: number;
   lastRegularRedemptionDate?: string | null;
   nextRegularRedemptionEligibleDate?: string | null;
   birthdayMonth?: number | null;

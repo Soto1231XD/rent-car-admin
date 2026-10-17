@@ -393,6 +393,7 @@ export type SaveRentalPayload = {
   rentalType?: string;
   totalPrice: number;
   dailyRateApplied?: number;
+  depositAmount?: number;
   advancePayment?: number;
   renterType?: string;
   priceMode?: string;

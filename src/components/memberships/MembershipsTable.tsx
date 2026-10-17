@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { Cake } from "lucide-react";
 import { Membership, MembershipStatus } from "@/types/membership";
 import DataTableShell from "@/components/ui/DataTableShell";
 import Pagination, { paginate } from "@/components/ui/Pagination";
@@ -93,7 +94,19 @@ export default function MembershipsTable({ memberships }: Props) {
                 {membership.client?.fullName ?? "Cliente no disponible"}
               </td>
               <td className="px-6 py-4">
-                <StatusBadge status={membership.status} />
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={membership.status} />
+                  {membership.status === "ACTIVA" &&
+                    !membership.client?.birthDate && (
+                      <Cake
+                        size={16}
+                        className="shrink-0 text-amber-600"
+                        aria-label="Falta la fecha de nacimiento del cliente"
+                      >
+                        <title>Falta la fecha de nacimiento del cliente</title>
+                      </Cake>
+                    )}
+                </div>
               </td>
               <td className="px-6 py-4 text-slate-900">
                 {membership.renewalType === "AUTOMATICA" ? "Automática" : "Manual"}

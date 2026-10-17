@@ -69,7 +69,16 @@ export default function UnifiedRentalDocument({ rental }: Props) {
   const phone = rental.client?.phone ?? "________________________";
   const idNumber = rental.client?.idNumber ?? "________________________";
   const plate = rental.car?.plate ?? "________________________";
-  const depositAmount = rental.car?.deposit ? Number(rental.car.deposit) : 6000;
+  // El depósito real de esta renta (puede diferir del depósito actual del
+  // auto si el staff lo ajustó al crear/editar la renta, o si el precio
+  // del auto cambió después). Solo se recurre al depósito del auto, y
+  // luego al valor fijo, para rentas viejas que nunca lo guardaron.
+  const depositAmount =
+    rental.depositAmount != null
+      ? Number(rental.depositAmount)
+      : rental.car?.deposit
+        ? Number(rental.car.deposit)
+        : 6000;
   const deposit = formatMoney(depositAmount);
   const totalWithDeposit = rental.totalPrice + depositAmount;
   const advancePayment = rental.advancePayment ?? 0;

@@ -41,6 +41,7 @@ const schema = z
     endDate: z.string().optional(),
     rentalType: z.enum(["NORMAL", "INDEFINIDA"]),
     dailyRateApplied: optionalCurrencyNumber,
+    depositAmount: optionalCurrencyNumber,
     advancePayment: optionalCurrencyNumber,
     renterType: z.enum(["CLIENTE", "COMISIONISTA"]),
     status: z.enum(["RESERVACION", "ACTIVO", "COMPLETADO", "CANCELADO"]),
@@ -179,6 +180,9 @@ export default function RentalForm({
       dailyRateApplied: formatCurrencyInputValue(
         initialData?.dailyRateApplied ?? undefined
       ),
+      depositAmount: formatCurrencyInputValue(
+        initialData?.depositAmount ?? undefined
+      ),
       advancePayment: formatCurrencyInputValue(initialData?.advancePayment ?? 0),
       renterType: initialData?.renterType ?? "CLIENTE",
       status: initialData?.status ?? "RESERVACION",
@@ -198,12 +202,24 @@ export default function RentalForm({
     advancePaymentInput as string | number | null | undefined
   );
   const dailyRateInput = useWatch({ control, name: "dailyRateApplied" });
+  const depositInput = useWatch({ control, name: "depositAmount" });
+  const depositValue = toMoneyNumber(
+    depositInput as string | number | null | undefined
+  );
   const isIndefinida = rentalType === "INDEFINIDA";
   const isCompletingIndefinida = isIndefinida && status === "COMPLETADO";
   const isCompleting = status === "COMPLETADO";
   const selectedCar = useMemo(
     () => cars.find((car) => car.id === selectedCarId) ?? null,
     [cars, selectedCarId]
+  );
+  // El depósito, a diferencia de la tarifa diaria, no depende de las
+  // fechas -- se sugiere en cuanto se elige un carro, sin esperar a que la
+  // renta tenga un rango de fechas válido (relevante sobre todo para
+  // INDEFINIDA, donde `quote` nunca se calcula).
+  const suggestedDeposit = useMemo(
+    () => (selectedCar ? toMoneyNumber(selectedCar.deposit) : null),
+    [selectedCar]
   );
   const priceMode = useMemo(() => {
     if (isIndefinida || !startDate || !endDate || endDate < startDate) {
@@ -284,6 +300,24 @@ export default function RentalForm({
       });
     }
   }, [isIndefinida, quote, setValue]);
+
+  // Mismo criterio que la tarifa diaria, pero depende solo del carro (no de
+  // las fechas), así que corre en un efecto aparte -- aplica también para
+  // INDEFINIDA, donde `quote` nunca se calcula.
+  const hasSyncedInitialDeposit = useRef(false);
+  useEffect(() => {
+    if (!hasSyncedInitialDeposit.current) {
+      hasSyncedInitialDeposit.current = true;
+      return;
+    }
+
+    if (suggestedDeposit !== null) {
+      setValue("depositAmount", formatCurrencyInputValue(suggestedDeposit), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [suggestedDeposit, setValue]);
 
   const onInvalid = () => {
     const message = "Revisa los campos marcados antes de guardar la renta.";
@@ -467,6 +501,20 @@ export default function RentalForm({
             </p>
           </Field>
 
+          <Field label="Depósito en garantía" error={errors.depositAmount?.message}>
+            <input
+              type="text"
+              inputMode="decimal"
+              {...register("depositAmount")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="0"
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Se sugiere según el vehículo; puedes ajustarlo solo para esta renta, sin cambiar el depósito general del carro.
+            </p>
+          </Field>
+
           <Field label="Estado de la renta" error={errors.status?.message}>
             <select {...register("status")} className="input">
               <option value="RESERVACION">Reservación</option>
@@ -559,8 +607,8 @@ export default function RentalForm({
             }
           />
           <SummaryItem
-            label="Depósito sugerido"
-            value={quote?.deposit ? formatCurrency(quote.deposit) : "No definido"}
+            label="Depósito en garantía"
+            value={depositValue > 0 ? formatCurrency(depositValue) : "-"}
           />
           {(!isIndefinida || isCompletingIndefinida) && (
             <SummaryItem

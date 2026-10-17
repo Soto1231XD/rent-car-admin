@@ -1,5 +1,6 @@
 import Link from "next/link";
 import QRCode from "qrcode";
+import { Cake } from "lucide-react";
 import { notFound } from "next/navigation";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 import ResendMembershipPaymentLinkButton from "@/components/memberships/ResendMembershipPaymentLinkButton";
@@ -144,6 +145,22 @@ export default async function MembershipDetailPage({ params }: Props) {
           </p>
         </section>
       </div>
+
+      {membership.status === "ACTIVA" && !membership.client?.birthDate && (
+        <div className="mt-6 flex flex-col items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <p className="flex items-center gap-2 text-sm text-amber-800">
+            <Cake size={18} className="shrink-0" />
+            Falta la fecha de nacimiento del cliente para activar su
+            beneficio de cumpleaños.
+          </p>
+          <Link
+            href={`/dashboard/clients/${membership.clientId}/edit`}
+            className="inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100"
+          >
+            Completar en su ficha
+          </Link>
+        </div>
+      )}
 
       {membership.status === "ACTIVA" && membership.daysSummary && (
         <div className="mt-6">

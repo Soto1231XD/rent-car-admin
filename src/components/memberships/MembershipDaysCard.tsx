@@ -78,15 +78,21 @@ export default function MembershipDaysCard({
         Días de renta
       </h2>
 
-      <div className="grid grid-cols-3 gap-3 text-center">
-        <SummaryStat label="Acumulados" value={summary.accruedDays} />
-        <SummaryStat label="Usados" value={summary.redeemedDays} />
+      <div className="grid grid-cols-2 gap-3 text-center">
         <SummaryStat
-          label="Disponibles"
+          label="Disponibles ahora"
           value={summary.availableDays}
           highlight
         />
+        <SummaryStat
+          label="Usados en total"
+          value={summary.lifetimeRedeemedDays}
+        />
       </div>
+      <p className="mt-2 text-xs text-slate-500">
+        Los días no son acumulables sin límite: cada canje reinicia el avance
+        de la tabla, conservando lo que haya quedado sin usar.
+      </p>
 
       {!canRedeemRegular && summary.nextRegularRedemptionEligibleDate && (
         <p className="mt-4 text-xs text-amber-700">
