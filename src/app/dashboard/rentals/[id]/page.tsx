@@ -216,6 +216,19 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
             />
           </div>
 
+          {!!rental.classificationFee && (
+            <div className="mt-6 border-t border-slate-200 pt-4">
+              <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                Cambio de clasificación
+              </h3>
+
+              <Info
+                label="Cargo adicional por clasificación"
+                value={`${formatCurrency(rental.classificationFee)} (incluido en el total)`}
+              />
+            </div>
+          )}
+
           {!!rental.depositAmount && (
             <div className="mt-6 border-t border-slate-200 pt-4">
               <h3 className="mb-3 text-sm font-semibold text-slate-900">
@@ -228,6 +241,28 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
                   "es-MX"
                 )} MXN`}
               />
+            </div>
+          )}
+
+          {!!rental.dayRedemptions?.length && (
+            <div className="mt-6 border-t border-slate-200 pt-4">
+              <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                Membresía
+              </h3>
+
+              {rental.dayRedemptions.map((redemption) => (
+                <p key={redemption.id} className="text-sm text-slate-700">
+                  Pagada con {redemption.days} día
+                  {redemption.days === 1 ? "" : "s"} de membresía (tarifa
+                  preferencial).{" "}
+                  <Link
+                    href={`/dashboard/memberships/${redemption.membershipId}`}
+                    className="font-medium text-slate-900 hover:underline"
+                  >
+                    Ver membresía
+                  </Link>
+                </p>
+              ))}
             </div>
           )}
         </section>

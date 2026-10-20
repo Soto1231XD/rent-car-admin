@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Cake, Gift } from "lucide-react";
 import {
   MembershipDayRedemption,
@@ -16,21 +17,27 @@ type Props = {
   redemptions: MembershipDayRedemption[];
 };
 
+// El cliente no puede canjear un solo día de renta -- el mínimo por canje
+// es de 2 (regla de negocio nueva; antes el mínimo era 1).
+const MINIMUM_REGULAR_REDEMPTION_DAYS = 2;
+
 export default function MembershipDaysCard({
   membershipId,
   summary,
   redemptions,
 }: Props) {
   const router = useRouter();
-  const [days, setDays] = useState(1);
+  const [days, setDays] = useState(MINIMUM_REGULAR_REDEMPTION_DAYS);
   const [notes, setNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingBirthday, setIsSavingBirthday] = useState(false);
 
+  const isWaitingForNextRedemption =
+    !!summary.nextRegularRedemptionEligibleDate &&
+    new Date(summary.nextRegularRedemptionEligibleDate) > new Date();
   const canRedeemRegular =
-    summary.availableDays > 0 &&
-    (!summary.nextRegularRedemptionEligibleDate ||
-      new Date(summary.nextRegularRedemptionEligibleDate) <= new Date());
+    summary.availableDays >= MINIMUM_REGULAR_REDEMPTION_DAYS &&
+    !isWaitingForNextRedemption;
 
   const handleRedeemRegular = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -49,7 +56,7 @@ export default function MembershipDaysCard({
       return;
     }
 
-    setDays(1);
+    setDays(MINIMUM_REGULAR_REDEMPTION_DAYS);
     setNotes("");
     router.refresh();
   };
@@ -94,13 +101,22 @@ export default function MembershipDaysCard({
         de la tabla, conservando lo que haya quedado sin usar.
       </p>
 
-      {!canRedeemRegular && summary.nextRegularRedemptionEligibleDate && (
+      {isWaitingForNextRedemption && summary.nextRegularRedemptionEligibleDate && (
         <p className="mt-4 text-xs text-amber-700">
           Próximo canje disponible hasta el{" "}
           {summary.nextRegularRedemptionEligibleDate.slice(0, 10)} (1 mes de
           espera entre canjes).
         </p>
       )}
+
+      {!isWaitingForNextRedemption &&
+        summary.availableDays > 0 &&
+        summary.availableDays < MINIMUM_REGULAR_REDEMPTION_DAYS && (
+          <p className="mt-4 text-xs text-amber-700">
+            Tiene {summary.availableDays} día disponible, pero el canje
+            mínimo es de {MINIMUM_REGULAR_REDEMPTION_DAYS} días.
+          </p>
+        )}
 
       {canRedeemRegular && (
         <form
@@ -113,7 +129,7 @@ export default function MembershipDaysCard({
             </span>
             <input
               type="number"
-              min={1}
+              min={MINIMUM_REGULAR_REDEMPTION_DAYS}
               max={Math.min(10, summary.availableDays)}
               value={days}
               onChange={(event) => setDays(Number(event.target.value))}
@@ -179,6 +195,17 @@ export default function MembershipDaysCard({
                     ? "Cumpleaños"
                     : "Regular"}
                   {redemption.notes ? ` · ${redemption.notes}` : ""}
+                  {redemption.rentalId && (
+                    <>
+                      {" · "}
+                      <Link
+                        href={`/dashboard/rentals/${redemption.rentalId}`}
+                        className="font-medium text-slate-900 hover:underline"
+                      >
+                        Ver renta
+                      </Link>
+                    </>
+                  )}
                 </span>
               </li>
             ))}

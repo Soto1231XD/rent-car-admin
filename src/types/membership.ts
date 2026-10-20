@@ -34,6 +34,9 @@ export type MembershipDayRedemption = {
   days: number;
   date: string;
   notes?: string | null;
+  // Liga opcional a la renta para la que se usaron estos días (ej. canje
+  // hecho directo desde "Nueva renta").
+  rentalId?: string | null;
   createdAt?: string;
 };
 
@@ -55,6 +58,7 @@ export type MembershipDaysSummary = {
 
 export type Membership = {
   id: string;
+  membershipNumber: number;
   clientId: string;
   status: MembershipStatus;
   renewalType: MembershipRenewalType;
@@ -64,6 +68,8 @@ export type Membership = {
   cancelledAt?: string | null;
   mpPreapprovalId?: string | null;
   mpPreferenceId?: string | null;
+  contractPdfUrl?: string | null;
+  contractSignedAt?: string | null;
   notes?: string | null;
   client?: Client;
   payments?: MembershipPayment[];

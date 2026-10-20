@@ -9,6 +9,8 @@ import MembershipAutoRefresh from "@/components/memberships/MembershipAutoRefres
 import MembershipDaysCard from "@/components/memberships/MembershipDaysCard";
 import { getMembership } from "@/lib/api";
 import { formatCurrency } from "@/lib/format-currency";
+import { getAssetUrl } from "@/lib/assets";
+import { formatMembershipNumber } from "@/lib/membership-number";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDIENTE: "Pendiente",
@@ -63,6 +65,9 @@ export default async function MembershipDetailPage({ params }: Props) {
             <h1 className="mt-3 text-2xl font-bold text-slate-900">
               {clientName}
             </h1>
+            <p className="mt-0.5 font-mono text-xs text-slate-500">
+              {formatMembershipNumber(membership.membershipNumber)}
+            </p>
             <p className="mt-1 text-sm text-slate-600">
               {STATUS_LABELS[membership.status]} ·{" "}
               {membership.renewalType === "AUTOMATICA"
@@ -95,6 +100,10 @@ export default async function MembershipDetailPage({ params }: Props) {
           </h2>
 
           <div className="grid gap-4 md:grid-cols-2">
+            <Info
+              label="Folio"
+              value={formatMembershipNumber(membership.membershipNumber)}
+            />
             <Info label="Cliente" value={clientName} />
             <Info label="Teléfono" value={membership.client?.phone ?? "—"} />
             <Info label="Estado" value={STATUS_LABELS[membership.status]} />
@@ -124,6 +133,22 @@ export default async function MembershipDetailPage({ params }: Props) {
                 Link de pago
               </h3>
               <ResendMembershipPaymentLinkButton membershipId={membership.id} />
+            </div>
+          )}
+
+          {membership.contractPdfUrl && (
+            <div className="mt-6 border-t border-slate-200 pt-5">
+              <h3 className="mb-2 text-sm font-semibold text-slate-900">
+                Contrato de afiliación
+              </h3>
+              <a
+                href={getAssetUrl(membership.contractPdfUrl) ?? undefined}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Ver contrato firmado
+              </a>
             </div>
           )}
         </section>

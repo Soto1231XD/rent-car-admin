@@ -8,6 +8,8 @@ export type Transmission = "AUTOMATICO" | "ESTANDAR";
 
 export type FuelType = "GASOLINA" | "DIESEL" | "HIBRIDA" | "ELECTRICA";
 
+export type CarClassification = "A" | "B" | "C" | "D" | "E";
+
 export type Car = {
   id: string;
   brand: string;
@@ -28,6 +30,10 @@ export type Car = {
   commissionDailyPrice?: number | null;
   commissionHighSeasonPrice?: number | null;
   deposit: number;
+  classification: CarClassification;
+  // Cargo único de cambio de clasificación para ESTE auto (varía por auto,
+  // no solo por letra de clasificación -- ver RentalForm.tsx).
+  classificationSwapFee: number;
   currentMileage?: number | null;
   /** Calculado por el backend a partir del historial de mantenimiento. Solo lectura. */
   nextServiceMileage?: number | null;

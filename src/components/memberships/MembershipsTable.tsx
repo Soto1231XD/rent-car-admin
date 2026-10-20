@@ -6,6 +6,7 @@ import { Cake } from "lucide-react";
 import { Membership, MembershipStatus } from "@/types/membership";
 import DataTableShell from "@/components/ui/DataTableShell";
 import Pagination, { paginate } from "@/components/ui/Pagination";
+import { formatMembershipNumber } from "@/lib/membership-number";
 
 type Props = {
   memberships: Membership[];
@@ -13,20 +14,29 @@ type Props = {
 
 export default function MembershipsTable({ memberships }: Props) {
   const [search, setSearch] = useState("");
+  const [folioSearch, setFolioSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<MembershipStatus | "">("");
   const [page, setPage] = useState(1);
-  const hasFilters = search !== "" || statusFilter !== "";
+  const hasFilters = search !== "" || folioSearch !== "" || statusFilter !== "";
 
   const filtered = useMemo(() => {
     return memberships.filter((membership) => {
       const value = search.toLowerCase().trim();
       const matchesSearch =
         !value || (membership.client?.fullName ?? "").toLowerCase().includes(value);
+
+      const folioValue = folioSearch.toLowerCase().trim();
+      const matchesFolio =
+        !folioValue ||
+        formatMembershipNumber(membership.membershipNumber)
+          .toLowerCase()
+          .includes(folioValue);
+
       const matchesStatus = !statusFilter || membership.status === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesFolio && matchesStatus;
     });
-  }, [memberships, search, statusFilter]);
+  }, [memberships, search, folioSearch, statusFilter]);
 
   const { pageItems: pagedMemberships, totalPages, safePage } = paginate(filtered, page);
 
@@ -40,6 +50,16 @@ export default function MembershipsTable({ memberships }: Props) {
               placeholder="Buscar por nombre de cliente..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              className="input w-full"
+            />
+          </div>
+
+          <div className="sm:w-56 sm:shrink-0">
+            <input
+              type="text"
+              placeholder="Buscar por folio..."
+              value={folioSearch}
+              onChange={(event) => setFolioSearch(event.target.value)}
               className="input w-full"
             />
           </div>
@@ -67,6 +87,7 @@ export default function MembershipsTable({ memberships }: Props) {
       hasFilters={hasFilters}
       onClearFilters={() => {
         setSearch("");
+        setFolioSearch("");
         setStatusFilter("");
         setPage(1);
       }}
@@ -79,6 +100,7 @@ export default function MembershipsTable({ memberships }: Props) {
       <table className="w-full min-w-[760px] border-collapse text-left text-sm">
         <thead className="bg-slate-50 text-slate-600">
           <tr>
+            <th className="px-6 py-4 font-semibold">Folio</th>
             <th className="px-6 py-4 font-semibold">Cliente</th>
             <th className="px-6 py-4 font-semibold">Estado</th>
             <th className="px-6 py-4 font-semibold">Renovación</th>
@@ -90,6 +112,9 @@ export default function MembershipsTable({ memberships }: Props) {
         <tbody className="divide-y divide-slate-100">
           {pagedMemberships.map((membership) => (
             <tr key={membership.id} className="transition hover:bg-slate-50">
+              <td className="px-6 py-4 font-mono text-xs text-slate-500">
+                {formatMembershipNumber(membership.membershipNumber)}
+              </td>
               <td className="px-6 py-4 font-medium text-slate-900">
                 {membership.client?.fullName ?? "Cliente no disponible"}
               </td>

@@ -77,6 +77,10 @@ const carSchema = z.object({
   status: z.enum(["DISPONIBLE", "RENTADO", "MANTENIMIENTO", "NO_DISPONIBLE"], {
     message: "El estado es obligatorio",
   }),
+  classification: z.enum(["A", "B", "C", "D", "E"], {
+    message: "La clasificación es obligatoria",
+  }),
+  classificationSwapFee: optionalCurrencyNumber,
   currentMileage: optionalCurrencyNumber,
   description: optionalText,
   featuresText: optionalText,
@@ -158,6 +162,10 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       ),
       deposit: formatCurrencyInputValue(initialData?.deposit),
       status: initialData?.status ?? "DISPONIBLE",
+      classification: initialData?.classification ?? "A",
+      classificationSwapFee: formatCurrencyInputValue(
+        initialData?.classificationSwapFee
+      ),
       currentMileage: formatIntegerInputValue(initialData?.currentMileage ?? undefined),
       description: initialData?.description ?? "",
       featuresText: initialData?.features?.join("\n") ?? "",
@@ -213,6 +221,8 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       commissionHighSeasonPrice: data.commissionHighSeasonPrice,
       deposit: data.deposit,
       status: data.status,
+      classification: data.classification,
+      classificationSwapFee: data.classificationSwapFee ?? 0,
       currentMileage: data.currentMileage,
       description: data.description,
       features: parseFeatures(data.featuresText),
@@ -388,6 +398,39 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
               <option value="MANTENIMIENTO">Mantenimiento</option>
               <option value="NO_DISPONIBLE">No disponible</option>
             </select>
+          </Field>
+
+          <Field
+            label="Clasificación"
+            required
+            error={errors.classification?.message}
+          >
+            <select {...register("classification")} className="input">
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="E">E</option>
+            </select>
+          </Field>
+
+          <Field
+            label="Costo de cambio de clasificación"
+            error={errors.classificationSwapFee?.message}
+          >
+            <input
+              type="text"
+              inputMode="decimal"
+              {...register("classificationSwapFee")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="0"
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Cargo único que se le suma a la renta cuando un socio con
+              membresía activa usa este auto (la Clasificación A no suele
+              tener costo). Déjalo en 0 si no aplica.
+            </p>
           </Field>
 
           <Field label="Kilometraje actual" error={errors.currentMileage?.message}>

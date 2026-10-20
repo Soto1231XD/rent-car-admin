@@ -1,5 +1,6 @@
 import { Car } from "@/types/car";
 import { Client } from "@/types/client";
+import { MembershipDayRedemption } from "@/types/membership";
 
 export type RentalStatus =
   | "RESERVACION"
@@ -41,8 +42,15 @@ export type Rental = {
   returnAddress?: string | null;
   returnFee?: number | null;
   returnLocation?: string | null;
+  // Cargo de cambio de clasificación congelado al crear/editar la renta (ver
+  // Car.classificationSwapFee) -- a diferencia de deliveryFee/returnFee, SÍ
+  // va incluido en totalPrice.
+  classificationFee?: number;
   client?: Client;
   car?: Car;
+  // Canjes de días de membresía ligados a esta renta (si se usaron días
+  // de tarifa preferencial al crearla).
+  dayRedemptions?: MembershipDayRedemption[];
   createdAt?: string;
   updatedAt?: string;
   // Solo viene presente en la respuesta de un PATCH que completó la renta:

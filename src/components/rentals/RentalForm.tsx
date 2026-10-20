@@ -5,11 +5,18 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Car } from "@/types/car";
+import { Gift } from "lucide-react";
+import { Car, CarClassification } from "@/types/car";
 import { formatCarLabel } from "@/lib/car-label";
 import { Client } from "@/types/client";
 import { Rental } from "@/types/rental";
-import { createRentalResult, updateRentalResult } from "@/lib/api-client";
+import { Membership } from "@/types/membership";
+import {
+  createRentalResult,
+  updateRentalResult,
+  getMembershipResult,
+  redeemMembershipDaysResult,
+} from "@/lib/api-client";
 import FormAlert from "@/components/ui/FormAlert";
 import { showErrorToast } from "@/lib/toast";
 import DeliveryPointFields from "@/components/rentals/DeliveryPointFields";
@@ -26,6 +33,7 @@ import { formatIntegerInput, formatIntegerInputValue } from "@/lib/format-number
 type PriceMode = "daily" | "highSeason";
 
 const MINIMUM_RENTAL_DAYS = 2;
+const MINIMUM_MEMBERSHIP_REDEMPTION_DAYS = 2;
 
 const optionalCurrencyNumber = z.preprocess((value) => {
   const normalizedValue = normalizeCurrencyValue(value);
@@ -191,7 +199,102 @@ export default function RentalForm({
     },
   });
 
+  const selectedClientId = useWatch({ control, name: "clientId" });
+  const selectedClient = useMemo(
+    () => clients.find((client) => client.id === selectedClientId) ?? null,
+    [clients, selectedClientId]
+  );
+  // La lista de clientes (getClients) solo trae, por cliente, la membresía
+  // más reciente con id/status/renewalType -- nada más. Si está activa, se
+  // pide aparte el resumen completo de días (daysSummary) ya nada más para
+  // esta membresía, no para todas las de la lista.
+  const activeMembership = selectedClient?.memberships?.find(
+    (membership) => membership.status === "ACTIVA"
+  );
+  const [membershipDetails, setMembershipDetails] = useState<Membership | null>(
+    null
+  );
+  const [wantsToRedeemDays, setWantsToRedeemDays] = useState(false);
+  const [redeemDaysAmount, setRedeemDaysAmount] = useState(
+    MINIMUM_MEMBERSHIP_REDEMPTION_DAYS
+  );
+  const [redeemNotes, setRedeemNotes] = useState("");
+  // La membresía incluye por default la Clasificación A; si el socio quiere
+  // un auto de otra clasificación, el formulario filtra el combo de
+  // "Vehículo" a esa clasificación y el backend le suma el cargo de cambio
+  // del auto elegido (Car.classificationSwapFee) al total -- ver
+  // rentals.service.ts / rental-pricing.util.ts.
+  const [selectedClassification, setSelectedClassification] =
+    useState<CarClassification>(() => {
+      const initialCar = cars.find((car) => car.id === initialData?.carId);
+      return initialCar?.classification ?? "A";
+    });
+
+  // Patrón de React para "resetear estado cuando cambia algo": se ajusta
+  // durante el render (no en un efecto), así no hay setState síncrono
+  // dentro de un useEffect. En cuanto cambia la membresía activa detectada
+  // (o deja de haber una), se limpian los datos y la intención de canje de
+  // la membresía anterior.
+  const [syncedMembershipId, setSyncedMembershipId] = useState<
+    string | undefined
+  >(undefined);
+  if (activeMembership?.id !== syncedMembershipId) {
+    setSyncedMembershipId(activeMembership?.id);
+    setMembershipDetails(null);
+    setWantsToRedeemDays(false);
+    setSelectedClassification("A");
+  }
+
+  useEffect(() => {
+    if (!activeMembership) {
+      return;
+    }
+
+    let cancelled = false;
+
+    getMembershipResult(activeMembership.id).then((result) => {
+      if (cancelled || !result.data) return;
+      setMembershipDetails(result.data);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMembership?.id]);
+
+  const isLoadingMembership = Boolean(activeMembership) && !membershipDetails;
+  const membershipAvailableDays = membershipDetails?.daysSummary?.availableDays ?? 0;
+  const canRedeemMembershipDays =
+    membershipAvailableDays >= MINIMUM_MEMBERSHIP_REDEMPTION_DAYS &&
+    (!membershipDetails?.daysSummary?.nextRegularRedemptionEligibleDate ||
+      new Date(
+        membershipDetails.daysSummary.nextRegularRedemptionEligibleDate
+      ) <= new Date());
+
+  const availableCars = activeMembership
+    ? cars.filter((car) => car.classification === selectedClassification)
+    : cars;
+
   const selectedCarId = useWatch({ control, name: "carId" });
+
+  // Si el cliente tiene membresía y cambia la clasificación elegida, el auto
+  // que tenía seleccionado puede dejar de pertenecer a esa clasificación --
+  // se limpia para que el staff elija uno de la lista filtrada.
+  useEffect(() => {
+    if (!activeMembership) {
+      return;
+    }
+
+    if (
+      selectedCarId &&
+      !availableCars.some((car) => car.id === selectedCarId)
+    ) {
+      setValue("carId", "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClassification, activeMembership?.id]);
+
   const startDate = useWatch({ control, name: "startDate" });
   const endDate = useWatch({ control, name: "endDate" });
   const rentalType = useWatch({ control, name: "rentalType" });
@@ -229,6 +332,23 @@ export default function RentalForm({
     return isHighSeasonRange(startDate, endDate) ? "highSeason" : "daily";
   }, [endDate, initialPriceMode, isIndefinida, startDate]);
 
+  // Cargo único de cambio de clasificación: solo aplica si el cliente tiene
+  // membresía activa. Vive en el auto, no en la letra, porque autos de la
+  // misma clasificación pueden cobrar distinto (ej. Jetta vs Ertiga en D).
+  // La Clasificación A viene incluida sin costo SOLO como punto de partida
+  // de la renta -- si se está editando una renta que ya tenía otro auto
+  // asignado y se cambia por uno distinto (aunque sea A), ese cambio sí
+  // tiene costo. El backend recalcula esto mismo de forma independiente
+  // (nunca confía en este valor del frontend).
+  const isVehicleSwap =
+    mode === "edit" &&
+    Boolean(initialData?.carId) &&
+    selectedCarId !== initialData?.carId;
+  const classificationFee =
+    activeMembership && selectedCar && (isVehicleSwap || selectedCar.classification !== "A")
+      ? toMoneyNumber(selectedCar.classificationSwapFee)
+      : 0;
+
   const quote = useMemo(() => {
     if (isIndefinida || !selectedCar || !startDate || !endDate || endDate < startDate) {
       return null;
@@ -241,7 +361,7 @@ export default function RentalForm({
     return {
       days,
       dailyRate,
-      total: days * dailyRate,
+      total: days * dailyRate + classificationFee,
       deposit,
       isUsingFallbackRate:
         priceMode === "highSeason" &&
@@ -252,7 +372,7 @@ export default function RentalForm({
         !hasMoneyValue(selectedCar.commissionDailyPrice) &&
         !hasMoneyValue(selectedCar.commissionHighSeasonPrice),
     };
-  }, [endDate, isIndefinida, priceMode, renterType, selectedCar, startDate]);
+  }, [classificationFee, endDate, isIndefinida, priceMode, renterType, selectedCar, startDate]);
 
   const completionQuote = useMemo(() => {
     if (
@@ -280,7 +400,7 @@ export default function RentalForm({
     ? (completionQuote?.total ?? effectiveDailyRate)
     : isIndefinida
       ? effectiveDailyRate
-      : (quote ? quote.days * dailyRateValue : 0);
+      : (quote ? quote.days * dailyRateValue + classificationFee : 0);
 
   // Pre-fill the daily rate with the car/date-suggested value whenever the
   // underlying selection actually changes, but skip the very first run so we
@@ -346,7 +466,7 @@ export default function RentalForm({
         ? (completionQuote?.total ?? rateForSubmit)
         : isIndefinida
           ? rateForSubmit
-          : (quote ? quote.days * rateForSubmit : 0),
+          : (quote ? quote.days * rateForSubmit + classificationFee : 0),
       dailyRateApplied: rateForSubmit,
       advancePayment: data.advancePayment ?? 0,
       returnMileage: isCompleting ? data.returnMileage : undefined,
@@ -385,6 +505,25 @@ export default function RentalForm({
       );
     }
 
+    if (wantsToRedeemDays && activeMembership) {
+      const redeemResult = await redeemMembershipDaysResult(
+        activeMembership.id,
+        {
+          source: "REGULAR",
+          days: redeemDaysAmount,
+          notes: redeemNotes || undefined,
+          rentalId: result.data.id,
+        }
+      );
+
+      if (!redeemResult.data) {
+        showErrorToast(
+          redeemResult.error ??
+            "La renta se guardó, pero no se pudo registrar el canje de días. Regístralo manualmente desde la membresía."
+        );
+      }
+    }
+
     router.refresh();
     router.push(
       `/dashboard/rentals/${result.data.id}?success=${
@@ -412,16 +551,143 @@ export default function RentalForm({
             </select>
           </Field>
 
+          {activeMembership && (
+            <div className="md:col-span-2 rounded-xl border border-teal-200 bg-teal-50 p-4">
+              <p className="flex items-center gap-2 text-sm font-semibold text-teal-900">
+                <Gift size={16} className="shrink-0" />
+                Cliente con membresía activa
+              </p>
+
+              {isLoadingMembership ? (
+                <p className="mt-2 text-xs text-teal-700">
+                  Cargando días disponibles...
+                </p>
+              ) : membershipDetails?.daysSummary ? (
+                <>
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:w-80">
+                    <div className="rounded-lg border border-teal-200 bg-white p-3 text-center">
+                      <p className="text-lg font-bold text-teal-700">
+                        {membershipDetails.daysSummary.availableDays}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Disponibles ahora
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white p-3 text-center">
+                      <p className="text-lg font-bold text-slate-800">
+                        {membershipDetails.daysSummary.lifetimeRedeemedDays}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Usados en total
+                      </p>
+                    </div>
+                  </div>
+
+                  {canRedeemMembershipDays ? (
+                    <div className="mt-3">
+                      <label className="flex items-center gap-2 text-sm text-teal-900">
+                        <input
+                          type="checkbox"
+                          checked={wantsToRedeemDays}
+                          onChange={(event) =>
+                            setWantsToRedeemDays(event.target.checked)
+                          }
+                        />
+                        Usar días de membresía en esta renta
+                      </label>
+
+                      {wantsToRedeemDays && (
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2 sm:max-w-md">
+                          <label className="block">
+                            <span className="mb-1 block text-xs font-medium text-slate-600">
+                              Días a canjear
+                            </span>
+                            <input
+                              type="number"
+                              min={MINIMUM_MEMBERSHIP_REDEMPTION_DAYS}
+                              max={Math.min(
+                                10,
+                                membershipDetails.daysSummary.availableDays
+                              )}
+                              value={redeemDaysAmount}
+                              onChange={(event) =>
+                                setRedeemDaysAmount(Number(event.target.value))
+                              }
+                              className="input"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="mb-1 block text-xs font-medium text-slate-600">
+                              Notas (opcional)
+                            </span>
+                            <input
+                              type="text"
+                              value={redeemNotes}
+                              onChange={(event) =>
+                                setRedeemNotes(event.target.value)
+                              }
+                              className="input"
+                              placeholder="Ej. 3 días de esta renta"
+                            />
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-xs text-teal-700">
+                      {membershipDetails.daysSummary.availableDays > 0
+                        ? `Tiene ${membershipDetails.daysSummary.availableDays} día disponible, pero el canje mínimo es de ${MINIMUM_MEMBERSHIP_REDEMPTION_DAYS} días.`
+                        : "No tiene días disponibles para canjear por ahora."}
+                    </p>
+                  )}
+                </>
+              ) : null}
+
+              <label className="mt-4 block max-w-xs">
+                <span className="mb-1 block text-xs font-medium text-teal-900">
+                  Clasificación de auto
+                </span>
+                <select
+                  value={selectedClassification}
+                  onChange={(event) =>
+                    setSelectedClassification(
+                      event.target.value as CarClassification
+                    )
+                  }
+                  className="input"
+                >
+                  <option value="A">A (incluida en la membresía)</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                  <option value="E">E</option>
+                </select>
+                <p className="mt-1 text-xs text-teal-700">
+                  La membresía incluye la Clasificación A. Elegir otra
+                  clasificación agrega el cargo de cambio de ese auto al
+                  total.
+                </p>
+              </label>
+            </div>
+          )}
+
           <Field label="Vehículo" error={errors.carId?.message}>
             <select {...register("carId")} className="input">
               <option value="">Selecciona un vehículo</option>
-              {cars.map((car) => (
+              {availableCars.map((car) => (
                 <option key={car.id} value={car.id}>
                   {formatCarLabel(car)}
                   {car.plate ? ` - ${car.plate}` : ""}
                 </option>
               ))}
             </select>
+            {classificationFee > 0 && (
+              <p className="mt-1 text-xs text-teal-700">
+                Costo adicional por cambio de clasificación:{" "}
+                <strong>{formatCurrency(classificationFee)}</strong> (incluido
+                en el total).
+              </p>
+            )}
           </Field>
 
           <Field label="Tipo de cliente" error={errors.renterType?.message}>

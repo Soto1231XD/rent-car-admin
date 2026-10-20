@@ -316,12 +316,24 @@ export function cancelMembershipResult(id: string) {
 
 export function redeemMembershipDaysResult(
   id: string,
-  payload: { source: MembershipDaySource; days: number; notes?: string }
+  payload: {
+    source: MembershipDaySource;
+    days: number;
+    notes?: string;
+    rentalId?: string;
+  }
 ) {
   return requestResult<Membership>(`/memberships/${id}/redeem-days`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+// Trae la membresía completa (con daysSummary) -- usado desde "Nueva
+// renta" en cuanto se elige un cliente con membresía activa, ya que la
+// lista de clientes (getClients) solo trae un resumen liviano.
+export function getMembershipResult(id: string) {
+  return requestResult<Membership>(`/memberships/${id}`);
 }
 
 export function updateLeadStatusResult(id: string, status: LeadStatus) {

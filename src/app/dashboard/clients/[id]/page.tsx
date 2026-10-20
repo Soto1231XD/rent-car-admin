@@ -6,8 +6,16 @@ import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
 import { Rental, RentalStatus } from "@/types/rental";
 import { formatCarLabel } from "@/lib/car-label";
 import { formatCurrency } from "@/lib/format-currency";
+import { formatMembershipNumber } from "@/lib/membership-number";
 
 const NEW_CLIENT_BADGE_HOURS = 12;
+
+const MEMBERSHIP_STATUS_LABELS: Record<string, string> = {
+  PENDIENTE: "Pendiente",
+  ACTIVA: "Activa",
+  INACTIVA: "En gracia (por vencer)",
+  CANCELADA: "Cancelada",
+};
 
 type Props = {
   params: Promise<{
@@ -42,6 +50,9 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
 
   const rentals = client.rentals ?? [];
   const activeRental = rentals.find((rental) => rental.status === "ACTIVO");
+  // El backend ya las trae ordenadas de más reciente a más antigua -- la
+  // primera es la membresía vigente, o la más reciente si ya se canceló.
+  const latestMembership = client.memberships?.[0];
 
   return (
     <div>
@@ -167,6 +178,60 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
             </div>
           ) : (
             <p className="text-sm text-slate-600">Sin renta activa.</p>
+          )}
+        </section>
+      </div>
+
+      <div className="mt-6">
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
+          <h2 className="mb-5 text-lg font-semibold text-slate-900">
+            Membresía
+          </h2>
+
+          {latestMembership ? (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Info
+                  label="Folio"
+                  value={formatMembershipNumber(latestMembership.membershipNumber)}
+                />
+                <Info
+                  label="Estado"
+                  value={MEMBERSHIP_STATUS_LABELS[latestMembership.status]}
+                />
+                <Info
+                  label="Renovación"
+                  value={
+                    latestMembership.renewalType === "AUTOMATICA"
+                      ? "Automática"
+                      : "Manual"
+                  }
+                />
+              </div>
+
+              <div className="flex shrink-0 flex-wrap gap-3">
+                <Link
+                  href={`/dashboard/memberships/${latestMembership.id}`}
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Ver membresía
+                </Link>
+                {latestMembership.contractPdfUrl && (
+                  <a
+                    href={getAssetUrl(latestMembership.contractPdfUrl)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Ver contrato firmado
+                  </a>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-600">
+              Este cliente no tiene ninguna membresía registrada.
+            </p>
           )}
         </section>
       </div>
