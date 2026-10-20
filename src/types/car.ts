@@ -31,9 +31,11 @@ export type Car = {
   commissionHighSeasonPrice?: number | null;
   deposit: number;
   classification: CarClassification;
-  // Cargo único de cambio de clasificación para ESTE auto (varía por auto,
-  // no solo por letra de clasificación -- ver RentalForm.tsx).
-  classificationSwapFee: number;
+  // Excepción de cargo de cambio de clasificación para ESTE auto. `null`
+  // significa "usa el precio base de su clasificación" (ver
+  // types/classification-pricing.ts); un valor significa que este auto
+  // cobra distinto al resto de su clasificación (ej. Jetta vs Ertiga en D).
+  classificationSwapFee: number | null;
   currentMileage?: number | null;
   /** Calculado por el backend a partir del historial de mantenimiento. Solo lectura. */
   nextServiceMileage?: number | null;

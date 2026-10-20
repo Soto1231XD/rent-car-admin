@@ -222,7 +222,10 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       deposit: data.deposit,
       status: data.status,
       classification: data.classification,
-      classificationSwapFee: data.classificationSwapFee ?? 0,
+      // Explicit null (not omitted/0) so dejar el campo vacío realmente lo
+      // limpia server-side -- mismo criterio que `year` arriba: significa
+      // "sin excepción, usa el precio base de la clasificación".
+      classificationSwapFee: data.classificationSwapFee ?? null,
       currentMileage: data.currentMileage,
       description: data.description,
       features: parseFeatures(data.featuresText),
@@ -415,7 +418,7 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
           </Field>
 
           <Field
-            label="Costo de cambio de clasificación"
+            label="Costo de cambio (excepción para este auto)"
             error={errors.classificationSwapFee?.message}
           >
             <input
@@ -424,12 +427,12 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
               {...register("classificationSwapFee")}
               onInput={formatCurrencyInput}
               className="input"
-              placeholder="0"
+              placeholder="Usar precio base de la clasificación"
             />
             <p className="mt-1 text-xs text-slate-500">
-              Cargo único que se le suma a la renta cuando un socio con
-              membresía activa usa este auto (la Clasificación A no suele
-              tener costo). Déjalo en 0 si no aplica.
+              Déjalo vacío para usar el precio base de su clasificación
+              (configurado en Precios). Solo llénalo si ESTE auto en
+              particular cobra distinto al resto de su clasificación.
             </p>
           </Field>
 

@@ -1,9 +1,13 @@
 import Link from "next/link";
 import RentalForm from "@/components/rentals/RentalForm";
-import { getCars, getClients } from "@/lib/api";
+import { getCars, getClassificationPricing, getClients } from "@/lib/api";
 
 export default async function NewRentalPage() {
-  const [cars, clients] = await Promise.all([getCars(), getClients()]);
+  const [cars, clients, classificationPricing] = await Promise.all([
+    getCars(),
+    getClients(),
+    getClassificationPricing(),
+  ]);
 
   return (
     <div>
@@ -24,7 +28,12 @@ export default async function NewRentalPage() {
         </p>
       </div>
 
-      <RentalForm mode="create" cars={cars} clients={clients} />
+      <RentalForm
+        mode="create"
+        cars={cars}
+        clients={clients}
+        classificationPricing={classificationPricing}
+      />
     </div>
   );
 }

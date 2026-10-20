@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Gift } from "lucide-react";
 import { Car, CarClassification } from "@/types/car";
+import { ClassificationPricing } from "@/types/classification-pricing";
 import { formatCarLabel } from "@/lib/car-label";
 import { Client } from "@/types/client";
 import { Rental } from "@/types/rental";
@@ -131,6 +131,7 @@ type Props = {
   mode: "create" | "edit";
   cars: Car[];
   clients: Client[];
+  classificationPricing: ClassificationPricing[];
   initialData?: Partial<Rental>;
   rentalId?: string;
 };
@@ -138,6 +139,7 @@ type Props = {
 export default function RentalForm({
   mode,
   cars,
+  classificationPricing,
   clients,
   initialData,
   rentalId,
@@ -344,9 +346,17 @@ export default function RentalForm({
     mode === "edit" &&
     Boolean(initialData?.carId) &&
     selectedCarId !== initialData?.carId;
+  // Si el auto no tiene su propia excepción (classificationSwapFee en
+  // null), se usa el precio base configurado para su clasificación en
+  // "Precios" -- mismo criterio que calculatePriceBreakdown() en el
+  // backend, que es quien manda de verdad.
   const classificationFee =
     activeMembership && selectedCar && (isVehicleSwap || selectedCar.classification !== "A")
-      ? toMoneyNumber(selectedCar.classificationSwapFee)
+      ? (selectedCar.classificationSwapFee ??
+        classificationPricing.find(
+          (row) => row.classification === selectedCar.classification
+        )?.swapFee ??
+        0)
       : 0;
 
   const quote = useMemo(() => {
@@ -551,100 +561,29 @@ export default function RentalForm({
             </select>
           </Field>
 
-          {activeMembership && (
-            <div className="md:col-span-2 rounded-xl border border-teal-200 bg-teal-50 p-4">
-              <p className="flex items-center gap-2 text-sm font-semibold text-teal-900">
-                <Gift size={16} className="shrink-0" />
-                Cliente con membresía activa
-              </p>
-
-              {isLoadingMembership ? (
-                <p className="mt-2 text-xs text-teal-700">
-                  Cargando días disponibles...
+          <div>
+            <Field label="Vehículo" error={errors.carId?.message}>
+              <select {...register("carId")} className="input">
+                <option value="">Selecciona un vehículo</option>
+                {availableCars.map((car) => (
+                  <option key={car.id} value={car.id}>
+                    {formatCarLabel(car)}
+                    {car.plate ? ` - ${car.plate}` : ""}
+                  </option>
+                ))}
+              </select>
+              {classificationFee > 0 && (
+                <p className="mt-1 text-xs text-teal-700">
+                  Costo adicional por cambio de clasificación:{" "}
+                  <strong>{formatCurrency(classificationFee)}</strong>{" "}
+                  (incluido en el total).
                 </p>
-              ) : membershipDetails?.daysSummary ? (
-                <>
-                  <div className="mt-3 grid grid-cols-2 gap-3 sm:w-80">
-                    <div className="rounded-lg border border-teal-200 bg-white p-3 text-center">
-                      <p className="text-lg font-bold text-teal-700">
-                        {membershipDetails.daysSummary.availableDays}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        Disponibles ahora
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-slate-200 bg-white p-3 text-center">
-                      <p className="text-lg font-bold text-slate-800">
-                        {membershipDetails.daysSummary.lifetimeRedeemedDays}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        Usados en total
-                      </p>
-                    </div>
-                  </div>
+              )}
+            </Field>
 
-                  {canRedeemMembershipDays ? (
-                    <div className="mt-3">
-                      <label className="flex items-center gap-2 text-sm text-teal-900">
-                        <input
-                          type="checkbox"
-                          checked={wantsToRedeemDays}
-                          onChange={(event) =>
-                            setWantsToRedeemDays(event.target.checked)
-                          }
-                        />
-                        Usar días de membresía en esta renta
-                      </label>
-
-                      {wantsToRedeemDays && (
-                        <div className="mt-3 grid gap-3 sm:grid-cols-2 sm:max-w-md">
-                          <label className="block">
-                            <span className="mb-1 block text-xs font-medium text-slate-600">
-                              Días a canjear
-                            </span>
-                            <input
-                              type="number"
-                              min={MINIMUM_MEMBERSHIP_REDEMPTION_DAYS}
-                              max={Math.min(
-                                10,
-                                membershipDetails.daysSummary.availableDays
-                              )}
-                              value={redeemDaysAmount}
-                              onChange={(event) =>
-                                setRedeemDaysAmount(Number(event.target.value))
-                              }
-                              className="input"
-                            />
-                          </label>
-                          <label className="block">
-                            <span className="mb-1 block text-xs font-medium text-slate-600">
-                              Notas (opcional)
-                            </span>
-                            <input
-                              type="text"
-                              value={redeemNotes}
-                              onChange={(event) =>
-                                setRedeemNotes(event.target.value)
-                              }
-                              className="input"
-                              placeholder="Ej. 3 días de esta renta"
-                            />
-                          </label>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-xs text-teal-700">
-                      {membershipDetails.daysSummary.availableDays > 0
-                        ? `Tiene ${membershipDetails.daysSummary.availableDays} día disponible, pero el canje mínimo es de ${MINIMUM_MEMBERSHIP_REDEMPTION_DAYS} días.`
-                        : "No tiene días disponibles para canjear por ahora."}
-                    </p>
-                  )}
-                </>
-              ) : null}
-
-              <label className="mt-4 block max-w-xs">
-                <span className="mb-1 block text-xs font-medium text-teal-900">
+            {activeMembership && (
+              <label className="mt-4 block">
+                <span className="mb-1 block text-xs font-medium text-slate-700">
                   Clasificación de auto
                 </span>
                 <select
@@ -662,33 +601,14 @@ export default function RentalForm({
                   <option value="D">D</option>
                   <option value="E">E</option>
                 </select>
-                <p className="mt-1 text-xs text-teal-700">
+                <p className="mt-1 text-xs text-slate-500">
                   La membresía incluye la Clasificación A. Elegir otra
                   clasificación agrega el cargo de cambio de ese auto al
                   total.
                 </p>
               </label>
-            </div>
-          )}
-
-          <Field label="Vehículo" error={errors.carId?.message}>
-            <select {...register("carId")} className="input">
-              <option value="">Selecciona un vehículo</option>
-              {availableCars.map((car) => (
-                <option key={car.id} value={car.id}>
-                  {formatCarLabel(car)}
-                  {car.plate ? ` - ${car.plate}` : ""}
-                </option>
-              ))}
-            </select>
-            {classificationFee > 0 && (
-              <p className="mt-1 text-xs text-teal-700">
-                Costo adicional por cambio de clasificación:{" "}
-                <strong>{formatCurrency(classificationFee)}</strong> (incluido
-                en el total).
-              </p>
             )}
-          </Field>
+          </div>
 
           <Field label="Tipo de cliente" error={errors.renterType?.message}>
             <select {...register("renterType")} className="input">
@@ -812,6 +732,103 @@ export default function RentalForm({
         </div>
       </section>
 
+      {activeMembership && (
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
+          <h2 className="mb-5 text-lg font-semibold text-slate-900">
+            Días de renta
+          </h2>
+
+          {isLoadingMembership ? (
+            <p className="text-xs text-slate-500">
+              Cargando días disponibles...
+            </p>
+          ) : membershipDetails?.daysSummary ? (
+            <>
+              <div className="grid grid-cols-2 gap-3 text-center">
+                <div className="rounded-xl border border-teal-200 bg-teal-50 p-3">
+                  <p className="text-2xl font-bold text-teal-700">
+                    {membershipDetails.daysSummary.availableDays}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Disponibles ahora
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-2xl font-bold text-slate-900">
+                    {membershipDetails.daysSummary.lifetimeRedeemedDays}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Usados en total
+                  </p>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                Los días no son acumulables sin límite: cada canje reinicia el
+                avance de la tabla, conservando lo que haya quedado sin usar.
+              </p>
+
+              {canRedeemMembershipDays ? (
+                <div className="mt-3">
+                  <label className="flex items-center gap-2 text-sm text-slate-900">
+                    <input
+                      type="checkbox"
+                      checked={wantsToRedeemDays}
+                      onChange={(event) =>
+                        setWantsToRedeemDays(event.target.checked)
+                      }
+                    />
+                    Usar días de membresía en esta renta
+                  </label>
+
+                  {wantsToRedeemDays && (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 sm:max-w-md">
+                      <label className="block">
+                        <span className="mb-1 block text-xs font-medium text-slate-600">
+                          Días a canjear
+                        </span>
+                        <input
+                          type="number"
+                          min={MINIMUM_MEMBERSHIP_REDEMPTION_DAYS}
+                          max={Math.min(
+                            10,
+                            membershipDetails.daysSummary.availableDays
+                          )}
+                          value={redeemDaysAmount}
+                          onChange={(event) =>
+                            setRedeemDaysAmount(Number(event.target.value))
+                          }
+                          className="input"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="mb-1 block text-xs font-medium text-slate-600">
+                          Notas (opcional)
+                        </span>
+                        <input
+                          type="text"
+                          value={redeemNotes}
+                          onChange={(event) =>
+                            setRedeemNotes(event.target.value)
+                          }
+                          className="input"
+                          placeholder="Ej. 3 días de esta renta"
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="mt-3 text-xs text-amber-700">
+                  {membershipDetails.daysSummary.availableDays > 0
+                    ? `Tiene ${membershipDetails.daysSummary.availableDays} día disponible, pero el canje mínimo es de ${MINIMUM_MEMBERSHIP_REDEMPTION_DAYS} días.`
+                    : "No tiene días disponibles para canjear por ahora."}
+                </p>
+              )}
+            </>
+          ) : null}
+        </section>
+      )}
+
       <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
         <h2 className="mb-1 text-lg font-semibold text-slate-900">
           Punto de entrega y devolución
@@ -876,6 +893,12 @@ export default function RentalForm({
             label="Depósito en garantía"
             value={depositValue > 0 ? formatCurrency(depositValue) : "-"}
           />
+          {classificationFee > 0 && (
+            <SummaryItem
+              label="Cambio de clasificación"
+              value={formatCurrency(classificationFee)}
+            />
+          )}
           {(!isIndefinida || isCompletingIndefinida) && (
             <SummaryItem
               label="Total"

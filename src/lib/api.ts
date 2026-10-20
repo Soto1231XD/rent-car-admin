@@ -12,6 +12,7 @@ import { Maintenance } from "@/types/maintenance";
 import { Quote } from "@/types/quote";
 import { MonthlyBreakdownEntry } from "@/types/monthly-breakdown";
 import { Rental } from "@/types/rental";
+import { ClassificationPricing } from "@/types/classification-pricing";
 import { AUTH_COOKIE } from "@/lib/auth";
 
 const API_URL =
@@ -83,6 +84,14 @@ export async function getCars(): Promise<Car[]> {
 
 export async function getCar(id: string): Promise<Car | null> {
   return request<Car>(`/cars/${id}`);
+}
+
+export async function getClassificationPricing(): Promise<
+  ClassificationPricing[]
+> {
+  return (
+    (await request<ClassificationPricing[]>("/classification-pricing")) ?? []
+  );
 }
 
 export async function getClients(): Promise<Client[]> {

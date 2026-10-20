@@ -14,6 +14,7 @@ import { Lead, LeadStatus } from "@/types/lead";
 import { Maintenance, MaintenanceFieldHistory } from "@/types/maintenance";
 import { Quote } from "@/types/quote";
 import { Rental } from "@/types/rental";
+import { ClassificationPricing } from "@/types/classification-pricing";
 import { getStoredToken } from "@/lib/auth";
 
 const API_URL =
@@ -118,6 +119,8 @@ export type SaveCarPayload = {
   commissionHighSeasonPrice?: number;
   deposit: number;
   status?: string;
+  classification?: string;
+  classificationSwapFee?: number | null;
   currentMileage?: number;
   description?: string;
   features: string[];
@@ -166,6 +169,19 @@ export function setCarReportExclusionResult(id: string, excluded: boolean) {
     method: "PATCH",
     body: JSON.stringify({ excluded }),
   });
+}
+
+export function updateClassificationPricingResult(
+  classification: string,
+  payload: { swapFee: number }
+) {
+  return requestResult<ClassificationPricing>(
+    `/classification-pricing/${classification}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }
+  );
 }
 
 export async function uploadCarImages(
