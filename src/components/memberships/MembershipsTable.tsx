@@ -76,6 +76,7 @@ export default function MembershipsTable({ memberships }: Props) {
               <option value="PENDIENTE">Pendiente</option>
               <option value="ACTIVA">Activa</option>
               <option value="INACTIVA">En gracia (por vencer)</option>
+              <option value="SUSPENDIDA">Suspendida</option>
               <option value="CANCELADA">Cancelada</option>
             </select>
           </div>
@@ -159,6 +160,7 @@ const STATUS_LABELS: Record<MembershipStatus, string> = {
   PENDIENTE: "Pendiente",
   ACTIVA: "Activa",
   INACTIVA: "En gracia (por vencer)",
+  SUSPENDIDA: "Suspendida",
   CANCELADA: "Cancelada",
 };
 
@@ -166,6 +168,7 @@ const STATUS_STYLES: Record<MembershipStatus, string> = {
   PENDIENTE: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
   ACTIVA: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
   INACTIVA: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+  SUSPENDIDA: "bg-orange-50 text-orange-700 ring-1 ring-orange-200",
   CANCELADA: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
 };
 

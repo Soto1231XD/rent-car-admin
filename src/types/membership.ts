@@ -1,12 +1,16 @@
 import { Client } from "@/types/client";
 
-// "INACTIVA" es el periodo de gracia (5 días tras vencer sin renovar); si
-// pasa sin pago nuevo, cae sola a "CANCELADA" (ver expireOverdueMemberships
-// en el backend). No existe un estado intermedio "GRACIA" separado.
+// "INACTIVA" es el periodo de gracia (7 días tras vencer sin renovar, con
+// avisos día 3/día 5). Si pasa sin pago nuevo, pasa a "SUSPENDIDA" (otros 7
+// días; aquí es donde se reducen a la mitad los días de renta acumulados).
+// Si tampoco se paga en esa ventana, cae sola a "CANCELADA" (ver
+// expireOverdueMemberships en el backend). No existe un estado intermedio
+// "GRACIA" separado -- ese valor del enum no se usa.
 export type MembershipStatus =
   | "PENDIENTE"
   | "ACTIVA"
   | "INACTIVA"
+  | "SUSPENDIDA"
   | "CANCELADA";
 
 export type MembershipRenewalType = "AUTOMATICA" | "MANUAL";
@@ -65,6 +69,7 @@ export type Membership = {
   startDate?: string | null;
   currentPeriodEnd?: string | null;
   graceEndsAt?: string | null;
+  suspensionEndsAt?: string | null;
   cancelledAt?: string | null;
   mpPreapprovalId?: string | null;
   mpPreferenceId?: string | null;

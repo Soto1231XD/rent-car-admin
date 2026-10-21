@@ -14,9 +14,20 @@ type Props = {
   clients: Client[];
 };
 
+type ClientTypeFilter = RenterType | "MEMBRESIA" | "";
+
+// No es un RenterType real (ese sigue siendo solo Cliente/Comisionista y
+// define la tarifa de renta) -- es una categoría aparte, calculada, que se
+// muestra en vez del tipo real cuando el cliente tiene una membresía con
+// estado ACTIVA. No requiere marcarse a mano: basta con que exista esa
+// membresía (creada desde el alta pública o manualmente en el CRM).
+function hasActiveMembership(client: Client) {
+  return client.memberships?.some((membership) => membership.status === "ACTIVA") ?? false;
+}
+
 export default function ClientsTable({ clients }: Props) {
   const [clientSearch, setClientSearch] = useState("");
-  const [clientType, setClientType] = useState<RenterType | "">("");
+  const [clientType, setClientType] = useState<ClientTypeFilter>("");
   const [page, setPage] = useState(1);
   const hasFilters = clientSearch !== "" || clientType !== "";
 
@@ -30,7 +41,11 @@ export default function ClientsTable({ clients }: Props) {
         (client.email ?? "").toLowerCase().includes(clientValue) ||
         client.phone.toLowerCase().includes(clientValue);
 
-      const matchesType = !clientType || (client.type ?? "CLIENTE") === clientType;
+      const matchesType =
+        !clientType ||
+        (clientType === "MEMBRESIA"
+          ? hasActiveMembership(client)
+          : (client.type ?? "CLIENTE") === clientType);
 
       return matchesSearch && matchesType;
     });
@@ -56,13 +71,14 @@ export default function ClientsTable({ clients }: Props) {
             <select
               value={clientType}
               onChange={(event) =>
-                setClientType(event.target.value as RenterType | "")
+                setClientType(event.target.value as ClientTypeFilter)
               }
               className="input w-full"
             >
               <option value="">Todos los tipos</option>
               <option value="CLIENTE">Clientes</option>
               <option value="COMISIONISTA">Comisionistas</option>
+              <option value="MEMBRESIA">Con membresía activa</option>
             </select>
           </div>
         </div>
@@ -107,7 +123,10 @@ export default function ClientsTable({ clients }: Props) {
                   )}
               </td>
               <td className="px-6 py-4">
-                <ClientTypeBadge type={client.type ?? "CLIENTE"} />
+                <ClientTypeBadge
+                  type={client.type ?? "CLIENTE"}
+                  hasActiveMembership={hasActiveMembership(client)}
+                />
               </td>
               <td className="px-6 py-4 text-slate-900">{client.phone}</td>
               <td className="px-6 py-4 text-slate-900">
@@ -132,7 +151,21 @@ export default function ClientsTable({ clients }: Props) {
   );
 }
 
-function ClientTypeBadge({ type }: { type: RenterType }) {
+function ClientTypeBadge({
+  type,
+  hasActiveMembership,
+}: {
+  type: RenterType;
+  hasActiveMembership: boolean;
+}) {
+  if (hasActiveMembership) {
+    return (
+      <span className="inline-flex whitespace-nowrap rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700 ring-1 ring-teal-200">
+        Membresía
+      </span>
+    );
+  }
+
   const isCommissioner = type === "COMISIONISTA";
 
   return (
