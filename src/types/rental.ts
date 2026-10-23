@@ -42,10 +42,10 @@ export type Rental = {
   returnAddress?: string | null;
   returnFee?: number | null;
   returnLocation?: string | null;
-  // Cargo de cambio de clasificación congelado al crear/editar la renta (ver
-  // Car.classificationSwapFee) -- a diferencia de deliveryFee/returnFee, SÍ
-  // va incluido en totalPrice.
-  classificationFee?: number;
+  // Cuántos días de esta renta se cobraron a la tarifa de canje de
+  // membresía (0 en rentas normales) -- congelado al crear/editar la
+  // renta, ya va incluido en totalPrice.
+  membershipRedeemedDays?: number;
   client?: Client;
   car?: Car;
   // Canjes de días de membresía ligados a esta renta (si se usaron días

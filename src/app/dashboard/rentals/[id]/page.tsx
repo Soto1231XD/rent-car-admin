@@ -216,15 +216,15 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
             />
           </div>
 
-          {!!rental.classificationFee && (
+          {!!rental.membershipRedeemedDays && (
             <div className="mt-6 border-t border-slate-200 pt-4">
               <h3 className="mb-3 text-sm font-semibold text-slate-900">
-                Cambio de clasificación
+                Membresía
               </h3>
 
               <Info
-                label="Cargo adicional por clasificación"
-                value={`${formatCurrency(rental.classificationFee)} (incluido en el total)`}
+                label="Días de membresía aplicados"
+                value={`${rental.membershipRedeemedDays} (tarifa de canje, incluida en el total)`}
               />
             </div>
           )}

@@ -1,16 +1,12 @@
 import Link from "next/link";
 import { Calendar, ShieldCheck, Tag } from "lucide-react";
 import PricesTable from "@/components/prices/PricesTable";
-import ClassificationPricingCard from "@/components/prices/ClassificationPricingCard";
 import SummaryCard from "@/components/ui/SummaryCard";
-import { getCars, getClassificationPricing } from "@/lib/api";
+import { getCars } from "@/lib/api";
 import { formatCurrency } from "@/lib/format-currency";
 
 export default async function PricesPage() {
-  const [cars, classificationPricing] = await Promise.all([
-    getCars(),
-    getClassificationPricing(),
-  ]);
+  const cars = await getCars();
 
   // Promedios informativos de las tarifas configuradas — no es dinero ya
   // cobrado, solo una referencia rápida de cómo están puestos los precios.
@@ -66,7 +62,6 @@ export default async function PricesPage() {
       </div>
 
       <PricesTable cars={cars} />
-      <ClassificationPricingCard pricing={classificationPricing} />
     </div>
   );
 }

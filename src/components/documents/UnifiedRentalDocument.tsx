@@ -135,10 +135,10 @@ export default function UnifiedRentalDocument({ rental }: Props) {
               label={isOpenIndefinida ? "Tarifa diaria" : "Monto de renta"}
               value={formatMoney(rental.totalPrice)}
             />
-            {!!rental.classificationFee && (
+            {!!rental.membershipRedeemedDays && (
               <Info
-                label="Cambio de clasificación"
-                value={`${formatMoney(rental.classificationFee)} (incluido en el monto de renta)`}
+                label="Días de membresía aplicados"
+                value={`${rental.membershipRedeemedDays} (tarifa de canje, incluida en el monto de renta)`}
               />
             )}
             <Info label="Depósito en garantía" value={deposit} />

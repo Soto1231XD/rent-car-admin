@@ -77,10 +77,15 @@ const carSchema = z.object({
   status: z.enum(["DISPONIBLE", "RENTADO", "MANTENIMIENTO", "NO_DISPONIBLE"], {
     message: "El estado es obligatorio",
   }),
-  classification: z.enum(["A", "B", "C", "D", "E"], {
-    message: "La clasificación es obligatoria",
-  }),
-  classificationSwapFee: optionalCurrencyNumber,
+  // "" = sin clasificar (este auto no participa en el programa de
+  // membresía). z.enum no acepta "" junto a los valores reales de forma
+  // directa, así que se preprocesa a undefined para que quede opcional.
+  classification: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.enum(["A", "B", "C", "D", "E"]).optional()
+  ),
+  membershipDailyPrice: optionalCurrencyNumber,
+  membershipHighSeasonPrice: optionalCurrencyNumber,
   currentMileage: optionalCurrencyNumber,
   description: optionalText,
   featuresText: optionalText,
@@ -162,9 +167,12 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       ),
       deposit: formatCurrencyInputValue(initialData?.deposit),
       status: initialData?.status ?? "DISPONIBLE",
-      classification: initialData?.classification ?? "A",
-      classificationSwapFee: formatCurrencyInputValue(
-        initialData?.classificationSwapFee
+      classification: initialData?.classification ?? "",
+      membershipDailyPrice: formatCurrencyInputValue(
+        initialData?.membershipDailyPrice
+      ),
+      membershipHighSeasonPrice: formatCurrencyInputValue(
+        initialData?.membershipHighSeasonPrice
       ),
       currentMileage: formatIntegerInputValue(initialData?.currentMileage ?? undefined),
       description: initialData?.description ?? "",
@@ -221,11 +229,12 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
       commissionHighSeasonPrice: data.commissionHighSeasonPrice,
       deposit: data.deposit,
       status: data.status,
-      classification: data.classification,
-      // Explicit null (not omitted/0) so dejar el campo vacío realmente lo
-      // limpia server-side -- mismo criterio que `year` arriba: significa
-      // "sin excepción, usa el precio base de la clasificación".
-      classificationSwapFee: data.classificationSwapFee ?? null,
+      // Explicit null (not omitted) so dejar el campo vacío realmente lo
+      // limpia server-side -- "sin clasificar" significa que este auto no
+      // participa en el programa de membresía.
+      classification: data.classification ?? null,
+      membershipDailyPrice: data.membershipDailyPrice ?? null,
+      membershipHighSeasonPrice: data.membershipHighSeasonPrice ?? null,
       currentMileage: data.currentMileage,
       description: data.description,
       features: parseFeatures(data.featuresText),
@@ -405,34 +414,20 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
 
           <Field
             label="Clasificación"
-            required
             error={errors.classification?.message}
           >
             <select {...register("classification")} className="input">
+              <option value="">Sin clasificar</option>
               <option value="A">A</option>
               <option value="B">B</option>
               <option value="C">C</option>
               <option value="D">D</option>
               <option value="E">E</option>
             </select>
-          </Field>
-
-          <Field
-            label="Costo de cambio (excepción para este auto)"
-            error={errors.classificationSwapFee?.message}
-          >
-            <input
-              type="text"
-              inputMode="decimal"
-              {...register("classificationSwapFee")}
-              onInput={formatCurrencyInput}
-              className="input"
-              placeholder="Usar precio base de la clasificación"
-            />
             <p className="mt-1 text-xs text-slate-500">
-              Déjalo vacío para usar el precio base de su clasificación
-              (configurado en Precios). Solo llénalo si ESTE auto en
-              particular cobra distinto al resto de su clasificación.
+              Solo para agrupar/filtrar autos en el flujo de membresía. "Sin
+              clasificar" = este auto no participa en el programa, sin
+              importar lo que tenga en los precios de membresía de abajo.
             </p>
           </Field>
 
@@ -516,6 +511,38 @@ export default function CarForm({ mode, initialData, carId }: CarFormProps) {
               onInput={formatCurrencyInput}
               className="input"
               placeholder="6,000"
+            />
+          </Field>
+
+          <Field
+            label="Precio con membresía (temporada baja)"
+            error={errors.membershipDailyPrice?.message}
+          >
+            <input
+              type="text"
+              inputMode="decimal"
+              {...register("membershipDailyPrice")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="Sin clasificar"
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Déjalo vacío si este auto no participa en el programa de
+              membresía.
+            </p>
+          </Field>
+
+          <Field
+            label="Precio con membresía (temporada alta)"
+            error={errors.membershipHighSeasonPrice?.message}
+          >
+            <input
+              type="text"
+              inputMode="decimal"
+              {...register("membershipHighSeasonPrice")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="Sin clasificar"
             />
           </Field>
         </div>

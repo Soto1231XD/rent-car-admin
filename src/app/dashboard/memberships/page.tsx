@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { AlertTriangle, CheckCircle2, Clock, IdCard, XCircle } from "lucide-react";
 import MembershipsTable from "@/components/memberships/MembershipsTable";
 import MembershipAutoRefresh from "@/components/memberships/MembershipAutoRefresh";
+import SummaryCard from "@/components/ui/SummaryCard";
 import { getMemberships } from "@/lib/api";
 
 type Props = {
@@ -12,6 +14,13 @@ type Props = {
 export default async function MembershipsPage({ searchParams }: Props) {
   await searchParams;
   const memberships = await getMemberships();
+
+  const activeCount = memberships.filter((m) => m.status === "ACTIVA").length;
+  const pendingCount = memberships.filter((m) => m.status === "PENDIENTE").length;
+  const atRiskCount = memberships.filter(
+    (m) => m.status === "INACTIVA" || m.status === "SUSPENDIDA"
+  ).length;
+  const cancelledCount = memberships.filter((m) => m.status === "CANCELADA").length;
 
   return (
     <div>
@@ -36,6 +45,44 @@ export default async function MembershipsPage({ searchParams }: Props) {
           >
             Agregar membresía
           </Link>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <SummaryCard
+            title="Total membresías"
+            value={memberships.length}
+            detail="Registradas en el sistema"
+            icon={<IdCard />}
+            valueClassName="text-3xl"
+          />
+          <SummaryCard
+            title="Activas"
+            value={activeCount}
+            detail="Al corriente de pago"
+            icon={<CheckCircle2 />}
+            valueClassName="text-3xl"
+          />
+          <SummaryCard
+            title="Pendientes"
+            value={pendingCount}
+            detail="Sin primer pago confirmado"
+            icon={<Clock />}
+            valueClassName="text-3xl"
+          />
+          <SummaryCard
+            title="En riesgo"
+            value={atRiskCount}
+            detail="En gracia o suspendidas"
+            icon={<AlertTriangle />}
+            valueClassName="text-3xl"
+          />
+          <SummaryCard
+            title="Canceladas"
+            value={cancelledCount}
+            detail="Ya no están activas"
+            icon={<XCircle />}
+            valueClassName="text-3xl"
+          />
         </div>
       </div>
 

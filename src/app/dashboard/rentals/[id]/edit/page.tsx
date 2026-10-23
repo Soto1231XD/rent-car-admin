@@ -1,11 +1,6 @@
 import Link from "next/link";
 import RentalForm from "@/components/rentals/RentalForm";
-import {
-  getCars,
-  getClassificationPricing,
-  getClients,
-  getRental,
-} from "@/lib/api";
+import { getCars, getClients, getRental } from "@/lib/api";
 
 type Props = {
   params: Promise<{
@@ -15,11 +10,10 @@ type Props = {
 
 export default async function EditRentalPage({ params }: Props) {
   const { id } = await params;
-  const [rental, cars, clients, classificationPricing] = await Promise.all([
+  const [rental, cars, clients] = await Promise.all([
     getRental(id),
     getCars(),
     getClients(),
-    getClassificationPricing(),
   ]);
 
   if (!rental) {
@@ -62,7 +56,6 @@ export default async function EditRentalPage({ params }: Props) {
         mode="edit"
         cars={cars}
         clients={clients}
-        classificationPricing={classificationPricing}
         initialData={rental}
         rentalId={id}
       />

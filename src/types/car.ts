@@ -30,12 +30,15 @@ export type Car = {
   commissionDailyPrice?: number | null;
   commissionHighSeasonPrice?: number | null;
   deposit: number;
-  classification: CarClassification;
-  // Excepción de cargo de cambio de clasificación para ESTE auto. `null`
-  // significa "usa el precio base de su clasificación" (ver
-  // types/classification-pricing.ts); un valor significa que este auto
-  // cobra distinto al resto de su clasificación (ej. Jetta vs Ertiga en D).
-  classificationSwapFee: number | null;
+  // `null` = este auto no participa en el programa de membresía (no se le
+  // asignó a propósito). Solo agrupa/filtra -- ya no tiene ningún precio
+  // propio, ver membershipDailyPrice/membershipHighSeasonPrice.
+  classification: CarClassification | null;
+  // Precio con membresía de ESTE auto (aparte de dailyPrice/highSeasonPrice,
+  // que son el precio normal). `null` = sin precio de membresía
+  // configurado -- se trata como "no participa" aunque tenga clasificación.
+  membershipDailyPrice: number | null;
+  membershipHighSeasonPrice: number | null;
   currentMileage?: number | null;
   /** Calculado por el backend a partir del historial de mantenimiento. Solo lectura. */
   nextServiceMileage?: number | null;

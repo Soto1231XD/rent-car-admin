@@ -106,6 +106,7 @@ export default function MembershipsTable({ memberships }: Props) {
             <th className="px-6 py-4 font-semibold">Estado</th>
             <th className="px-6 py-4 font-semibold">Renovación</th>
             <th className="px-6 py-4 font-semibold">Vigencia</th>
+            <th className="px-6 py-4 font-semibold">Mes</th>
             <th className="px-6 py-4 font-semibold">Acciones</th>
           </tr>
         </thead>
@@ -139,6 +140,9 @@ export default function MembershipsTable({ memberships }: Props) {
               </td>
               <td className="px-6 py-4 text-slate-900">
                 {formatDate(membership.currentPeriodEnd)}
+              </td>
+              <td className="px-6 py-4 text-slate-900">
+                {formatMembershipMonth(membership.startDate)}
               </td>
               <td className="px-6 py-4">
                 <Link
@@ -184,4 +188,29 @@ function StatusBadge({ status }: { status: MembershipStatus }) {
 
 function formatDate(value?: string | null) {
   return value ? value.slice(0, 10) : "—";
+}
+
+// En qué mes de antigüedad va la membresía desde que inició (mes 1 =
+// primer mes, etc.) -- es lo mismo que determina en qué renglón del
+// tabulador de días por antigüedad cae el cliente. Sin fecha de inicio
+// (ej. PENDIENTE, nunca llegó a pagar) no aplica.
+function formatMembershipMonth(startDate?: string | null) {
+  if (!startDate) {
+    return "—";
+  }
+
+  const start = new Date(startDate);
+  const now = new Date();
+
+  let months =
+    (now.getFullYear() - start.getFullYear()) * 12 +
+    (now.getMonth() - start.getMonth());
+
+  if (now.getDate() < start.getDate()) {
+    months -= 1;
+  }
+
+  const currentMonth = Math.max(1, months + 1);
+
+  return `Mes ${currentMonth}`;
 }
