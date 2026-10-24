@@ -133,9 +133,7 @@ const menu: (MenuLink | MenuCategory)[] = [
       { name: "Control mensual", href: "/dashboard/monthly-breakdown", icon: TrendingUp },
       { name: "Carros aparte", href: "/dashboard/aveo", icon: NotebookText },
       { name: "Fondo de ahorro", href: "/dashboard/savings-fund", icon: PiggyBank },
-      ...(process.env.NEXT_PUBLIC_SHOW_MEMBERSHIP === "true"
-        ? [{ name: "Membresías", href: "/dashboard/memberships", icon: CreditCard }]
-        : []),
+      { name: "Membresías", href: "/dashboard/memberships", icon: CreditCard },
     ],
   },
 ];

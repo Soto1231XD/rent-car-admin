@@ -7,6 +7,7 @@
 export type DeliveryLocationId =
   | "domicilio"
   | "plaza"
+  | "oficina"
   | "aeropuerto_cancun"
   | "hotel_cancun"
   | "puerto_morelos"
@@ -28,6 +29,7 @@ export type PlazaId =
 export const DELIVERY_LOCATIONS: { id: DeliveryLocationId; label: string; fee: number }[] = [
   { id: "domicilio", label: "Domicilio", fee: 0 },
   { id: "plaza", label: "Plaza", fee: 0 }, // el monto real depende de la plaza elegida
+  { id: "oficina", label: "Oficina", fee: 0 },
   { id: "aeropuerto_cancun", label: "Aeropuerto de Cancún", fee: 300 },
   { id: "hotel_cancun", label: "Hotel en Cancún", fee: 300 },
   { id: "puerto_morelos", label: "Puerto Morelos", fee: 0 },
