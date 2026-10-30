@@ -1,5 +1,5 @@
 import { Car } from "@/types/car";
-import { RentalPriceMode } from "@/types/rental";
+import { RentalPriceMode, RenterType } from "@/types/rental";
 
 export type Quote = {
   id: string;
@@ -9,6 +9,7 @@ export type Quote = {
   endDate: string;
   daysCharged: number;
   priceMode: RentalPriceMode;
+  renterType: RenterType;
   dailyRateApplied: number;
   totalPrice: number;
   deposit: number;

@@ -76,6 +76,10 @@ export default async function QuoteDetailPage({ params, searchParams }: Props) {
 
           <div className="grid gap-4 md:grid-cols-2">
             <Info label="Vehículo" value={carName} />
+            <Info
+              label="Tipo de cliente"
+              value={quote.renterType === "COMISIONISTA" ? "Comisionista" : "Cliente normal"}
+            />
             <Info label="Días" value={quote.daysCharged} />
             <Info label="Fecha de entrega" value={formatDate(quote.startDate)} />
             <Info label="Fecha de devolución" value={formatDate(quote.endDate)} />

@@ -29,6 +29,7 @@ const schema = z
     carId: z.string().min(1, "Selecciona un vehículo"),
     startDate: z.string().min(1, "La fecha de entrega es obligatoria"),
     endDate: z.string().min(1, "La fecha de devolución es obligatoria"),
+    renterType: z.enum(["CLIENTE", "COMISIONISTA"]),
     deliveryFee: optionalCurrencyNumber,
     returnFee: optionalCurrencyNumber,
     notes: z.string().optional(),
@@ -61,6 +62,7 @@ export default function QuoteForm({ cars }: Props) {
       carId: "",
       startDate: "",
       endDate: "",
+      renterType: "CLIENTE",
       deliveryFee: undefined,
       returnFee: undefined,
       notes: "",
@@ -68,6 +70,7 @@ export default function QuoteForm({ cars }: Props) {
   });
 
   const selectedCarId = useWatch({ control, name: "carId" });
+  const renterType = useWatch({ control, name: "renterType" });
   const startDate = useWatch({ control, name: "startDate" });
   const endDate = useWatch({ control, name: "endDate" });
   const deliveryFeeInput = useWatch({ control, name: "deliveryFee" });
@@ -90,10 +93,8 @@ export default function QuoteForm({ cars }: Props) {
 
     const days = getRentalDays(startDate, endDate);
     const isHighSeason = isHighSeasonRange(startDate, endDate);
-    const dailyRate =
-      isHighSeason && hasMoneyValue(selectedCar.highSeasonPrice)
-        ? toMoneyNumber(selectedCar.highSeasonPrice)
-        : toMoneyNumber(selectedCar.dailyPrice);
+    const priceMode = isHighSeason ? "highSeason" : "daily";
+    const dailyRate = getDailyRate(selectedCar, priceMode, renterType);
     const deposit = toMoneyNumber(selectedCar.deposit);
 
     return {
@@ -102,9 +103,15 @@ export default function QuoteForm({ cars }: Props) {
       total: days * dailyRate,
       deposit,
       isUsingFallbackRate:
-        isHighSeason && !hasMoneyValue(selectedCar.highSeasonPrice),
+        isHighSeason &&
+        renterType === "CLIENTE" &&
+        !hasMoneyValue(selectedCar.highSeasonPrice),
+      isUsingCommissionFallback:
+        renterType === "COMISIONISTA" &&
+        !hasMoneyValue(selectedCar.commissionDailyPrice) &&
+        !hasMoneyValue(selectedCar.commissionHighSeasonPrice),
     };
-  }, [endDate, selectedCar, startDate]);
+  }, [endDate, renterType, selectedCar, startDate]);
 
   const onInvalid = () => {
     const message = "Revisa los campos marcados antes de generar la cotización.";
@@ -158,7 +165,15 @@ export default function QuoteForm({ cars }: Props) {
             </select>
           </Field>
 
-          <div />
+          <Field label="Tipo de cliente" error={errors.renterType?.message}>
+            <select {...register("renterType")} className="input">
+              <option value="CLIENTE">Cliente normal</option>
+              <option value="COMISIONISTA">Comisionista</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Comisionista usa la tarifa especial configurada en el carro.
+            </p>
+          </Field>
 
           <Field label="Fecha de entrega" error={errors.startDate?.message}>
             <input type="date" {...register("startDate")} className="input" />
@@ -238,6 +253,13 @@ export default function QuoteForm({ cars }: Props) {
         {quote?.isUsingFallbackRate && (
           <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
             Este carro no tiene precio de temporada alta configurado. Se usó el
+            precio normal.
+          </p>
+        )}
+
+        {quote?.isUsingCommissionFallback && (
+          <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
+            Este carro no tiene tarifa de comisionista configurada. Se usó el
             precio normal.
           </p>
         )}
@@ -355,4 +377,28 @@ function isHighSeasonDate(date: Date) {
 
 function hasMoneyValue(value?: number | string | null) {
   return toMoneyNumber(value) > 0;
+}
+
+function getDailyRate(
+  car: Car,
+  priceMode: "daily" | "highSeason",
+  renterType: "CLIENTE" | "COMISIONISTA"
+) {
+  if (renterType === "COMISIONISTA") {
+    if (priceMode === "highSeason" && hasMoneyValue(car.commissionHighSeasonPrice)) {
+      return toMoneyNumber(car.commissionHighSeasonPrice);
+    }
+
+    if (hasMoneyValue(car.commissionDailyPrice)) {
+      return toMoneyNumber(car.commissionDailyPrice);
+    }
+  }
+
+  if (priceMode === "highSeason") {
+    return hasMoneyValue(car.highSeasonPrice)
+      ? toMoneyNumber(car.highSeasonPrice)
+      : toMoneyNumber(car.dailyPrice);
+  }
+
+  return toMoneyNumber(car.dailyPrice);
 }

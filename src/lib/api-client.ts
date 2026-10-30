@@ -13,7 +13,7 @@ import { SavingsFundEntry } from "@/types/savings-fund";
 import { Lead, LeadStatus } from "@/types/lead";
 import { Maintenance, MaintenanceFieldHistory } from "@/types/maintenance";
 import { Quote } from "@/types/quote";
-import { Rental } from "@/types/rental";
+import { Rental, RenterType } from "@/types/rental";
 import { getStoredToken } from "@/lib/auth";
 
 const API_URL =
@@ -712,6 +712,7 @@ export type SaveQuotePayload = {
   carId: string;
   startDate: string;
   endDate: string;
+  renterType?: RenterType;
   deliveryFee?: number;
   returnFee?: number;
   notes?: string;
