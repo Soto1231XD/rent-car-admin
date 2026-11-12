@@ -4,6 +4,17 @@ import { Rental } from "@/types/rental";
 import { formatCarLabel } from "@/lib/car-label";
 import { formatCurrency as formatMoney } from "@/lib/format-currency";
 
+// Identidad legal de "EL ARRENDADOR" para el contrato -- antes el documento
+// nunca la mostraba, solo hablaba de "EL ARRENDADOR" en abstracto sin RFC ni
+// datos de contacto reales, lo que hacía que no se viera como un contrato
+// formal. Se usa el nombre comercial (no el nombre personal del titular del
+// RFC) junto con el RFC real tomado de la Constancia de Situación Fiscal
+// vigente; el resto ya se usa igual en el resto del sitio.
+const LESSOR_NAME = "RENTAMIVAR";
+const LESSOR_RFC = "MASC950912JU3";
+const LESSOR_ADDRESS = "SM 97, Mz 5, Lte 20, Calle Pustunich, C.P. 77530, Cancún, Q. Roo";
+const LESSOR_PHONE = "+52 998 399 8112";
+
 type Props = {
   rental: Rental;
 };
@@ -83,9 +94,26 @@ export default function UnifiedRentalDocument({ rental }: Props) {
   const totalWithDeposit = rental.totalPrice + depositAmount;
   const advancePayment = rental.advancePayment ?? 0;
   const remainingAfterAdvance = Math.max(totalWithDeposit - advancePayment, 0);
+  // No hay folio de contrato como tal en el backend -- se deriva un número
+  // corto y legible del id de la renta, solo para que el documento se vea
+  // numerado/trazable, sin necesitar un campo ni migración nuevos.
+  const contractNumber = rental.id.slice(-8).toUpperCase();
+  // El "Kilometraje de salida" se jala del control de kilometraje del auto
+  // (Car.currentMileage): cada vez que se completa una renta, ese campo se
+  // actualiza con el kilometraje de regreso, así que siempre refleja el
+  // último kilometraje conocido -- el que le toca de salida a la siguiente
+  // renta. El de regreso sigue en blanco porque se llena hasta que esta
+  // renta se complete.
+  const departureMileage =
+    rental.car?.currentMileage != null
+      ? `${rental.car.currentMileage.toLocaleString("es-MX")} km`
+      : "________________";
 
   return (
-    <article className="print-document relative mx-auto max-w-[816px] overflow-hidden bg-white p-10 text-[12pt] leading-[1.35] text-black print:max-w-none print:overflow-visible print:p-0">
+    <article
+      className="print-document relative mx-auto max-w-[816px] overflow-hidden bg-white p-10 text-[12pt] leading-[1.35] text-black print:max-w-none print:overflow-visible print:p-0"
+      style={{ WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}
+    >
       <Image
         src="/documents/Logo.png"
         alt=""
@@ -97,17 +125,92 @@ export default function UnifiedRentalDocument({ rental }: Props) {
       />
 
       <div className="relative z-10">
+        <section className="-mx-10 -mt-10 mb-6 break-inside-avoid print:mx-0 print:mt-0">
+          {/* Mismo patrón que el banner de "Asistencia 24 horas": un solo
+              SVG con forma y texto incluidos, para que se vea idéntico en
+              pantalla y en el PDF exportado. */}
+          <svg
+            viewBox="0 0 820 190"
+            width="100%"
+            style={{ display: "block" }}
+            role="img"
+            aria-label="Rentamivar - Contrato de renta"
+          >
+            <polygon
+              points="0,0 820,0 820,170 410,150 0,170"
+              fill="#0b477d"
+            />
+            <rect x="340" y="58" width="140" height="3" fill="#ffffff" />
+            <text
+              x="410"
+              y="50"
+              textAnchor="middle"
+              fontFamily="Helvetica, Arial, sans-serif"
+              fontSize="32"
+              fontWeight="bold"
+              fontStyle="italic"
+              fill="#ffffff"
+            >
+              RENTAMIVAR
+            </text>
+            <text
+              x="410"
+              y="82"
+              textAnchor="middle"
+              fontFamily="Helvetica, Arial, sans-serif"
+              fontSize="17"
+              fontWeight="bold"
+              fill="#ffffff"
+            >
+              Contrato de renta
+            </text>
+            <text
+              x="410"
+              y="108"
+              textAnchor="middle"
+              fontFamily="Helvetica, Arial, sans-serif"
+              fontSize="11"
+              fill="#ffffff"
+            >
+              Estimado cliente, lea cuidadosamente su contrato y
+            </text>
+            <text
+              x="410"
+              y="124"
+              textAnchor="middle"
+              fontFamily="Helvetica, Arial, sans-serif"
+              fontSize="11"
+              fill="#ffffff"
+            >
+              consérvelo hasta el final de su renta.
+            </text>
+          </svg>
+        </section>
+
         <h1 className="text-center text-[14pt] font-bold uppercase">
           Contrato de arrendamiento
         </h1>
 
-        <p className="mt-4 text-right">
-          Cancún, Quintana Roo a ____ de ______________ de 20____
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[10pt]">
+          <p className="font-bold uppercase tracking-wide text-[#0b477d]">
+            Contrato No. {contractNumber}
+          </p>
+          <p>Cancún, Quintana Roo a ____ de ______________ de 20____</p>
+        </div>
+
+        <p className="mt-4 text-justify">
+          Contrato de arrendamiento de vehículo que celebran, por una parte{" "}
+          <b>{LESSOR_NAME}</b>, con <b>RFC {LESSOR_RFC}</b>, con domicilio en{" "}
+          {LESSOR_ADDRESS} y teléfono {LESSOR_PHONE}, a quien en lo sucesivo se
+          le denominará <b>&quot;EL ARRENDADOR&quot;</b>; y por la otra parte
+          quien se identifica en los datos generales de este documento, a
+          quien en lo sucesivo se le denominará <b>&quot;EL ARRENDATARIO&quot;</b>,
+          al tenor de las siguientes declaraciones y cláusulas.
         </p>
 
         <section className="mt-4">
-          <h2 className="mb-2 font-bold uppercase">1. Datos generales</h2>
-          <div className="grid grid-cols-2 gap-2 border border-black p-3">
+          <SectionHeading number={1} title="Datos generales" />
+          <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-300 p-3">
             <Info label="Arrendatario" value={clientName} />
             <Info label="Teléfono" value={phone} />
             <Info label="Identificación" value={idNumber} />
@@ -167,7 +270,7 @@ export default function UnifiedRentalDocument({ rental }: Props) {
         </section>
 
         <section className="mt-4">
-          <h2 className="mb-2 font-bold uppercase">2. Declaraciones</h2>
+          <SectionHeading number={2} title="Declaraciones" />
           <p className="text-justify">
             El ARRENDADOR entrega en arrendamiento temporal al ARRENDATARIO el
             vehículo descrito anteriormente, quien manifiesta recibirlo en buen
@@ -183,9 +286,7 @@ export default function UnifiedRentalDocument({ rental }: Props) {
         </section>
 
         <section className="mt-4">
-          <h2 className="mb-2 font-bold uppercase">
-            3. Responsabilidad del arrendatario
-          </h2>
+          <SectionHeading number={3} title="Responsabilidad del arrendatario" />
           <p className="text-justify">
             Durante el tiempo que el vehículo se encuentre bajo su resguardo, el
             ARRENDATARIO asume todas las obligaciones civiles, penales,
@@ -201,9 +302,7 @@ export default function UnifiedRentalDocument({ rental }: Props) {
         </section>
 
         <section className="mt-4 break-inside-avoid">
-          <h2 className="mb-2 font-bold uppercase">
-            4. Condiciones de entrega y devolución
-          </h2>
+          <SectionHeading number={4} title="Condiciones de entrega y devolución" />
           <ul className="list-disc space-y-0.5 pl-5">
             <li>El vehículo deberá devolverse en la fecha y hora acordadas.</li>
             <li>
@@ -242,11 +341,9 @@ export default function UnifiedRentalDocument({ rental }: Props) {
 
         <section className="print-page-break mt-4">
           <div className="break-inside-avoid">
-            <h2 className="mb-2 font-bold uppercase">
-              5. Inventario y estado del vehículo
-            </h2>
-            <div className="grid grid-cols-2 gap-2 border border-black p-3">
-              <Info label="Kilometraje de salida" value="________________" />
+            <SectionHeading number={5} title="Inventario y estado del vehículo" />
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-300 p-3">
+              <Info label="Kilometraje de salida" value={departureMileage} />
               <Info label="Kilometraje de regreso" value="________________" />
               <Info label="Gasolina de salida" value="________________" />
               <Info label="Gasolina de regreso" value="________________" />
@@ -267,10 +364,17 @@ export default function UnifiedRentalDocument({ rental }: Props) {
               <Checklist title="Interiores" items={interior} />
             </div>
           </div>
+
+          <p className="mt-4 text-justify">
+            Declaro que el vehículo ha sido revisado en mi presencia en
+            cuanto a sus condiciones físicas, accesorios y niveles de
+            gasolina, aceptando que no cuenta con mayores daños o faltantes
+            que los señalados en el diagrama de daños anexo.
+          </p>
         </section>
 
         <section className="print-page-break mt-5">
-          <h2 className="mb-2 font-bold uppercase">6. Cláusulas generales</h2>
+          <SectionHeading number={6} title="Cláusulas generales" />
           <p className="text-justify">
             El ARRENDATARIO no podrá subarrendar, ceder, prestar o permitir el
             uso del vehículo a terceros sin autorización del ARRENDADOR.
@@ -295,14 +399,116 @@ export default function UnifiedRentalDocument({ rental }: Props) {
 
         <section className="mt-12">
           <div className="grid grid-cols-2 gap-10 text-center">
-            <Signature label="EL ARRENDADOR" />
+            <Signature label="EL ARRENDADOR" name={LESSOR_NAME} />
             <Signature label="EL ARRENDATARIO" name={clientName} />
             <Signature label="TESTIGO 1" />
             <Signature label="TESTIGO 2" />
           </div>
         </section>
 
-        <p className="mt-10 border-t border-slate-300 pt-2 text-center text-[9px] text-slate-500">
+        <section className="mt-10 break-inside-avoid">
+          {/* Todo el banner (forma + texto) se dibuja dentro de UN solo SVG.
+              El intento anterior combinaba CSS Grid + posicionamiento
+              absoluto + un SVG con "preserveAspectRatio=none" estirado por
+              porcentaje del alto/ancho del contenedor -- esa combinación no
+              se mide igual en el motor de "Guardar como PDF" de Chrome que
+              en pantalla, y el corte diagonal salía más ancho/torcido en el
+              PDF. Un solo SVG con su propio viewBox (forma y texto
+              incluidos) es un único gráfico vectorial que el PDF reproduce
+              igual que la pantalla, sin nada que CSS/Grid pueda calcular
+              distinto entre los dos. */}
+          <svg
+            viewBox="0 0 820 110"
+            width="100%"
+            style={{ display: "block" }}
+            role="img"
+            aria-label="Asistencia las 24 horas"
+          >
+            <rect width="820" height="110" fill="#eef6fc" />
+            <polygon points="0,0 400,0 320,110 0,110" fill="#0b477d" />
+
+            <circle
+              cx="55"
+              cy="55"
+              r="26"
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="2"
+            />
+            <text
+              x="55"
+              y="51"
+              textAnchor="middle"
+              fontFamily="Helvetica, Arial, sans-serif"
+              fontSize="13"
+              fontWeight="bold"
+              fill="#ffffff"
+            >
+              24
+            </text>
+            <text
+              x="55"
+              y="65"
+              textAnchor="middle"
+              fontFamily="Helvetica, Arial, sans-serif"
+              fontSize="10"
+              fontWeight="bold"
+              fill="#ffffff"
+            >
+              hrs
+            </text>
+
+            <text
+              x="100"
+              y="48"
+              textAnchor="start"
+              fontFamily="Helvetica, Arial, sans-serif"
+              fontSize="15"
+              fontWeight="bold"
+              fill="#ffffff"
+            >
+              ASISTENCIA LAS 24 HORAS
+            </text>
+            <text
+              x="100"
+              y="68"
+              textAnchor="start"
+              fontFamily="Helvetica, Arial, sans-serif"
+              fontSize="13"
+              fill="#ffffff"
+            >
+              WhatsApp: {LESSOR_PHONE}
+            </text>
+
+            <text
+              x="430"
+              y="50"
+              textAnchor="start"
+              fontFamily="Helvetica, Arial, sans-serif"
+              fontSize="17"
+              fontWeight="bold"
+              fill="#0b477d"
+            >
+              Gracias por elegir RENTAMIVAR
+            </text>
+            <text
+              x="430"
+              y="74"
+              textAnchor="start"
+              fontFamily="Helvetica, Arial, sans-serif"
+              fontSize="17"
+              fontWeight="bold"
+              fill="#0b477d"
+            >
+              ¡Buen viaje!
+            </text>
+          </svg>
+        </section>
+
+        <p className="mt-3 border-t border-slate-300 pt-2 text-center text-[9px] text-slate-500">
+          RENTAMIVAR · RFC {LESSOR_RFC} · Tel. {LESSOR_PHONE} · Facebook /
+          Instagram / TikTok: @rentamivar
+          <br />
           Este contrato fue generado automáticamente por el sistema de la
           empresa Rentamivar para control administrativo interno.
         </p>
@@ -311,11 +517,26 @@ export default function UnifiedRentalDocument({ rental }: Props) {
   );
 }
 
+function SectionHeading({ number, title }: { number: number; title: string }) {
+  return (
+    <div className="mb-2 flex items-center gap-2">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#0b477d] text-[11px] font-bold text-white">
+        {number}
+      </span>
+      <h2 className="font-bold uppercase tracking-wide text-slate-900">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <span className="font-bold">{label}: </span>
-      <span>{value}</span>
+    <div className="rounded-lg bg-[#f8fafc] px-3 py-2">
+      <p className="text-[9px] font-bold uppercase tracking-wide text-[#0b477d]">
+        {label}
+      </p>
+      <p className="mt-0.5 font-semibold text-slate-900">{value}</p>
     </div>
   );
 }
@@ -373,9 +594,11 @@ function Checklist({ title, items }: { title: string; items: string[] }) {
 
 function Signature({ label, name }: { label: string; name?: string }) {
   return (
-    <div className="mt-10 break-inside-avoid">
-      <div className="border-t border-black pt-2 font-bold">{label}</div>
-      {name && <p className="mt-1">{name}</p>}
+    <div className="break-inside-avoid rounded-xl border border-slate-300 p-4 pt-14">
+      <div className="border-t border-slate-400 pt-2 text-xs font-bold uppercase tracking-wide text-[#0b477d]">
+        {label}
+      </div>
+      {name && <p className="mt-1 text-sm font-semibold text-slate-700">{name}</p>}
     </div>
   );
 }

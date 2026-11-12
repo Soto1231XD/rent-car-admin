@@ -30,7 +30,6 @@ import { formatIntegerInput, formatIntegerInputValue } from "@/lib/format-number
 
 type PriceMode = "daily" | "highSeason";
 
-const MINIMUM_RENTAL_DAYS = 2;
 const MINIMUM_MEMBERSHIP_REDEMPTION_DAYS = 2;
 // Mensualidad de la membresía -- se resta del precio con membresía del auto
 // para el preview del precio de los días canjeados. Solo es para mostrarle
@@ -73,15 +72,6 @@ const schema = z
           message: "La fecha de devolución no puede ser anterior a la entrega",
           path: ["endDate"],
         });
-      } else if (
-        data.renterType !== "COMISIONISTA" &&
-        getRentalDays(data.startDate, data.endDate) < MINIMUM_RENTAL_DAYS
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `La renta mínima es de ${MINIMUM_RENTAL_DAYS} días`,
-          path: ["endDate"],
-        });
       }
 
       if (data.dailyRateApplied === undefined || data.dailyRateApplied <= 0) {
@@ -111,15 +101,6 @@ const schema = z
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "La fecha de devolución no puede ser anterior a la entrega",
-            path: ["endDate"],
-          });
-        } else if (
-          data.renterType !== "COMISIONISTA" &&
-          getRentalDays(data.startDate, data.endDate) < MINIMUM_RENTAL_DAYS
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `La renta mínima es de ${MINIMUM_RENTAL_DAYS} días`,
             path: ["endDate"],
           });
         }

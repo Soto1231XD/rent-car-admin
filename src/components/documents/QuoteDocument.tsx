@@ -22,7 +22,6 @@ const WHATSAPP_DISPLAY = "998 399 8112";
 const conditions = [
   "Edad mínima del conductor: 18 años.",
   "Licencia de conducir vigente.",
-  "Periodo mínimo de renta: 2 días.",
   "Tarjeta de crédito o débito a nombre del conductor para el depósito.",
   "El vehículo se entrega con tanque lleno y debe devolverse igual.",
   "El kilometraje será libre siempre y cuando el carro se encuentre dentro de Quintana Roo y Yucatán; de lo contrario, se les cobrará kilometraje extra.",
