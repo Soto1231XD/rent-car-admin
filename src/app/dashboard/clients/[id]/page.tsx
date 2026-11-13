@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FileText } from "lucide-react";
 import { getClient } from "@/lib/api";
 import { getAssetUrl } from "@/lib/assets";
 import { isWithinHours } from "@/lib/time";
@@ -140,12 +141,21 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
                     rel="noreferrer"
                     className="block w-fit"
                   >
-                    <div
-                      className="h-32 w-52 rounded-xl border border-slate-200 bg-slate-100 bg-cover bg-center shadow-sm transition hover:opacity-90"
-                      style={{
-                        backgroundImage: `url("${getAssetUrl(document.url)}")`,
-                      }}
-                    />
+                    {document.url.toLowerCase().endsWith(".pdf") ? (
+                      <div className="flex h-32 w-52 flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-100 text-slate-500 shadow-sm transition hover:opacity-90">
+                        <FileText size={32} />
+                        <span className="text-xs font-medium uppercase tracking-wide">
+                          PDF
+                        </span>
+                      </div>
+                    ) : (
+                      <div
+                        className="h-32 w-52 rounded-xl border border-slate-200 bg-slate-100 bg-cover bg-center shadow-sm transition hover:opacity-90"
+                        style={{
+                          backgroundImage: `url("${getAssetUrl(document.url)}")`,
+                        }}
+                      />
+                    )}
                     <p className="mt-1.5 text-sm font-medium text-slate-700">
                       {document.label}
                     </p>

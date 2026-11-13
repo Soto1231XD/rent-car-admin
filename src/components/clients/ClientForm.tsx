@@ -30,6 +30,10 @@ const DOCUMENT_LABEL_PRESETS = [
   "Otro",
 ];
 
+function isPdfUrl(url: string) {
+  return url.toLowerCase().endsWith(".pdf");
+}
+
 type PendingDocument = {
   key: string;
   label: string;
@@ -363,7 +367,7 @@ export default function ClientForm({
               Opcional. Agrega los documentos que apliquen: identificación,
               comprobante de domicilio (clientes locales), itinerario de vuelo
               o reserva de hospedaje (clientes extranjeros), u otro. Formatos
-              JPG, PNG o WEBP.
+              JPG, PNG, WEBP o PDF.
             </p>
 
             {(existingDocuments.length > 0 || pendingDocuments.length > 0) && (
@@ -373,15 +377,26 @@ export default function ClientForm({
                     key={document.id}
                     className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
                   >
-                    <a
-                      href={getAssetUrl(document.url)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="h-14 w-20 shrink-0 rounded-lg bg-slate-100 bg-cover bg-center ring-1 ring-slate-200"
-                      style={{
-                        backgroundImage: `url("${getAssetUrl(document.url)}")`,
-                      }}
-                    />
+                    {isPdfUrl(document.url) ? (
+                      <a
+                        href={getAssetUrl(document.url)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex h-14 w-20 shrink-0 items-center justify-center rounded-lg bg-slate-100 ring-1 ring-slate-200"
+                      >
+                        <FileText size={22} className="text-slate-500" />
+                      </a>
+                    ) : (
+                      <a
+                        href={getAssetUrl(document.url)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="h-14 w-20 shrink-0 rounded-lg bg-slate-100 bg-cover bg-center ring-1 ring-slate-200"
+                        style={{
+                          backgroundImage: `url("${getAssetUrl(document.url)}")`,
+                        }}
+                      />
+                    )}
                     <p className="flex-1 truncate text-sm font-medium text-slate-900">
                       {document.label}
                     </p>
@@ -401,10 +416,16 @@ export default function ClientForm({
                     key={document.key}
                     className="flex items-center gap-3 rounded-xl border border-dashed border-blue-300 bg-blue-50/40 p-3"
                   >
-                    <div
-                      className="h-14 w-20 shrink-0 rounded-lg bg-slate-100 bg-cover bg-center ring-1 ring-slate-200"
-                      style={{ backgroundImage: `url("${document.previewUrl}")` }}
-                    />
+                    {document.file.type === "application/pdf" ? (
+                      <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-lg bg-slate-100 ring-1 ring-slate-200">
+                        <FileText size={22} className="text-slate-500" />
+                      </div>
+                    ) : (
+                      <div
+                        className="h-14 w-20 shrink-0 rounded-lg bg-slate-100 bg-cover bg-center ring-1 ring-slate-200"
+                        style={{ backgroundImage: `url("${document.previewUrl}")` }}
+                      />
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-slate-900">
                         {document.label}
@@ -500,7 +521,7 @@ export default function ClientForm({
               <input
                 id="client-document-file"
                 type="file"
-                accept="image/png,image/jpeg,image/webp"
+                accept="image/png,image/jpeg,image/webp,application/pdf"
                 onChange={handleDocumentFileChange}
                 className="sr-only"
               />
