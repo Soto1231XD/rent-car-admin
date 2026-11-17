@@ -32,6 +32,9 @@ export type Rental = {
   isNewClient: boolean;
   confirmedAt?: string | null;
   depositAmount?: number | null;
+  // Cargo opcional por gasolina extra. Null/0 = no aplica -- en ese caso no
+  // aparece en el contrato de la renta.
+  extraFuelFee?: number | null;
   deliveryLocationId?: string | null;
   deliveryPlazaId?: string | null;
   deliveryAddress?: string | null;

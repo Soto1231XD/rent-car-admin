@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import Image from "next/image";
 import CarDamageDiagram from "./CarDamageDiagram";
 import { Rental } from "@/types/rental";
@@ -17,6 +18,15 @@ const LESSOR_PHONE = "+52 998 399 8112";
 
 type Props = {
   rental: Rental;
+  // Códigos QR (como data URL, generados server-side con la librería
+  // "qrcode") hacia las redes de la empresa. Un link de texto solo sirve si
+  // alguien ve el PDF en pantalla; en un contrato que a veces se firma e
+  // imprime en papel, el QR es lo único que funciona siempre.
+  socialQrCodes?: {
+    facebook: string | null;
+    instagram: string | null;
+    tiktok: string | null;
+  };
 };
 
 const accessories = [
@@ -67,7 +77,7 @@ const interior = [
   "Vestiduras",
 ];
 
-export default function UnifiedRentalDocument({ rental }: Props) {
+export default function UnifiedRentalDocument({ rental, socialQrCodes }: Props) {
   // An indefinida rental has no known return date/days until it's completed.
   // Once rental.daysCharged is set, treat it like a normal rental for
   // display — it now has a real return date and calculated total.
@@ -266,6 +276,9 @@ export default function UnifiedRentalDocument({ rental }: Props) {
                 value={formatDeliveryPoint(rental.returnLocation, rental.returnFee)}
               />
             )}
+            {!!rental.extraFuelFee && (
+              <Info label="Gasolina extra" value={formatMoney(rental.extraFuelFee)} />
+            )}
           </div>
         </section>
 
@@ -401,8 +414,6 @@ export default function UnifiedRentalDocument({ rental }: Props) {
           <div className="grid grid-cols-2 gap-10 text-center">
             <Signature label="EL ARRENDADOR" name={LESSOR_NAME} />
             <Signature label="EL ARRENDATARIO" name={clientName} />
-            <Signature label="TESTIGO 1" />
-            <Signature label="TESTIGO 2" />
           </div>
         </section>
 
@@ -505,6 +516,26 @@ export default function UnifiedRentalDocument({ rental }: Props) {
           </svg>
         </section>
 
+        {socialQrCodes && (
+          <section className="mt-4 flex justify-center gap-8 break-inside-avoid">
+            <SocialQr
+              label="Facebook"
+              qrDataUrl={socialQrCodes.facebook}
+              icon={<FacebookIcon className="h-5 w-5 text-[#1877F2]" />}
+            />
+            <SocialQr
+              label="Instagram"
+              qrDataUrl={socialQrCodes.instagram}
+              icon={<InstagramIcon className="h-5 w-5 text-[#E1306C]" />}
+            />
+            <SocialQr
+              label="TikTok"
+              qrDataUrl={socialQrCodes.tiktok}
+              icon={<TikTokIcon className="h-5 w-5 text-slate-900" />}
+            />
+          </section>
+        )}
+
         <p className="mt-3 border-t border-slate-300 pt-2 text-center text-[9px] text-slate-500">
           RENTAMIVAR · RFC {LESSOR_RFC} · Tel. {LESSOR_PHONE} · Facebook /
           Instagram / TikTok: @rentamivar
@@ -600,5 +631,61 @@ function Signature({ label, name }: { label: string; name?: string }) {
       </div>
       {name && <p className="mt-1 text-sm font-semibold text-slate-700">{name}</p>}
     </div>
+  );
+}
+
+function SocialQr({
+  label,
+  qrDataUrl,
+  icon,
+}: {
+  label: string;
+  qrDataUrl: string | null;
+  icon: ReactNode;
+}) {
+  if (!qrDataUrl) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="relative h-28 w-28">
+        {/* El QR se genera con errorCorrectionLevel "H" (tolera hasta ~30%
+            de obstrucción) justamente para poder taparle el centro con el
+            logo sin que deje de escanear. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={qrDataUrl} alt={`Código QR de ${label}`} className="h-28 w-28" />
+        <span className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow">
+          {icon}
+        </span>
+      </div>
+      <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-600">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function FacebookIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M22.675 0h-21.35C.594 0 0 .593 0 1.325v21.351C0 23.406.594 24 1.325 24h11.494v-9.294H9.691v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.098 2.795.142v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.115c.73 0 1.324-.594 1.324-1.325V1.325C24 .593 23.406 0 22.675 0z" />
+    </svg>
+  );
+}
+
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.204-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.069-4.85.069-3.204 0-3.584-.011-4.849-.069-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12s.014 3.668.072 4.948c.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24s3.668-.014 4.948-.072c4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" />
+    </svg>
+  );
+}
+
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M16.708 0h-3.516v16.078c0 1.734-1.396 3.152-3.13 3.152a3.135 3.135 0 0 1-3.13-3.152 3.135 3.135 0 0 1 3.13-3.152c.323 0 .63.055.923.144V9.4a6.756 6.756 0 0 0-.923-.064C6.31 9.336 3 12.646 3 16.898 3 21.15 6.311 24.46 10.062 24.46c3.751 0 7.062-3.31 7.062-7.562v-8.19a9.673 9.673 0 0 0 5.629 1.802V6.996a6.13 6.13 0 0 1-3.396-1.031A6.146 6.146 0 0 1 16.708 0z" />
+    </svg>
   );
 }

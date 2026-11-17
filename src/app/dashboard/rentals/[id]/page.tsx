@@ -164,20 +164,16 @@ export default async function RentalDetailPage({ params, searchParams }: Props) 
           </h2>
 
           <p className="mb-5 text-sm text-slate-600">
-            {isCommissionerRental
-              ? "Las rentas de comisionistas no generan contrato."
-              : "Genera el documento completo de la renta."}
+            Genera el documento completo de la renta.
           </p>
 
           <div className="space-y-3">
-            {!isCommissionerRental && (
-              <Link
-                href={`/print/rentals/${rental.id}/document`}
-                className="block w-full rounded-xl bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-slate-700"
-              >
-                Generar documento único
-              </Link>
-            )}
+            <Link
+              href={`/print/rentals/${rental.id}/document`}
+              className="block w-full rounded-xl bg-slate-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-slate-700"
+            >
+              Generar documento único
+            </Link>
 
             <Link
               href={`/print/rentals/${rental.id}/ticket`}

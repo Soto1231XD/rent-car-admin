@@ -53,6 +53,7 @@ const schema = z
     dailyRateApplied: optionalCurrencyNumber,
     depositAmount: optionalCurrencyNumber,
     advancePayment: optionalCurrencyNumber,
+    extraFuelFee: optionalCurrencyNumber,
     renterType: z.enum(["CLIENTE", "COMISIONISTA"]),
     status: z.enum(["RESERVACION", "ACTIVO", "COMPLETADO", "CANCELADO"]),
     notes: z.string().optional(),
@@ -176,6 +177,9 @@ export default function RentalForm({
         initialData?.depositAmount ?? undefined
       ),
       advancePayment: formatCurrencyInputValue(initialData?.advancePayment ?? 0),
+      extraFuelFee: formatCurrencyInputValue(
+        initialData?.extraFuelFee ?? undefined
+      ),
       renterType: initialData?.renterType ?? "CLIENTE",
       status: initialData?.status ?? "RESERVACION",
       notes: initialData?.notes ?? "",
@@ -961,6 +965,24 @@ export default function RentalForm({
             }
             strong
           />
+        </div>
+
+        <div className="mt-4">
+          <Field label="Gasolina extra" error={errors.extraFuelFee?.message}>
+            <input
+              type="text"
+              inputMode="decimal"
+              {...register("extraFuelFee")}
+              onInput={formatCurrencyInput}
+              className="input"
+              placeholder="0"
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Opcional. Solo si se le cobra gasolina extra a este cliente;
+              déjalo vacío o en 0 si no aplica. Si tiene un monto mayor a 0,
+              aparece en el contrato de la renta.
+            </p>
+          </Field>
         </div>
 
         {quote?.isUsingFallbackRate && (
