@@ -6,7 +6,8 @@ import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Car } from "@/types/car";
-import { createQuoteResult } from "@/lib/api-client";
+import { Quote } from "@/types/quote";
+import { createQuoteResult, updateQuoteResult } from "@/lib/api-client";
 import { formatCarLabel } from "@/lib/car-label";
 import FormAlert from "@/components/ui/FormAlert";
 import { showErrorToast } from "@/lib/toast";
@@ -44,9 +45,17 @@ type FormInput = z.input<typeof schema>;
 
 type Props = {
   cars: Car[];
+  mode?: "create" | "edit";
+  initialData?: Quote;
+  quoteId?: string;
 };
 
-export default function QuoteForm({ cars }: Props) {
+export default function QuoteForm({
+  cars,
+  mode = "create",
+  initialData,
+  quoteId,
+}: Props) {
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -59,13 +68,13 @@ export default function QuoteForm({ cars }: Props) {
   } = useForm<FormInput, unknown, FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      carId: "",
-      startDate: "",
-      endDate: "",
-      renterType: "CLIENTE",
-      deliveryFee: undefined,
-      returnFee: undefined,
-      notes: "",
+      carId: initialData?.carId ?? "",
+      startDate: initialData?.startDate.slice(0, 10) ?? "",
+      endDate: initialData?.endDate.slice(0, 10) ?? "",
+      renterType: initialData?.renterType ?? "CLIENTE",
+      deliveryFee: formatCurrencyInputValue(initialData?.deliveryFee),
+      returnFee: formatCurrencyInputValue(initialData?.returnFee),
+      notes: initialData?.notes ?? "",
     },
   });
 
@@ -114,7 +123,10 @@ export default function QuoteForm({ cars }: Props) {
   }, [endDate, renterType, selectedCar, startDate]);
 
   const onInvalid = () => {
-    const message = "Revisa los campos marcados antes de generar la cotización.";
+    const message =
+      mode === "edit"
+        ? "Revisa los campos marcados antes de guardar la cotización."
+        : "Revisa los campos marcados antes de generar la cotización.";
     setSubmitError(message);
     showErrorToast(message);
   };
@@ -123,21 +135,28 @@ export default function QuoteForm({ cars }: Props) {
     setSubmitError("");
     setIsSaving(true);
 
-    const result = await createQuoteResult(data);
+    const result =
+      mode === "edit" && quoteId
+        ? await updateQuoteResult(quoteId, data)
+        : await createQuoteResult(data);
 
     setIsSaving(false);
 
     if (!result.data) {
       const message =
         result.error ??
-        "No se pudo generar la cotización. Revisa los datos e intenta de nuevo.";
+        (mode === "edit"
+          ? "No se pudo guardar la cotización. Revisa los datos e intenta de nuevo."
+          : "No se pudo generar la cotización. Revisa los datos e intenta de nuevo.");
       setSubmitError(message);
       showErrorToast(message);
       return;
     }
 
     router.refresh();
-    router.push(`/dashboard/quotes/${result.data.id}?success=created`);
+    router.push(
+      `/dashboard/quotes/${result.data.id}?success=${mode === "edit" ? "updated" : "created"}`
+    );
   };
 
   return (
@@ -291,7 +310,13 @@ export default function QuoteForm({ cars }: Props) {
           disabled={isSaving}
           className="rounded-xl bg-slate-900 px-5 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
-          {isSaving ? "Generando..." : "Generar cotización"}
+          {mode === "edit"
+            ? isSaving
+              ? "Guardando..."
+              : "Guardar cambios"
+            : isSaving
+              ? "Generando..."
+              : "Generar cotización"}
         </button>
       </div>
     </form>

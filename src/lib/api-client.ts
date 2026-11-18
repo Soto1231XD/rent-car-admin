@@ -725,6 +725,13 @@ export function createQuoteResult(payload: SaveQuotePayload) {
   });
 }
 
+export function updateQuoteResult(id: string, payload: SaveQuotePayload) {
+  return requestResult<Quote>(`/quotes/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function deleteQuoteResult(id: string) {
   return requestResult<Quote>(`/quotes/${id}`, {
     method: "DELETE",

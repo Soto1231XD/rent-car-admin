@@ -60,12 +60,23 @@ export default async function QuoteDetailPage({ params, searchParams }: Props) {
             </p>
           </div>
 
-          <DeleteResourceButton
-            id={quote.id}
-            resourceType="quote"
-            resourceName={`${quote.folio} - ${carName}`}
-            redirectTo="/dashboard/quotes"
-          />
+          <div className="flex gap-3">
+            {!quote.rental && (
+              <Link
+                href={`/dashboard/quotes/${quote.id}/edit`}
+                className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              >
+                Editar
+              </Link>
+            )}
+
+            <DeleteResourceButton
+              id={quote.id}
+              resourceType="quote"
+              resourceName={`${quote.folio} - ${carName}`}
+              redirectTo="/dashboard/quotes"
+            />
+          </div>
         </div>
       </div>
 
