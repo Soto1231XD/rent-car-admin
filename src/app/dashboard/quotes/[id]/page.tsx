@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { getQuote } from "@/lib/api";
+import { getClients, getQuote } from "@/lib/api";
 import DeleteResourceButton from "@/components/ui/DeleteResourceButton";
+import CreateRentalFromQuoteButton from "@/components/quotes/CreateRentalFromQuoteButton";
 import { formatCarLabel } from "@/lib/car-label";
 import { formatCurrency as formatMoney } from "@/lib/format-currency";
 
@@ -16,7 +17,7 @@ type Props = {
 export default async function QuoteDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
   await searchParams;
-  const quote = await getQuote(id);
+  const [quote, clients] = await Promise.all([getQuote(id), getClients()]);
 
   if (!quote) {
     return (
@@ -117,6 +118,20 @@ export default async function QuoteDetailPage({ params, searchParams }: Props) {
           >
             Generar cotización
           </Link>
+        </section>
+
+        <section className="rounded-2xl bg-white p-4 shadow sm:p-6">
+          <h2 className="mb-2 text-lg font-semibold text-slate-900">
+            Renta
+          </h2>
+
+          <p className="mb-5 text-sm text-slate-600">
+            {quote.rental
+              ? "Esta cotización ya fue convertida en una renta."
+              : "Crea la renta real a partir de esta cotización, pidiendo solo los datos que faltan."}
+          </p>
+
+          <CreateRentalFromQuoteButton quote={quote} clients={clients} />
         </section>
       </div>
     </div>

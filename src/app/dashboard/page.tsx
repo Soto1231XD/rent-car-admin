@@ -6,7 +6,6 @@ import {
   Plus,
   ReceiptText,
   UserPlus,
-  Users,
   Wrench,
 } from "lucide-react";
 import { getDashboardSummary, getExtraExpenses } from "@/lib/api";
@@ -51,13 +50,12 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <SummaryCard
           title="Carros disponibles"
           value={summary.cars.available}
           detail={`${summary.cars.total} unidades registradas`}
           icon={<Car />}
-          className="xl:col-span-2"
           valueClassName="text-3xl"
         />
         <SummaryCard
@@ -65,40 +63,32 @@ export default async function DashboardPage() {
           value={summary.rentals.active}
           detail={`${summary.rentals.reserved} reservaciones`}
           icon={<CalendarDays />}
-          className="xl:col-span-2"
           valueClassName="text-3xl"
-        />
-        <SummaryCard
-          title="Clientes"
-          value={summary.clients.total}
-          detail="Clientes registrados"
-          icon={<Users />}
-          className="xl:col-span-2"
-          valueClassName="text-3xl"
-        />
-        <SummaryCard
-          title="Ingreso del mes"
-          value={formatSummaryMoney(monthlyIncome)}
-          detail="Ingreso registrado este mes, MXN"
-          icon={<DollarSign />}
-          className="xl:col-span-2"
-          valueClassName="text-2xl sm:text-3xl"
-        />
-        <SummaryCard
-          title="Comisionistas"
-          value={formatSummaryMoney(monthlyCommissionerIncome)}
-          detail="Ingreso mensual de comisionistas, MXN"
-          icon={<DollarSign />}
-          className="xl:col-span-2"
-          valueClassName="text-2xl sm:text-3xl"
         />
         <SummaryCard
           title="Gastos extras"
           value={formatSummaryMoney(monthlyExtraExpenses)}
           detail="Gastos pagados este mes, MXN"
           icon={<ReceiptText />}
-          className="xl:col-span-2"
-          valueClassName="text-2xl sm:text-3xl"
+          valueClassName="text-2xl"
+        />
+        <SummaryCard
+          title="Ingresos del mes"
+          value={formatSummaryMoney(monthlyIncome + monthlyCommissionerIncome)}
+          detail={`Renta: ${formatSummaryMoney(monthlyIncome)} · Comisionistas: ${formatSummaryMoney(monthlyCommissionerIncome)}`}
+          icon={<DollarSign />}
+          valueClassName="text-2xl"
+          className="sm:col-span-2 lg:col-span-1"
+        />
+        <SummaryCard
+          title="Total final"
+          value={formatSummaryMoney(
+            monthlyIncome + monthlyCommissionerIncome - monthlyExtraExpenses
+          )}
+          detail="Ingresos del mes - gastos extras"
+          icon={<DollarSign />}
+          valueClassName="text-2xl"
+          className="sm:col-span-2 lg:col-span-1"
         />
       </div>
 

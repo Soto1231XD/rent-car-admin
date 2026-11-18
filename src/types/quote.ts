@@ -17,6 +17,8 @@ export type Quote = {
   returnFee: number;
   notes?: string | null;
   car?: Car | null;
+  // Renta creada desde esta cotización (botón "Crear renta"), si aplica.
+  rental?: { id: string } | null;
   createdAt?: string;
   updatedAt?: string;
 };

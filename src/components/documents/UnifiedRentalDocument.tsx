@@ -29,54 +29,6 @@ type Props = {
   };
 };
 
-const accessories = [
-  "Gato",
-  "Maneral",
-  "Llave de ruedas",
-  "Estuche de herramienta",
-  "Señalamiento",
-  "Llanta de refacción",
-  "Extinguidor",
-];
-
-const mechanical = [
-  "Claxon",
-  "Tapón de aceite",
-  "Tapón radiador",
-  "Varilla de aceite",
-  "Filtro de aire",
-  "Batería",
-];
-
-const exterior = [
-  "Unidad de luces",
-  "Cuarto de luces",
-  "Antena",
-  "Espejo lateral izquierdo",
-  "Espejo lateral derecho",
-  "Parabrisas",
-  "Ventanas",
-  "Medallón",
-  "Emblema",
-  "Llantas",
-  "Tapón de ruedas",
-  "Limpiadores",
-];
-
-const interior = [
-  "Tablero",
-  "Calefacción / A/C",
-  "Radio",
-  "Bocinas",
-  "Encendedor",
-  "Espejo retrovisor",
-  "Cinturones",
-  "Botones interiores",
-  "Manijas interiores",
-  "Tapetes",
-  "Vestiduras",
-];
-
 export default function UnifiedRentalDocument({ rental, socialQrCodes }: Props) {
   // An indefinida rental has no known return date/days until it's completed.
   // Once rental.daysCharged is set, treat it like a normal rental for
@@ -367,14 +319,8 @@ export default function UnifiedRentalDocument({ rental, socialQrCodes }: Props) 
             <h3 className="mb-3 text-center font-bold uppercase print:mb-2">
               Diagrama de daños del vehículo
             </h3>
-            <div className="mx-auto max-w-sm print:max-w-[240px]">
+            <div className="mx-auto max-w-lg print:max-w-[380px]">
               <CarDamageDiagram />
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-6 print:mt-2 print:gap-x-6 print:gap-y-1 print:text-[9pt]">
-              <Checklist title="Accesorios" items={accessories} />
-              <Checklist title="Componentes mecánicos" items={mechanical} />
-              <Checklist title="Exteriores" items={exterior} />
-              <Checklist title="Interiores" items={interior} />
             </div>
           </div>
 
@@ -600,27 +546,6 @@ function getPriceBreakdown(rental: Rental) {
   const rate = rental.dailyRateApplied || rental.totalPrice / days;
 
   return `${days} ${days === 1 ? "día" : "días"} x ${formatMoney(rate)} = ${formatMoney(rental.totalPrice)}`;
-}
-
-function Checklist({ title, items }: { title: string; items: string[] }) {
-  return (
-    <section className="break-inside-avoid">
-      <h3 className="mb-2 border-b border-black text-center font-bold uppercase">
-        {title}
-      </h3>
-      <div className="space-y-1">
-        {items.map((item) => (
-          <div
-            key={item}
-            className="flex items-center justify-between border-b border-dotted border-slate-400"
-          >
-            <span>{item}</span>
-            <span>[ ]</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
 }
 
 function Signature({ label, name }: { label: string; name?: string }) {

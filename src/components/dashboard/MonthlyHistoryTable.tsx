@@ -86,11 +86,27 @@ export default function MonthlyHistoryTable({ entries }: Props) {
                     </p>
                   </div>
                   <div>
+                    <p className="text-xs font-medium text-slate-500">Total</p>
+                    <p className="mt-1 font-semibold text-slate-900">
+                      {formatMoney(entry.income + entry.commissionerIncome)}
+                    </p>
+                  </div>
+                  <div>
                     <p className="text-xs font-medium text-slate-500">
                       Gastos extras
                     </p>
                     <p className="mt-1 font-semibold text-slate-900">
                       {formatMoney(entry.extraExpenses)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-500">
+                      Total final
+                    </p>
+                    <p className="mt-1 font-semibold text-slate-900">
+                      {formatMoney(
+                        entry.income + entry.commissionerIncome - entry.extraExpenses
+                      )}
                     </p>
                   </div>
                 </div>
@@ -99,33 +115,46 @@ export default function MonthlyHistoryTable({ entries }: Props) {
           </div>
 
           <div className="hidden overflow-x-auto rounded-xl border border-slate-200 md:block">
-            <table className="w-full min-w-[680px] text-left text-sm">
+            <table className="w-full min-w-[900px] text-left text-sm">
               <thead className="bg-slate-50 text-slate-600">
                 <tr>
                   <th className="px-6 py-4 font-medium">Mes</th>
                   <th className="px-6 py-4 font-medium">Ingreso del mes</th>
                   <th className="px-6 py-4 font-medium">Comisionistas</th>
+                  <th className="px-6 py-4 font-medium">Total</th>
                   <th className="px-6 py-4 font-medium">Gastos extras</th>
+                  <th className="px-6 py-4 font-medium">Total final</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-slate-100">
-                {filteredEntries.map((entry) => (
-                  <tr key={entry.month}>
-                    <td className="whitespace-nowrap px-6 py-4 font-medium text-slate-900">
-                      {formatMonth(entry.month)}
-                    </td>
-                    <td className="px-6 py-4 text-slate-900">
-                      {formatMoney(entry.income)}
-                    </td>
-                    <td className="px-6 py-4 text-slate-900">
-                      {formatMoney(entry.commissionerIncome)}
-                    </td>
-                    <td className="px-6 py-4 text-slate-900">
-                      {formatMoney(entry.extraExpenses)}
-                    </td>
-                  </tr>
-                ))}
+                {filteredEntries.map((entry) => {
+                  const total = entry.income + entry.commissionerIncome;
+                  const totalFinal = total - entry.extraExpenses;
+
+                  return (
+                    <tr key={entry.month}>
+                      <td className="whitespace-nowrap px-6 py-4 font-medium text-slate-900">
+                        {formatMonth(entry.month)}
+                      </td>
+                      <td className="px-6 py-4 text-slate-900">
+                        {formatMoney(entry.income)}
+                      </td>
+                      <td className="px-6 py-4 text-slate-900">
+                        {formatMoney(entry.commissionerIncome)}
+                      </td>
+                      <td className="px-6 py-4 text-slate-900">
+                        {formatMoney(total)}
+                      </td>
+                      <td className="px-6 py-4 text-slate-900">
+                        {formatMoney(entry.extraExpenses)}
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-slate-900">
+                        {formatMoney(totalFinal)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

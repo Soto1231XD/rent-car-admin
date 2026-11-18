@@ -731,6 +731,27 @@ export function deleteQuoteResult(id: string) {
   });
 }
 
+export type CreateRentalFromQuotePayload = {
+  clientId?: string;
+  fullName?: string;
+  phone?: string;
+  email?: string;
+  idNumber?: string;
+  address?: string;
+  advancePayment?: number;
+  depositAmount?: number;
+};
+
+export function createRentalFromQuoteResult(
+  quoteId: string,
+  payload: CreateRentalFromQuotePayload
+) {
+  return requestResult<Rental>(`/quotes/${quoteId}/create-rental`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export type DashboardBadges = {
   pendingRentals: number;
   pendingClients: number;
